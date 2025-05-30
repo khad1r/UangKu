@@ -2,11 +2,13 @@
 
 -- init.sql
 CREATE TABLE AUTH (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user TEXT UNIQUE,
-  passkey TEXT
+  passkey_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nickname TEXT UNIQUE,
+  credential_id TEXT UNIQUE,
+  public_key TEXT,
+  created_at TEXT
 );
-INSERT INTO AUTH (user) VALUES (null);
+INSERT INTO AUTH (nickname) VALUES ('Admin');
 CREATE TABLE DB_INFO (
   version_date TEXT,
   fingerprint TEXT

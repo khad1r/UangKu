@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Controller;
 use App\models\Auth as ModelsAuth;
 use App\Route;
+use lbuchs\WebAuthn\WebAuthn;
 
 class Auth extends Controller
 {
@@ -22,15 +23,31 @@ class Auth extends Controller
       Route::Redirect('/Main');
       exit;
     }
+    $webAuthn = new WebAuthn(WEB_TITLE, $_SERVER['SERVER_NAME']);
     if (isset($_POST['login'])) {
       try {
-        $user = new ModelsAuth()->login($_POST);
-        if (!empty($user)) {
-          $_SESSION['user'] = $user;
+        $crendential_data = json_decode($_POST['login'], true);
+        $credential_id = bin2hex(base64_decode($crendential_data['id']));
+        $unique_id = bin2hex(base64_decode($crendential_data['userHandle']));
+        $passkey = new ModelsAuth()->get_passkey($credential_id);
+        if (empty($passkey)) {
+          throw new \Exception("Kredential tidak dikenali");
+        }
+        $isValid = $webAuthn->processGet(
+          base64_decode($crendential_data['clientDataJSON']),
+          base64_decode($crendential_data['authenticatorData']),
+          base64_decode($crendential_data['signature']),
+          $passkey['public_key'],
+          $_SESSION['challenge']
+        );
+        if ($isValid) {
+          unset($_SESSION['challenge']);
+          // Let's save the user id to the session, logging them in.
+          $_SESSION['user'] = $passkey;
           Route::Redirect('/Main');
           return;
         } else {
-          throw new \Exception("Username Atau Password Salah");
+          throw new \Exception("Kredential invalid");
         }
       } catch (\Exception $e) {
         $_SESSION['alert'] = ['danger', $e->getMessage()];
@@ -38,7 +55,9 @@ class Auth extends Controller
     }
 
     // $this->view('templates/header', array('title' => 'Login'));
-
+    $data['webAuthnArgs'] = $webAuthn->getGetArgs();
+    // $data['webAuthnArgs']->mediation = 'conditional';
+    $_SESSION['challenge'] = ($webAuthn->getChallenge())->getBinaryString();
     $data['view'] = 'auth/login';
     setCacheControl(0);
     $this->view('templates/template', $data);
@@ -59,23 +78,39 @@ class Auth extends Controller
   }
   public function regist()
   {
-    $registering = new ModelsAuth()->is_registering_device();
+    $registering = new ModelsAuth()->is_registering();
     if (empty($registering)) {
       $_SESSION['alert'] = ['danger', 'Dilarang!!'];
       Route::Redirect('/Auth/login');
       exit;
     }
+    $webAuthn = new WebAuthn(WEB_TITLE, $_SERVER['SERVER_NAME']);
     if (isset($_POST['regist'])) {
       try {
-        new ModelsAuth()->regist($_POST);
+        $data = json_decode($_POST['regist'], true);
+        $clientData = base64_decode($data['response']['clientDataJSON']);
+        $attestation = base64_decode($data['response']['attestationObject']);
+        $cred = $webAuthn->processCreate($clientData, $attestation, $_SESSION['challenge']);
+        new ModelsAuth()->regist($cred);
+        $_SESSION['alert'] = ['success', 'Registrasi Berhasil'];
         Route::Redirect('/Auth/login');
         exit;
       } catch (\Exception $e) {
         $_SESSION['alert'] = ['danger', $e->getMessage()];
+        Route::Redirect('');
+        exit;
       }
     }
-    $data['view'] = 'auth/regist';
+    $data['webAuthnArgs'] = $webAuthn->getCreateArgs(
+      $registering['passkey_id'],
+      $registering['nickname'],
+      $registering['nickname'],
+    );
+    $_SESSION['challenge'] = ($webAuthn->getChallenge())->getBinaryString();
+    // $_SESSION['challenge'] = $webAuthn->getChallenge();
+    // $data['view'] = 'auth/regist';
     setCacheControl(0);
-    $this->view('templates/template', $data);
+    // $this->view('templates/template', $data);
+    $this->view('auth/regist', $data);
   }
 }

@@ -68,7 +68,7 @@ COPY sql/ /docker-entrypoint-initdb.d/
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-WORKDIR /var/www/html
+# WORKDIR /var/www/html
 # RUN composer install
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

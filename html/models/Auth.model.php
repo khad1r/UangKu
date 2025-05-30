@@ -11,50 +11,31 @@ class Auth extends Database
   {
     parent::__construct();
   }
-  public function is_registering_device()
+  public function is_registering()
   {
-    $this->query("SELECT * FROM {$this->table} WHERE user IS NULL");
+    $this->query("SELECT * FROM {$this->table} WHERE credential_id IS NULL");
     return $this->resultSingle();
   }
-  public function login($data)
+  public function get_passkey($credential_id)
   {
-    $error = [];
-    foreach ($data as $key => $val) {
-      if (empty($val)) $error[$key] = 'Input Ini Tidak Boleh Kosong!!!';
-    }
-    foreach ($data as &$input) $input = htmlspecialchars($input);
-
-    if (!empty($error)) {
-      $_SESSION['InputError'] = $error;
-      throw new \Exception("Error Data!!");
-    }
-    return $this->query("SELECT * FROM {$this->table} WHERE user=:user")
-      ->bind('user', $data['user'])
+    return $this->query("SELECT * FROM {$this->table} WHERE credential_id=:credential_id")
+      ->bind('credential_id', $credential_id)
       ->resultSingle();
   }
   public function regist($data)
   {
-    $error = [];
-    foreach ($data as $key => $val) {
-      if (empty($val)) $error[$key] = 'Input Ini Tidak Boleh Kosong!!!';
-    }
-    foreach ($data as &$input) $input = htmlspecialchars($input);
-
-    if (!empty($error)) {
-      $_SESSION['InputError'] = $error;
-      throw new \Exception("Error Data!!");
-    }
     $query = <<<SQL
       UPDATE {$this->table}
       SET
-        user=:user,
-        passkey=:passkey
+        credential_id=:credential_id,
+        public_key=:pubkey,
+        created_at=DATETIME('now', 'localtime')
       WHERE
-        user IS NULL
+        credential_id IS NULL
       SQL;
     $this->query($query);
-    $this->bind('user', $data['user']);
-    $this->bind('passkey', $data['passkey']);
+    $this->bind('credential_id', bin2hex($data->credentialId));
+    $this->bind('pubkey', $data->credentialPublicKey);
     $this->execute();
     return $this->affectedRows();
   }

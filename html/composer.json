@@ -1,5 +1,6 @@
 {
-    "require": {
-        "lbuchs/webauthn": "*"
-    }
+  "require": {
+    "php": ">=7.2",
+    "lbuchs/webauthn": "*"
+  }
 }

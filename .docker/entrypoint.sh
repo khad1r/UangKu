@@ -23,6 +23,7 @@ if [ ! -f "$DB_PATH" ]; then
 else
   echo "SQLite database already exists at $DB_PATH."
 fi
-
+cd /var/www/html
+composer install
 # Start Apache in the foreground
 exec apache2-foreground

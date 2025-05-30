@@ -47,7 +47,7 @@ class Entry
     $path = '',
     $currentDepth = 0,
     // $validController = [$this->controller, $this->method, $this->params]
-    $fallbackController = [\App\Controllers\error::class, 'not_found', []]
+    $fallbackController = [\App\Controllers\error::class, 'notFound', []]
   ) {
     $maxDepth = intval(MAX_FILE_DEPTH_RECURSIVE);
     if ($maxDepth === 0) $maxDepth = PHP_INT_MAX;
@@ -55,7 +55,7 @@ class Entry
     // If no segments are found, return the error controller
     // Stop searching if we reach the max depth
     if (empty($segments) || $currentDepth > $maxDepth) {
-      // return [\App\Controllers\error::class, 'not_found', []];
+      // return [\App\Controllers\error::class, 'notFound', []];
       return $fallbackController;
     }
 

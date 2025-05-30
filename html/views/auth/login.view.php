@@ -5,15 +5,20 @@
 
   .body {
     --body-mobile-margin-top: 0;
-    --body-top-radius: clamp(0%, 10vw, 15%);
-    /* --body-min-height: 75dvh; */
-    --body-min-height: calc(100dvh - var(--main-logo-height));
+    --body-top-radius: clamp(0%, 10vw, 30%);
+    --body-min-height: 20dvh;
+    /* --body-min-height: calc(100dvh - var(--main-logo-height)); */
     padding-bottom: 10px;
     /* padding-top: auto; */
     display: flex;
     flex-direction: row;
     align-items: flex-end;
     justify-content: center;
+  }
+
+  .wrapper .main-logo {
+    width: 100%;
+    height: 60dvh;
   }
 </style>
 <div class="wrapper">
@@ -23,23 +28,18 @@
     <img src="<?= BASEURL ?>\assets\img\logo_512.png" class="">
   </div>
   <div class="body px-3">
-    <div id="form" name="login">
-      <div class="indicator-body mt-1 mb-5">
-        <i class="fa-solid fa-caret-up"></i>
-      </div>
-      <form method="post">
-        <div class="form-group px-4">
-          <label>Username</label>
-          <input type="text" class="form-control" placeholder="Username" autocorrect="off" autocapitalize="none"
-            name="user" value="" required="required">
-          <?php InputValidator('username') ?>
+    <div id="form">
+      <form method="post" name="login">
+        <div class="indicator-body mt-1 mb-5">
+          <i class="fa-solid fa-caret-up"></i>
         </div>
-        <hr>
+        <input type="hidden" name="login" />
         <div class="indicator-body">
           <div class="spinner-border mb-3" style="display:none;" role="status">
           </div>
         </div>
-        <input type="submit" class="btn w-100 text-white" value="Login" name="login">
+        <hr>
+        <button role="button" class="btn w-100 text-white" id="login-btn">Login</button>
         <div class="note">
           <p>Apakah Anda sudah memiliki QRIS Bank Gresik?</p>
           <a href="#" id="openModal">Ya, saya sudah</a> | <a href="#">Belum, saya
@@ -66,6 +66,25 @@
 </dialog>
 <script>
   const modal = document.querySelector('dialog')
+  const DATA = <?= json_encode($data['webAuthnArgs']) ?>;
+  webAuthnHelper.bta(DATA)
+  const Authenticate = async () => {
+    const credential = await navigator.credentials.get(DATA);
+    let credential_data = {
+      id: webAuthnHelper.atb(credential.rawId),
+      clientDataJSON: webAuthnHelper.atb(credential.response.clientDataJSON),
+      authenticatorData: webAuthnHelper.atb(credential.response.authenticatorData),
+      signature: webAuthnHelper.atb(credential.response.signature),
+      userHandle: webAuthnHelper.atb(credential.response.userHandle)
+    };
+    const form = document.querySelector("form[name='login']");
+    form.login.value = JSON.stringify(credential_data);
+    form.submit();
+  }
+  document.getElementById('login-btn').addEventListener('click', async (event) => {
+    event.preventDefault();
+    Authenticate()
+  })
   document.querySelector('#openModal').addEventListener('click', (e) => {
     e.preventDefault()
     modal.showModal()
@@ -83,17 +102,5 @@
   })
   document.querySelector('form').addEventListener('submit', () => {
     document.querySelector(".spinner-border.mb-3").style.display = "block"
-  })
-
-  function scrollToForm() {
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: 'smooth'
-    });
-  }
-  document.querySelector('.indicator-body').addEventListener('click', scrollToForm)
-  document.addEventListener('DOMContentLoaded', async () => {
-    if (sessionStorage.getItem('isInput')) scrollToForm()
-    // removeCache()
   })
 </script>

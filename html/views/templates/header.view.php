@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <link href="<?= BASEURL ?>/assets/img/icon.ico" rel="shortcut icon">
-  <link rel="manifest" href="<?= BASEURL ?>/manifest.json">
+  <!-- <link rel="manifest" href="<?= BASEURL ?>/manifest.json"> -->
   <title><?= $data['title'] ?? WEB_TITLE ?></title>
   <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous"> -->
