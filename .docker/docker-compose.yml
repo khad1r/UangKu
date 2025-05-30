@@ -1,0 +1,27 @@
+version: "3.8"
+name: Pembukuan
+services:
+  php:
+    container_name: php
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PHP_VERSION=${PHP_VERSION}
+        - DOCKER_ENV=${DOCKER_ENV}
+        - XDEBUG_PORT=${XDEBUG_PORT}
+        - XDEBUG_CLIENT_HOST=${XDEBUG_CLIENT_HOST}
+        - XDEBUG_VERSION=${XDEBUG_VERSION}
+    ports:
+      - "80:80"
+      - "443:443"
+    init: true
+    env_file:
+      - .env
+    volumes:
+      - ../:/var/www
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "localhost:host-gateway"
+    restart: unless-stopped
+    network_mode: bridge

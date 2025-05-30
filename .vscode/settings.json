@@ -1,0 +1,29 @@
+{
+  "workbench.settings.enableNaturalLanguageSearch": false,
+  "editor.tabSize": 2,
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.trimFinalNewlines": true,
+  "files.autoSave": "onFocusChange",
+  "editor.formatOnSave": true,
+  "editor.fontLigatures": true,
+  "editor.linkedEditing": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "editor.guides.bracketPairsHorizontal": true,
+  "editor.stickyScroll.enabled": true,
+  "editor.smoothScrolling": true,
+  "editor.multiCursorModifier": "ctrlCmd",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "intelephense.diagnostics.undefinedProperties": false,
+  "[php]": {
+    "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "html.format.templating": true
+}

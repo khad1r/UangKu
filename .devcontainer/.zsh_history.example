@@ -1,0 +1,28 @@
+: 1711522753:0;ls ~ -lah
+: 1711522865:0;git status
+: 1711534456:0;git log
+: 1711592179:0;git status
+: 1711592189:0;git push
+: 1711592204:0;git push --set-upstream origin php-fpm&nginx
+: 1711592228:0;git -h
+: 1711592240:0;git branch -h
+: 1711592277:0;git status
+: 1711600621:0;cat ~/.zsh_history
+: 1711600630:0;git 
+: 1711600632:0;ls
+: 1711600636:0;ls -lah
+: 1711600640:0;composer -v
+: 1711602085:0;printenv
+: 1711602186:0;apache2ctl start
+: 1711602239:0;hostname
+: 1711602279:0;printenv | sort
+: 1711602601:0;ping google.com
+: 1711602755:0;git config --global --add safe.directory '/workspaces/PHP'
+: 1711603019:0;command -v git >/dev/null 2>&1 && git config --global --replace-all credential.helper '!f() { /home/vscode/.vscode-server/bin/863d2581ecda6849923a2118d93a088b0745d9d6/node /tmp/vscode-remote-containers-f50d18dc-96b7-41e7-b0db-44a78cfc04f2.js git-credential-helper $*; }; f' || true
+: 1711603038:0;git config --global --add safe.directory '/workspaces/PHP'
+: 1711606936:0;${workspaceRoot}
+: 1711606940:0;echo ${workspaceRoot}
+: 1711609447:0;cat ~/.vscode-server/extensions/extensions.json
+: 1711617849:0;clear
+: 1711617871:0;git add .devcontainer/.zsh_history
+: 1711617885:0;git add .devcontainer/.zsh_history -f

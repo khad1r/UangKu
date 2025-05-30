@@ -1,0 +1,72 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/php
+{
+  "name": "Qris-Nasabah",
+  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  // "image": "mcr.microsoft.com/devcontainers/php:1-8.2-bullseye",
+  // ? https://github.com/devcontainers/images/blob/main/src/php/history/1.2.2.md#variant-82-apache-bullseye
+  // ! Already have Git, Zsh, And PHP Composer
+  // Configure tool-specific properties.
+  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  "dockerComposeFile": "../.docker/docker-compose.yml",
+  "service": "php",
+  // // Features to add to the dev container. More info: https://containers.dev/features.
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": "true",
+      "username": "bg", // ! Change in remoteuser below and in .docker/.env too
+      "userUid": "1000",
+      "userGid": "1000",
+      "upgradePackages": "true"
+    }
+  },
+  "overrideFeatureInstallOrder": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ],
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Add the IDs of extensions you want installed when the container is created.
+      // ! if not installed witch mean the default user(vscode) inside the Devcontainer
+      // ? already have installed extenstion in /home/vscode/.vscode-server/extensions/extensions.json
+      // ! so either use devcontainer ghr common utils for creating new user or
+      // ? comment this first -> rebuild -> you gonna see some extention is installed
+      // ? then uncomment this and rebuild
+      "extensions": [
+        "xdebug.php-debug",
+        "bmewburn.vscode-intelephense-client",
+        "mrmlnc.vscode-apache",
+        "patbenatar.advanced-new-file",
+        "Tobermory.es6-string-html",
+        "bashmish.es6-string-css",
+        "zjcompt.es6-string-javascript",
+        "sleistner.vscode-fileutils",
+        "ecmel.vscode-html-css",
+        "Zignd.html-css-class-completion",
+        "rifi2k.format-html-in-php",
+        "EditorConfig.EditorConfig",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        // Set *default* container specific settings.json values on container create.
+        "settings": {
+          "php.validate.executablePath": "/usr/local/bin/php",
+          "php.debug.executablePath": "/usr/local/bin/php",
+          "intelephense.environment.includePaths": ["/usr/local/bin/php"]
+          //Moved to .vscode/settings.json
+        }
+        //! Moved to .vscode/settings.json
+      }
+    }
+  },
+  // "postStartCommand": "",
+  // "initializeCommand": "",
+  "onCreateCommand": "if [ ! -f \"$(pwd)\"/.devcontainer/.zsh_history ]; then cp \"$(pwd)\"/.devcontainer/.zsh_history.example \"$(pwd)\"/.devcontainer/.zsh_history; fi",
+  "updateContentCommand": "",
+  // "forwardPorts": [80],
+  // Use 'postCreateCommand' to run commands after the container is created.
+  "postCreateCommand": "ln -s \"$(pwd)\"/.devcontainer/.zsh_history ~/.zsh_history",
+  // "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/${localWorkspaceFolder},type=bind",
+  "workspaceFolder": "/var/www",
+  "remoteUser": "bg"
+}

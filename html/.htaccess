@@ -1,0 +1,161 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine on
+
+    # # Skip if request is to an existing file or directory
+    # RewriteCond %{REQUEST_FILENAME} -f [OR]
+    # RewriteCond %{REQUEST_FILENAME} -d
+    # RewriteRule ^ - [L]
+
+    # Forward all other requests to the public folder
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+## You're correct in noticing that all requests are being forwarded to the public/ folder, even when the file ## does not exist, and it doesn't fall back to the second RewriteRule that should forward to index.php. This ## happens because the first RewriteRule is always triggered unless the request is to a real file or directory or ## starts with /public/.
+##
+## 🔍 The Problem:
+## Once the first rule matches and rewrites to public/$1, Apache treats this as a new request. This means the ## second RewriteRule (to index.php/$1) is never evaluated, because the new request path is now under /public, ## and unless your .htaccess inside /public is also configured to handle fallbacks, it won’t proceed to index.php.
+##
+## ✅ Solution:
+## You should separate concerns between rewriting to the public/ folder and the Laravel-style fallback to index.## php. Here’s a revised .htaccess setup:
+##
+## 🔧 Suggested .htaccess:
+## Put this in your root folder:
+##
+## apache
+## Salin
+## Edit
+## <IfModule mod_rewrite.c>
+##     RewriteEngine on
+##
+##     # Skip if request is to an existing file or directory
+##     RewriteCond %{REQUEST_FILENAME} -f [OR]
+##     RewriteCond %{REQUEST_FILENAME} -d
+##     RewriteRule ^ - [L]
+##
+##     # Forward all other requests to the public folder
+##     RewriteRule ^(.*)$ public/$1 [L]
+## </IfModule>
+## And then inside your /public/.htaccess, handle the fallback to index.php:
+##
+## apache
+## Salin
+## Edit
+## <IfModule mod_rewrite.c>
+##     RewriteEngine On
+##
+##     # Skip existing files/directories
+##     RewriteCond %{REQUEST_FILENAME} !-f
+##     RewriteCond %{REQUEST_FILENAME} !-d
+##
+##     # Send everything else to index.php
+##     RewriteRule ^ index.php [QSA,L]
+##
+##     Options -Indexes
+## </IfModule>
+## ✅ Summary of Fix:
+## Let the root .htaccess only forward to /public if the file doesn't exist.
+##
+## Let the public/.htaccess handle all fallbacks to index.php.
+##
+## This makes routing cleaner and more modular.
+##
+## Let me know if you're not using Laravel or if you want a unified .htaccess instead!
+# <IfModule mod_rewrite.c>
+#     RewriteEngine on
+
+#     # # # Forward requests to the public folder
+#     # RewriteCond %{REQUEST_FILENAME} !-f
+#     # RewriteCond %{REQUEST_FILENAME} !-d
+#     # RewriteCond %{REQUEST_URI} !^/public/
+#     # RewriteRule ^(.*)$ public/$1 [L]
+
+#     # Forward all requests that do not exist as files or directories to index.php
+#     RewriteCond %{REQUEST_FILENAME} !-f
+#     RewriteCond %{REQUEST_FILENAME} !-d
+#     RewriteRule ^(.*)$ index.php/$1 [L]
+
+#     Options -Indexes
+# </IfModule>
+
+# php_value date.timezone 'Asia/Jakarta'
+# RewriteEngine On
+# # RewriteBase /
+
+# # RewriteEngine On
+
+
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteRule ^([^/]+)/?$ index.php?controller=$1 [L,QSA]
+
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteRule ^([^/]+)/([^/]+)/?$ index.php?controller=$1&method=$2 [L,QSA]
+
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteRule ^([^/]+)/([^/]+)/([^/]+)/([^/]+)/?$ index.php?controller=$1&method=$2&$3=$4 [L,QSA]
+
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{QUERY_STRING} ^controller=([^&]+)$
+# RewriteRule ^(.*)$ /%1/? [R=301,L]
+
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{QUERY_STRING} ^controller=([^&]+)&method=([^&]+)$
+# RewriteRule ^(.*)$ /%1/%2/? [R=301,L]
+
+# RewriteCond %{REQUEST_FILENAME} -d
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteRule . 404.php [L]
+
+
+# # RewriteRule ^(.*)$ https://pertashop.gresikmigas.co.id/$1 [R=301,L]
+# ErrorDocument 404 /404.php
+# # RewriteCond %{REQUEST_FILENAME} !-f
+# # RewriteCond %{QUERY_STRING} ^controller=([^&]+)&method=([^&]+)$
+# # RewriteRule ^(.*)$ /%1/? [R=301,L]
+
+# # RewriteCond %{REQUEST_FILENAME} !-f
+# # RewriteCond %{REQUEST_FILENAME} !-d
+# # RewriteRule ^([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)?$ index.php?controller=$1&method=$2&$3=$4&$5=$6 [L]
+
+# # RewriteCond %{REQUEST_FILENAME} !-f
+# # RewriteCond %{REQUEST_FILENAME} !-d
+# # RewriteRule ^([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)?$ index.php?controller=$1&method=$2&$3=$4&$5=$6 [L]
+
+# # RewriteCond %{REQUEST_FILENAME} !-f
+# # RewriteCond %{REQUEST_FILENAME} !-d
+# # RewriteRule ^([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)?$ index.php?controller=$1&method=$2&$3=$4&$5=$6 [L]
+
+# # RewriteCond %{REQUEST_FILENAME} !-f
+# # RewriteCond %{QUERY_STRING} ^controller=([^&]+)$
+# # RewriteRule ^(.*)$ /%1? [R=301,L]
+
+# # RewriteCond %{REQUEST_FILENAME} !-f
+# # RewriteCond %{QUERY_STRING} ^controller=([^&]+)&(method=([^&]+)&)?(.*)$
+# # RewriteRule ^(.*)$ /%1/%3/%5? [R=301,L]
+
+# # RewriteCond %{REQUEST_FILENAME} !-f
+# # RewriteCond %{REQUEST_FILENAME} !-d
+# # RewriteRule ^(.*)$ index.php?controller=$1 [L]
+# # RewriteCond %{REQUEST_FILENAME} !-f
+# # RewriteCond %{REQUEST_FILENAME} !-d
+# # RewriteRule ^(.*)$ index.php?controller=$1&method=$2 [L]
+# # RewriteCond %{REQUEST_FILENAME} !-f
+# # RewriteCond %{REQUEST_FILENAME} !-d
+# # RewriteRule ^(.*)$ index.php?controller=$1&method=$2&params=$3 [L]
+
+# # # RewriteCond %{REQUEST_FILENAME} !-f
+# # # RewriteCond %{REQUEST_FILENAME} !-d
+# # # RewriteCond %{QUERY_STRING} ^controller=([^&]+)$
+# # # RewriteRule ^(.*)$ /%1/? [R=301,L]
+
+# # # RewriteCond %{REQUEST_FILENAME} !-f
+# # # RewriteCond %{REQUEST_FILENAME} !-d
+# # # RewriteCond %{QUERY_STRING} ^controller=([^&]+)&(method=([^&]+)&)$
+# # # RewriteRule ^(.*)$ /%1/%3/? [R=301,L]
+
+# # # RewriteCond %{REQUEST_FILENAME} !-f
+# # # RewriteCond %{REQUEST_FILENAME} !-d
+# # # RewriteCond %{QUERY_STRING} ^controller=([^&]+)?&(method=([^&]+)&)?(.*)$
+# # # RewriteRule ^(.*)$ /%1/%3/%5? [R=301,L]
