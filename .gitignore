@@ -16,5 +16,6 @@ log/*
 composer.lock
 
 # html/vendor/
+.databases/*
 /phpmyadmin
 html/ssl/*.pem
