@@ -93,14 +93,25 @@ class Database
   }
   protected function update(string $table, array $data, array $wheres)
   {
-    /* loop throught key */
-    // !Warning when Key in $data and $where have same
-    $update = implode(',', array_map(fn($field) => "$field = :$field", array_keys($data)));
-    $where  = implode(' AND ', array_map(fn($field) => "$field = :$field", array_keys($wheres)));
+    // SET clause
+    $set = implode(',', array_map(fn($k) => "$k = :$k", array_keys($data)));
 
-    $this->query("UPDATE $table SET $update WHERE $where");
+    // WHERE clause — handle conflicts with prefix
+    $whereParams = [];
+    $whereSql = implode(' AND ', array_map(function ($key) use (&$wheres, $data, &$whereParams) {
+      $param = array_key_exists($key, $data) ? "w_$key" : $key;
+      $whereParams[$param] = $wheres[$key];
+      return "$key = :$param";
+    }, array_keys($wheres)));
+
+    // Build the query
+    $this->query("UPDATE $table SET $set WHERE $whereSql");
+
+    // Bind values for SET
     array_walk($data, fn($value, $key) => $this->bind($key, $value));
-    array_walk($wheres, fn($value, $key) => $this->bind($key, $value));
+
+    // Bind values for WHERE
+    array_walk($whereParams, fn($value, $key) => $this->bind($key, $value));
 
     return $this->execute();
   }

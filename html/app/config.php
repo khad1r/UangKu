@@ -13,7 +13,7 @@ define('DEFAULT_CONTROLLER', App\Controllers\Auth::class);
 define('USE_SESSION', true);
 define('TRANSFORM_RAW_TO_PHP_POST', true);
 define('IS_PROD', getenv('ENV') !== 'development');
-
+define('JENIS_TRANSAKSI', ['Pengeluaran', 'Pemasukan', 'Pindah Buku']);
 
 /** app/autoload.php depth for searching classes
  * Interpret MAX_AUTOLOAD_DEPTH as follows:

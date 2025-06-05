@@ -1,6 +1,6 @@
 <style>
   main {
-    --main-bg: var(--primary-color) !important;
+    --bg-color: var(--primary-color) !important;
   }
 
   .body {

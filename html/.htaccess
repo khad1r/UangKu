@@ -1,6 +1,5 @@
 <IfModule mod_rewrite.c>
     RewriteEngine on
-
     # # Skip if request is to an existing file or directory
     # RewriteCond %{REQUEST_FILENAME} -f [OR]
     # RewriteCond %{REQUEST_FILENAME} -d

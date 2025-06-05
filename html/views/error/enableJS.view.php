@@ -11,7 +11,7 @@
         <div class="col-lg-8 p-0">
           <style>
             main {
-              --main-bg: var(--primary-color) !important;
+              --bg-color: var(--primary-color) !important;
               height: 100dvh;
               display: grid;
               place-content: center;

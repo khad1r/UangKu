@@ -1,5 +1,7 @@
 let loadingPage;
-
+// let pdfjslib = {
+//   load: ''
+// }
 document.addEventListener("DOMContentLoaded", function () {
   loadingPage = document.querySelector(".loading-Page");
   if (document.querySelector(".modal.addEdit")) {
@@ -10,7 +12,32 @@ document.addEventListener("DOMContentLoaded", function () {
     myModal.show();
   }
   if ('undefined' === typeof (wait)) loadingPage.style.display = "none";
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll('input.date-format').forEach(input => {
+    const format = () => {
+      const date = new Date(input.value);
+      input.type = "text";
+      if (!isNaN(date)) {
+        input.dataset.raw = input.value; // Save raw value like "2025-05-26"
+        input.value = toDateShortMonth(date);
+      } else {
+        input.dataset.raw = input.dataset.raw ?? '';
+        input.value = input.dataset.raw ?? '';
+      }
+    }
+    input.addEventListener('focus', e => {
+      e.target.value = e.target.dataset.raw
+      e.target.type = 'date'
+      e.target.showPicker()
+    })
+
+    input.addEventListener("blur", format);
+    format()
+  })
+})
 function showAlert(type, message) {
   const toastTemplate = document.querySelector("#toast-template");
   const toast = toastTemplate.cloneNode(true);
@@ -61,7 +88,7 @@ let toWeekday = ($date) => {
     weekday: "long",
   })).format($date);
 }
-let toDateShortMont = ($date) => {
+let toDateShortMonth = ($date) => {
   return (new Intl.DateTimeFormat("id", {
     weekday: "long",
     day: "numeric",
@@ -69,6 +96,7 @@ let toDateShortMont = ($date) => {
     year: "numeric"
   })).format($date);
 }
+
 const removeCache = async () => {
   const cacheNames = await caches.keys();
   await Promise.all(

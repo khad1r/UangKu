@@ -5,9 +5,9 @@ namespace App;
 class Route
 {
   private static $router = [
-    'POST:/v1.0/access-token/b2b' => [\App\Controllers\b2b::class, 'index'],
-    'POST:/v1.0/transfer-va/inquiry' => [\App\Controllers\inquiry::class, 'index'],
-    'POST:/v1.0/transfer-va/payment' => [\App\Controllers\payment::class, 'index'],
+    'GET:/uploads/.*' => [\App\Controllers\Record::class, 'c9184f37cff01bcdc32dc486ec36961'],
+    // 'POST:/v1.0/transfer-va/inquiry' => [\App\Controllers\inquiry::class, 'index'],
+    // 'POST:/v1.0/transfer-va/payment' => [\App\Controllers\payment::class, 'index'],
     'OPTIONS:/.*' => [\App\Controllers\error::class, 'options'], // Catch-all OPTIONS route
   ];
 

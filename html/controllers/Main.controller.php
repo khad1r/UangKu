@@ -3,83 +3,39 @@
 namespace App\Controllers;
 
 use App\Controller;
+use App\models\Transaksi;
 use App\Route;
 
 class Main extends Controller
 {
-  public function index($request = null)
+  public function __construct()
   {
-    if (isset($request['data']) && in_array($request['data'], ['week', 'month', 'year'])) {
-      return $this->graphData($request['data']);
-    }
+    parent::__construct();
     if (!CheckUser()) {
-      // $_SESSION['alert'] = array('warning', 'Akses Ditolak');
+      $_SESSION['alert'] = array('warning', 'Akses Ditolak');
       Route::Redirect('/Auth/Logout');
       exit;
     }
-
-    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS')
-      return $this->preCache();
-    $data['title'] = 'Qris Bank Gresik';
-    $data['view'] = 'main/graph';
-    $data['navPage'] = 'graph';
-    $data['store_name'] = $_SESSION['user']['store_name'];
-    $data['nmid'] = $_SESSION['user']['nmid'];
+  }
+  public function index()
+  {
     setCacheControl(259200/* 3 Day Expired */);
+    $data['view'] = 'transaction/dashboard';
+    $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }
-
-  public function Qris()
+  public function list()
   {
-    if (!CheckUser()) {
-      // $_SESSION['alert'] = array('warning', 'Akses Ditolak');
-      Route::Redirect('/Auth/Logout');
-      exit;
-    }
-
-    $data['title'] = 'Qris Bank Gresik';
-    $data['qris_url'] = $_SESSION['user']['image_url'];
-    $data['view'] = 'main/showQris';
-    $data['navPage'] = 'qris';
     setCacheControl(259200/* 3 Day Expired */);
+    $data['view'] = 'transaction/list';
+    $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }
-  public function Setting()
-  {
-    if (!CheckUser()) {
-      // $_SESSION['alert'] = array('warning', 'Akses Ditolak');
-      Route::Redirect('/Auth/Logout');
-      exit;
-    }
-    if (isset($_POST['update'])) {
-      try {
-        if ($this->model('sibg/Qris')->updateCredentials($_POST) > 0) {
-          $_SESSION['alert'] = ['success', "Operasi Berhasil, Silahkan Login Kembali"];
-          Route::Redirect('/Auth/Logout');
-          return;
-        } else {
-          $_SESSION['alert'] = ['danger', 'Operasi Gagal'];
-        }
-      } catch (\Exception $e) {
-        $_SESSION['alert'] = ['danger', $e->getMessage()];
-      }
-    }
-    $data['post'] = $_POST;
-    $data['title'] = 'Qris Bank Gresik';
 
-    $data['expandInput'] = isset($_SESSION['alert']) || (isset($_SESSION['InputError']) && !empty($_SESSION['InputError']));
-    $data['username'] = isset($data['post']['username']) ? $data['post']['username'] : $_SESSION['user']['login_user'];
-
-    $data['view'] = 'main/setting';
-    $data['navPage'] = 'setting';
-    setCacheControl(0/* 3 Day Expired */);
-    // setCacheControl(259200/* 3 Day Expired */);
-    $this->view('templates/template', $data);
-  }
-  public function queryTransaction()
+  public function datatable()
   {
-    $rate_limit_interval = 15; // 15 detik
-    $rate_limit_max_request = 10; // 10 request
+    $rate_limit_interval = 60; // 15 detik
+    $rate_limit_max_request = 30; // 10 request
     header("Access-Control-Allow-Methods: POST,GET");
     header("Access-Control-Allow-Headers: Content-Type");
     setCacheControl(0);
@@ -88,7 +44,7 @@ class Main extends Controller
 
     http_response_code(200);
     try {
-      $resp = $this->model('sibg/Transaction')->datatable($_POST);
+      $resp = new Transaksi()->datatable($_POST);
     } catch (\Throwable $th) {
       http_response_code(500);
       $resp = ['error' => $th->getMessage()];

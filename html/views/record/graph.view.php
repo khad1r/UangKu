@@ -1,40 +1,8 @@
-<style>
-  .body {
-    --body-min-height: 80vh;
-    --body-mobile-margin-top: 20vh;
-  }
-
-  #chartContainer .highcharts-button,
-  #chartContainer select,
-  #chartContainer .highcharts-credits {
-    display: none !important;
-  }
-</style>
 <div class="wrapper">
-  <div class="header">
-    <?php $Controller->view('components/navbar', $data); ?>
-    <div class="summary text-center d-grid align-content-center">
-      <div class="transaction"><?= $data['store_name'] ?></div>
-      <div class="store-name" style="font-size: .8em;"><?= $data['nmid'] ?></div>
-    </div>
-    <div style="height: 5vh;"></div>
-  </div>
-
-  <div class="body px-3">
-    <div class="indicator-body">
-      <div class="spinner-border" role="status">
-      </div>
-    </div>
-    <div id="chartContainer"></div>
-    <div id="total-transaction" class="mt-3 text-center" style='display: none;'>
-      <div class="">Total Transaksi Melalui Qris</div>
-      <span class="fs-4 fw-bold text-primary">Rp.&nbsp0,s</span>
-    </div>
-  </div>
 
 </div>
 <!-- <script src="<?= BASEURL ?>/assets/js/notification-helper.js"></script> -->
-<script src="https://code.highcharts.com/stock/highstock.js" crossorigin="anonymous"></script>
+<!-- <script src="https://code.highcharts.com/stock/highstock.js" crossorigin="anonymous"></script> -->
 
 <!-- <script>
   const totalDom = document.querySelector('#total-transaction')

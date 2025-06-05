@@ -1,6 +1,6 @@
 <style>
   main {
-    --main-bg: transparent !important;
+    --bg-color: transparent !important;
   }
 </style>
 <div class="header other mb-3">

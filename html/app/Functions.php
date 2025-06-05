@@ -22,7 +22,7 @@ function inputValidator($input)
   if (isset($_SESSION['InputError'][$input])) {
   ?>
     <i class="notice" style="color: red"><?= $_SESSION['InputError'][$input] ?> </i>
-<?php
+  <?php
     unset($_SESSION['InputError'][$input]);
   }
 }
@@ -56,6 +56,27 @@ function setCacheControl(int $age, $policy = 'private')
     header('Expires: ' . gmdate('D, d M Y H:i:s', time() + $age) . ' GMT');
   }
 }
+function setCookieToken(
+  $cookieName,
+  $cookieValue,
+  $httpOnly = true,
+  $secure = false,
+  $expire = 0
+) {
+  // if (empty($expire)) $expire = strtotime("+1 day", time());
+  // See: http://stackoverflow.com/a/1459794/59087
+  // See: http://shiflett.org/blog/2006/mar/server-name-versus-http-host
+  // See: http://stackoverflow.com/a/3290474/59087
+  setcookie(
+    $cookieName,
+    $cookieValue,
+    $expire,                // NextYear
+    "/",                   // your path
+    // $_SERVER["HTTP_HOST"], // your domain
+    $secure,               // Use true over HTTPS
+    $httpOnly              // Set true for $AUTH_COOKIE_NAME
+  );
+}
 function validateApi($limit, $interval)
 {
   if (!CheckUser()) {
@@ -69,6 +90,49 @@ function validateApi($limit, $interval)
     echo json_encode(['error' => 'Rate limit exceeded. Please try again later.']);
     exit;
   }
+}
+function csrf_security(string $form, array|object $validate = [])
+{
+
+  $token_key = 'csrf_tokens';
+  $token_name = 'csrf_security_token';
+  $generate = fn() => $_SESSION[$token_key][$form] = bin2hex(random_bytes(32));
+  // Validate incoming CSRF token
+  if (!empty($validate)) {
+    $validate = (object) $validate;
+    $isvalid = isset($validate->$token_name, $_SESSION[$token_key][$form]) &&
+      hash_equals($_SESSION[$token_key][$form], $validate->$token_name);
+    unset($_SESSION[$token_key][$form]);
+    if (!$isvalid) {
+      $_SESSION['alert'] = array('warning', 'CSRF Token Invalid Detected!!!');
+      App\Route::Referer('');
+      exit();
+    }
+    return $isvalid;
+  }
+  // Render the token as a hidden field
+  ?>
+  <input type="hidden" name="<?= $token_name ?>" value="<?= htmlspecialchars($_SESSION[$token_key][$form] ?? ($generate()), ENT_QUOTES) ?>">
+<?php
+  return null;
+}
+function validate_required_input(array &$toValidated, array $required)
+{
+  $error = [];
+  foreach ($required as $requiredField)
+    if (!isset($toValidated[$requiredField]) || trim($toValidated[$requiredField]) === '')
+      $error[$requiredField] = 'Input Ini Tidak Boleh Kosong!!!';
+  if (!empty($error)) {
+    $_SESSION['InputError'] = $error;
+    throw new Exception("Error Data!!");
+  }
+}
+function sanitize_input(&$toValidated)
+{
+  if (is_array($toValidated))
+    foreach ($toValidated as &$input) $input = htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
+  else $toValidated = htmlspecialchars($toValidated, ENT_QUOTES, 'UTF-8');
+  return $toValidated;
 }
 // function isKreditOrTabungan(string $custNo): string|bool
 // {

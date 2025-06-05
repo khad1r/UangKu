@@ -2,6 +2,8 @@
 node_modules
 html/application/cache/*
 html/foto*
+*/uploads/
+*/vendor/
 !html/application/cache/index.html
 
 html/application/logs/*
@@ -13,6 +15,6 @@ html/application/logs/*
 log/*
 composer.lock
 
-html/vendor/
+# html/vendor/
 /phpmyadmin
 html/ssl/*.pem

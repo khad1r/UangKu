@@ -9,15 +9,19 @@
   </div>
   <main>
     <?php $Controller->view('components/alert', $data); ?>
-    <div class="container">
+    <?php if (isset($data['top-left-view'])) $Controller->view($data['top-left-view'], $data) ?>
+    <!-- <div class="container">
       <div class="row">
         <div class="col-lg"></div>
-        <div class="col-lg-8 p-0"><?php $Controller->view($data['view'], $data); ?></div>
+        <div class="col-lg-8 p-0"></div>
         <div class="col-lg"></div>
       </div>
-    </div>
+    </div> -->
+    <?php $Controller->view($data['view'], $data); ?>
+    <?php if (isset($data['right-bottom-view'])) $Controller->view($data['right-bottom-view'], $data) ?>
   </main>
   <?php $Controller->view('templates/footer', $data); ?>
 </body>
 
 </html>
+<?php if (isset($_SESSION['InputError'])) unset($_SESSION['InputError']) ?>
