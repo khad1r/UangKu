@@ -4,23 +4,31 @@ function checkUser(...$level)
   if (empty($level)) return isset($_SESSION['user']);
   return isset($_SESSION['user']) && in_array($_SESSION['user']['level_user'], $level);
 }
-function alert()
+function generateAlert()
 {
-  if (isset($_SESSION['alert'])) {
-?>
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        showAlert(<?= "'{$_SESSION['alert'][0]}', `{$_SESSION['alert'][1]}`" ?>)
-      })
-    </script>
-  <?php
-    unset($_SESSION['alert']);
+  if (!empty($_SESSION['showToastNotification'])) foreach ($_SESSION['showToastNotification'] as $key => &$toast) {
+    echo <<<JS
+      showAlert(
+        "{$toast['type']}",
+        "{$toast['msg']}",
+        "{$toast['title']}",
+      );
+    JS;
+    unset($_SESSION['showToastNotification'][$key]);
   }
+}
+function showAlert($msg = '', $type = 'primary', $title = 'Pemberitahuan')
+{
+  $_SESSION['showToastNotification'][] = [
+    'type' => $type,
+    'msg' => $msg,
+    'title' => $title,
+  ];
 }
 function inputValidator($input)
 {
   if (isset($_SESSION['InputError'][$input])) {
-  ?>
+?>
     <i class="notice" style="color: red"><?= $_SESSION['InputError'][$input] ?> </i>
   <?php
     unset($_SESSION['InputError'][$input]);
@@ -80,7 +88,7 @@ function setCookieToken(
 function validateApi($limit, $interval)
 {
   if (!CheckUser()) {
-    // $_SESSION['alert'] = array('warning', 'Akses Ditolak');
+    // showAlert('Akses Ditolak', 'warning');
     http_response_code(401);
     exit;
   }
@@ -104,7 +112,7 @@ function csrf_security(string $form, array|object $validate = [])
       hash_equals($_SESSION[$token_key][$form], $validate->$token_name);
     unset($_SESSION[$token_key][$form]);
     if (!$isvalid) {
-      $_SESSION['alert'] = array('warning', 'CSRF Token Invalid Detected!!!');
+      showAlert('CSRF Token Invalid Detected!!!', 'warning');
       App\Route::Referer('');
       exit();
     }

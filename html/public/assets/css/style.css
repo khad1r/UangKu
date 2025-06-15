@@ -236,7 +236,7 @@ a {
     animation: 0.75s linear infinite spinner-border;
   }
 }
-.toast-container {
+.batal.toast-container {
   position: fixed;
   bottom: 0;
   left: 50%;

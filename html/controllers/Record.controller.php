@@ -13,7 +13,7 @@ class Record extends Controller
   {
     parent::__construct();
     if (!CheckUser()) {
-      $_SESSION['alert'] = array('warning', 'Akses Ditolak');
+      showAlert('Akses Ditolak', 'warning');
       Route::Redirect('/Auth/Logout');
       exit;
     }
@@ -45,12 +45,12 @@ class Record extends Controller
           // 'review'            => $post['review'] ?? null,
         ];
         if (new Transaksi()->insertTransaksi($data) > 0) {
-          $_SESSION['alert'] = ['success', "Insert Transaksi Berhasil"];
+          showAlert("Insert Transaksi Berhasil", 'success');
           Route::Redirect('/Record');
           return;
         }
       } catch (\Exception $e) {
-        $_SESSION['alert'] = ['danger', $e->getMessage()];
+        showAlert($e->getMessage(), 'danger');
       }
     }
     $data['view'] = 'transaction/record';
@@ -71,12 +71,12 @@ class Record extends Controller
         'review'            => $post['review'] ?? null,
       ];
       if (new Transaksi()->updateTransaksi($data, ['id' => $_POST['id']]) > 0) {
-        $_SESSION['alert'] = ['success', "Review Trx.{$_POST['id']} Berhasil"];
+        showAlert("Review Trx.{$_POST['id']} Berhasil", 'success');
       } else {
         throw new \Exception("Error Processing Request", 1);
       }
     } catch (\Exception $e) {
-      $_SESSION['alert'] = ['danger', $e->getMessage()];
+      showAlert($e->getMessage(), 'danger');
     }
     Route::Referer('/Transaction');
     return;
@@ -93,12 +93,12 @@ class Record extends Controller
         'review'            => $post['review'] ?? null,
       ];
       if (new Transaksi()->deleteTransaksi($_POST['id']) > 0) {
-        $_SESSION['alert'] = ['success', "Hapus Trx.{$_POST['id']} Berhasil"];
+        showAlert("Hapus Trx.{$_POST['id']} Berhasil", 'success');
       } else {
         throw new \Exception("Error Processing Request", 1);
       }
     } catch (\Exception $e) {
-      $_SESSION['alert'] = ['danger', $e->getMessage()];
+      showAlert($e->getMessage(), 'danger');
     }
     Route::Referer('/Transaction');
     return;

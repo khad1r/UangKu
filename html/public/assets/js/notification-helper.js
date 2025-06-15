@@ -128,14 +128,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   ) {
     sessionStorage.removeItem('isInput')
     await disableNotification()
-    enableNotification().catch(error => showAlert('danger', `Gagal.<br><small>${error.message}</small>`))
+    enableNotification().catch(error => showAlert(`Gagal.<br><small>${error.message}</small>`, 'danger'))
   }
   CHANNEL.addEventListener('message', (event) => {
-    if (event.data.type === 'notify') showAlert('success', event.data.data.body);
+    if (event.data.type === 'notify') showAlert(event.data.data.body, 'success');
     if (event.data.type === 'init') {
       sessionStorage.setItem('prefetch', true);
       if (Notification.permission === 'default' || !getNotificationState())
-        enableNotification().catch(error => showAlert('danger', `Gagal.<br><small>${error.message}</small>`))
+        enableNotification().catch(error => showAlert(`Gagal.<br><small>${error.message}</small>`, 'danger'))
     }
   });
 });

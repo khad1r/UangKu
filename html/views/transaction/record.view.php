@@ -147,7 +147,7 @@
       ARGS = d
       loadArgs()
     })
-    .catch((e) => showAlert('danger', e.message))
+    .catch((e) => showAlert(e.message, 'danger'))
   const rekeningSelectFormater = (d) => {
     let option = {
       text: `${d.nama}`,
@@ -255,17 +255,17 @@
       setTimeout(() => e.target.SlimSelect.setSelected(''), 0);
     }
     if (masukVal && sumberVal && masukVal === sumberVal) {
-      showAlert('warning', 'Tidak bisa pindah buku sama rekening');
+      showAlert('Tidak bisa pindah buku sama rekening', 'warning');
       resetSlimSelect(e);
       return false;
     }
     if (masukRek?.harta || sumberRek?.harta) {
-      showAlert('warning', 'Rekening Aset Harta tidak boleh langsung pindah buku');
+      showAlert('Rekening Aset Harta tidak boleh langsung pindah buku', 'warning');
       resetSlimSelect(e);
       return false;
     }
     if (masukRek?.isAsing && sumberRek?.isAsing) {
-      showAlert('warning', 'Tidak bisa pindah buku antar nominal asing');
+      showAlert('Tidak bisa pindah buku antar nominal asing', 'warning');
       resetSlimSelect(e);
       return false;
     }
@@ -491,7 +491,7 @@
       };
       img.src = URL.createObjectURL(file);
     } else {
-      return showAlert('warning', "Unsupported file type: " + file.type);
+      return showAlert("Unsupported file type: " + file.type, 'warning');
     }
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(file);
@@ -532,7 +532,7 @@
           resolve(newOption)
         })
         .catch((e) => {
-          showAlert('danger', e.message)
+          showAlert(e.message, 'danger');
           return reject('Error')
         })
     })
@@ -567,7 +567,7 @@
           resolve(newOption)
         })
         .catch((e) => {
-          showAlert('danger', e.message)
+          showAlert(e.message, 'danger');
           return reject('Error')
         })
     })

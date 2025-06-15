@@ -13,7 +13,7 @@ class Users extends Controller
   {
     parent::__construct();
     if (!CheckUser()) {
-      $_SESSION['alert'] = array('warning', 'Akses Ditolak');
+      showAlert('Akses Ditolak', 'warning');
       Route::Redirect('/Auth/Logout');
       exit;
     }
@@ -33,14 +33,14 @@ class Users extends Controller
           'nickname'          => $_POST['nickname'],
         ];
         if (new ModelsAuth()->create_empty($insert) > 0) {
-          $_SESSION['alert'] = ['success', "Penambahan Berhasil"];
+          showAlert("Penambahan Berhasil", 'success');
           Route::Referer('/Users');
           return;
         } else {
-          $_SESSION['alert'] = ['danger', 'Operasi Gagal'];
+          showAlert('Operasi Gagal', 'danger');
         }
       } catch (\Exception $e) {
-        $_SESSION['alert'] = ['danger', $e->getMessage()];
+        showAlert($e->getMessage(), 'danger');
       }
     }
     $data['title'] = 'Daftar Rekening';
@@ -51,7 +51,7 @@ class Users extends Controller
   }
   public function delete($id_passkey = '')
   {
-    $_SESSION['alert'] = ['warning', 'Something Happen ?!'];
+    showAlert('Something Happen ?!', 'warning');
     sanitize_input($id_passkey);
     if (!empty($_POST)) {
       try {
@@ -72,11 +72,11 @@ class Users extends Controller
         if (!$isValid) throw new \Exception("Kredensial invalid");
         unset($_SESSION['credDeleteChallenge']);
         if (!($model->delete($id_passkey) > 0)) throw new \Exception("Error Processing Request", 1);
-        $_SESSION['alert'] = ['success', "Penghapusan Kredensial Berhasil"];
+        showAlert("Penghapusan Kredensial Berhasil", 'success');
         Route::Redirect('/Users');
         return;
       } catch (\Exception $e) {
-        $_SESSION['alert'] = ['danger', $e->getMessage()];
+        showAlert($e->getMessage(), 'danger');
       }
     }
     Route::Referer('/Users');

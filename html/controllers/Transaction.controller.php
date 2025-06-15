@@ -13,7 +13,7 @@ class Transaction extends Controller
   {
     parent::__construct();
     if (!CheckUser()) {
-      $_SESSION['alert'] = array('warning', 'Akses Ditolak');
+      showAlert('Akses Ditolak', 'warning');
       Route::Redirect('/Auth/Logout');
       exit;
     }

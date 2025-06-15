@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
     format()
   })
 })
-function showAlert(type, message) {
+function showAlert(message, type = 'primary') {
   const toastTemplate = document.querySelector("#toast-template");
   const toast = toastTemplate.cloneNode(true);
 
@@ -54,6 +54,22 @@ function showAlert(type, message) {
   const bsToast = bootstrap.Toast.getOrCreateInstance(toast)
   // Show the toast
   bsToast.show();
+  // setTimeout(() => bsToast.hide(), 5000)
+}
+function showAlert(message, type = 'primary', title = '') {
+
+  const toastTemplate = document.querySelector("#toast-template");
+  const toast = toastTemplate.cloneNode(true);
+  toast.id = ''; // Clear the ID for the new toast
+  // Add the appropriate class for the alert type
+  toast.classList.add(`border-${type}`);
+  toast.querySelector('.toast-header').classList.add(`bg-${type}`);
+  // // Set the message
+  toast.querySelector('.toast-body').innerHTML = message;
+  toast.querySelector('strong').innerHTML = title;
+
+  document.querySelector('#toast-container').prepend(toast)
+  $(toast).toast('show')
   // setTimeout(() => bsToast.hide(), 5000)
 }
 
