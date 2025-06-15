@@ -61,7 +61,7 @@ class Users extends Controller
         $unique_id = bin2hex(base64_decode($crendential_data['userHandle']));
         $passkey = $model->get_passkey($credential_id);
         if (empty($passkey)) throw new \Exception("Kredensial tidak dikenali");
-        $webAuthn = new WebAuthn(WEB_TITLE, $_SERVER['SERVER_NAME']);
+        $webAuthn = new WebAuthn(WEB_TITLE, (explode(':', HOSTNAME))[0]);
         $isValid = $webAuthn->processGet(
           base64_decode($crendential_data['clientDataJSON']),
           base64_decode($crendential_data['authenticatorData']),
@@ -96,7 +96,7 @@ class Users extends Controller
       $resp = new ModelsAuth()->datatable($_POST);
 
       unset($_SESSION['credDeleteChallenge']);
-      $webAuthn = new WebAuthn(WEB_TITLE, $_SERVER['SERVER_NAME']);
+      $webAuthn = new WebAuthn(WEB_TITLE, (explode(':', HOSTNAME))[0]);
       $resp['webAuthnArgs'] = $webAuthn->getGetArgs([hex2bin($_SESSION['user']['credential_id'])]);
       // $resp['webAuthnArgs'] = $webAuthn->getGetArgs();
       $_SESSION['credDeleteChallenge'] = ($webAuthn->getChallenge())->getBinaryString();

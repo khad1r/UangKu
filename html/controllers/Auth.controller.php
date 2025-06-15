@@ -23,7 +23,7 @@ class Auth extends Controller
       Route::Redirect('/Record');
       exit;
     }
-    $webAuthn = new WebAuthn(WEB_TITLE, $_SERVER['SERVER_NAME']);
+    $webAuthn = new WebAuthn(WEB_TITLE, (explode(':', HOSTNAME))[0]);
     if (isset($_POST['login'])) {
       try {
         $crendential_data = json_decode($_POST['login'], true);
@@ -85,7 +85,7 @@ class Auth extends Controller
       Route::Redirect('/Auth/login');
       exit;
     }
-    $webAuthn = new WebAuthn(WEB_TITLE, $_SERVER['SERVER_NAME']);
+    $webAuthn = new WebAuthn(WEB_TITLE, (explode(':', HOSTNAME))[0]);
     if (isset($_POST['regist'])) {
       try {
         $data = json_decode($_POST['regist'], true);

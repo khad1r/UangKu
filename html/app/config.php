@@ -6,8 +6,13 @@ error_reporting(getenv('DOCKER_ENV') == 'development'); // Turn off error report
 mb_http_output("UTF-8");
 mb_internal_encoding("UTF-8");
 setlocale(LC_TIME, 'id_ID.UTF-8');
+$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+  || $_SERVER['SERVER_PORT'] == 443;
 
-define('BASEURL', getenv('HOSTNAME'));
+$hostname = getenv('HOSTNAME') ?: $_SERVER['HTTP_HOST']; // fallback jika getenv kosong
+define('HOSTNAME', $hostname);
+define('BASEURL', $protocol . $hostname);
+unset($is_https, $protocol, $hostname);
 // define('BASEURL', 'http://localhost');
 define('WEB_TITLE', 'UangKu');
 define('DEFAULT_CONTROLLER', App\Controllers\Auth::class);
