@@ -1,10 +1,10 @@
 # Use build arg for flexibility
-ARG PHP_VERSION=8.2
+ARG PHP_VERSION=8.4
 FROM php:${PHP_VERSION}-apache-bullseye AS php-production
 
 # Install only necessary packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  sqlite3 \
+  sqlite3 zip unzip\
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Apache security hardening
@@ -23,7 +23,7 @@ RUN mkdir -p /etc/apache2/ssl && \
     -subj "/C=ID/ST=Jakarta/L=Jakarta/O=Dev/OU=Prod/CN=localhost"
 
 # Add SSL vhost config
-COPY apache.conf /etc/apache2/sites-available/default-ssl.conf
+COPY .docker/apache.conf /etc/apache2/sites-available/default-ssl.conf
 RUN a2ensite default-ssl.conf
 
 # Install Composer
@@ -32,6 +32,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 # Copy source code from build context into container
 COPY ../ /var/www
 WORKDIR /var/www/html
+
+# Env
+ENV TZ=Asia/Jakarta
+ENV SQLITE_DEFAULT_NAME=default.sqlite
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
@@ -43,8 +47,8 @@ RUN apt-get autoremove --purge -y && apt-get autoclean -y && apt-get clean -y \
 EXPOSE 80
 EXPOSE 443
 
-COPY sql/ /docker-entrypoint-initdb.d/
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY .docker/sql/ /docker-entrypoint-initdb.d/
+COPY .docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

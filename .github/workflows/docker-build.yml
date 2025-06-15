@@ -7,7 +7,7 @@ on:
     branches: ["main"]
 
 env:
-  IMAGE_NAME: your-dockerhub-username/your-image-name
+  IMAGE_NAME: khad1r/uangku
 
 jobs:
   build:
@@ -28,7 +28,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: ../
+          context: .
           file: .docker/Dockerfile.production
           push: true
           tags: ${{ env.IMAGE_NAME }}:latest

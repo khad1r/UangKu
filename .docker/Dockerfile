@@ -64,6 +64,10 @@ EXPOSE 80
 # Enable mod_rewrite
 RUN a2enmod rewrite headers remoteip env ssl
 
+
+
+ENV TZ=Asia/Jakarta
+ENV SQLITE_DEFAULT_NAME=default.sqlite
 COPY sql/ /docker-entrypoint-initdb.d/
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
