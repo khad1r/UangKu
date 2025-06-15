@@ -8,6 +8,7 @@ class Route
     'GET:/uploads/.*' => [\App\Controllers\Record::class, 'c9184f37cff01bcdc32dc486ec36961'],
     // 'POST:/v1.0/transfer-va/inquiry' => [\App\Controllers\inquiry::class, 'index'],
     // 'POST:/v1.0/transfer-va/payment' => [\App\Controllers\payment::class, 'index'],
+    'OPTIONS:/precache' => [\App\Controllers\error::class, 'preCache'], // Catch-all OPTIONS route
     'OPTIONS:/.*' => [\App\Controllers\error::class, 'options'], // Catch-all OPTIONS route
   ];
 

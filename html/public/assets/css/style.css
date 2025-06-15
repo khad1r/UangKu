@@ -1,7 +1,4 @@
 :root {
-  --font-head: "Varela Round", sans-serif;
-  --font-stack: "Montserrat", sans-serif;
-
   --Rosewater-color: rgb(220, 138, 120);
   --Flamingo-color: rgb(221, 120, 120);
 
@@ -34,26 +31,20 @@
   --white-color-3: rgb(172, 176, 190);
   --white-color-2: rgb(188, 192, 204);
   --white-color-1: rgb(204, 208, 218);
-  --white-color: rgb(239, 241, 245);
+  --white-color-0: rgb(239, 241, 245);
+  --white-color: rgb(251, 251, 251);
   --primary-color: var(--Sky-color);
   --primary-color-alt: var(--Sapphire-color);
   --secondary-color: var(--Teal-color);
   --secondary-color-alt: var(--Green-color);
-  --tertiary-color: rgb(210, 15, 57);
-  --tertiary-color-alt: rgb(230, 69, 83);
-  --red-color: rgb(210, 15, 57);
-  --green-color: rgb(64, 160, 43);
-  --yellow-color: rgb(223, 142, 29);
-  --blue-color: rgb(30, 102, 245);
-  --disabled-color: color-mix(
-    in srgb,
-    var(--black-color) 40%,
-    var(--Yellow-color)
-  );
+  --tertiary-color: var(--Red-color);
+  --tertiary-color-alt: var(--Maroon-color);
+  --red-color: var(--Red-color);
+  --green-color: var(--Green-color);
+  --yellow-color: var(--Yellow-color);
+  --blue-color: var(--Blue-color);
 
-  --bg-color: var(--white-color);
-  --bg-color-alt: var(--black-color);
-
+  /* For Bootsrap Only */
   --primary-rgb: 4, 165, 229;
   --secondary-rgb: 23, 146, 153;
   --tertiary-rgb: 210, 15, 57;
@@ -63,6 +54,15 @@
   --yellow-rgb: 223, 142, 29;
   --black-rgb: 76, 79, 105;
   --white-rgb: 251, 251, 251;
+
+  --disabled-color: color-mix(
+    in srgb,
+    var(--black-color) 40%,
+    var(--Yellow-color)
+  );
+
+  --bg-color: var(--white-color);
+  --bg-color-alt: var(--black-color);
 
   --font-head: "Varela Round", sans-serif;
   --font-stack: "Montserrat", sans-serif;
@@ -97,7 +97,6 @@
   margin: 0;
   box-sizing: border-box;
 }
-
 body {
   color: var(--black-color);
   background: var(--white-color);
@@ -137,7 +136,7 @@ body {
   &:has(nav) {
     footer {
       div {
-        box-shadow: 0px -6px 12px rgba(var(--black-rgb), 0.3);
+        box-shadow: 0px -6px 12px color-mix(in srgb, var(--black-color) 30%, transparent);
       }
     }
   }
@@ -155,7 +154,8 @@ a {
 
     .card {
       border-radius: 8px;
-      box-shadow: 3px 3px 2px rgba(var(--black-rgb), 0.2);
+      box-shadow: 3px 3px 2px
+        color-mix(in srgb, var(--black-color) 20%, transparent);
     }
   }
 }
@@ -188,9 +188,10 @@ a {
     border-radius: 1px;
     margin-bottom: 15px;
     background: var(--white-color);
-    border: 1px solid rgba(var(--black-rgb), 0.15);
+    border: 1px solid color-mix(in srgb, var(--black-color) 15%, transparent);
     border-radius: 20px;
-    box-shadow: 0px 2px 2px rgba(var(--black-rgb), 0.3);
+    box-shadow: 0px 2px 2px
+      color-mix(in srgb, var(--black-color) 30%, transparent);
     padding: 30px;
   }
 
@@ -219,7 +220,7 @@ a {
   width: 100%;
   display: grid;
   place-items: center;
-  background: rgba(var(--white-rgb), 0.8);
+  background: color-mix(in srgb, var(--white-color) 80%, transparent);
   backdrop-filter: blur(5px); /* Adjust the blur radius as needed */
   overflow: hidden;
 
@@ -275,7 +276,34 @@ a {
     }
   }
 }
-
+.card-saldo {
+  background-color: var(--primary-color);
+  color: var(--white-color);
+  font-weight: 600;
+  padding: 1em;
+  margin-inline: auto;
+  width: 25%;
+  border-radius: 10px;
+  @media (orientation: portrait) {
+    & {
+      width: 100%;
+    }
+  }
+  .saldo {
+    font-size: 1.4em;
+    font-weight: 900;
+  }
+  hr {
+    margin: 0.5em 0 0.75em 0;
+    opacity: 40%;
+    border: 3px solid var(--white-color);
+  }
+  a {
+    color: inherit;
+    display: flex;
+    justify-content: space-between;
+  }
+}
 .my-tooltip {
   position: relative;
   &::after {
@@ -287,9 +315,11 @@ a {
     z-index: 1;
     margin-top: 0.125em;
   }
-}
-@media (hover: hover) {
-  .my-tooltip {
+  @media (hover: hover) {
+    &.tooltip-bg::after {
+      padding: 5px;
+      background-color: inherit;
+    }
     &::after {
       top: 100%;
       left: 50%;
@@ -306,40 +336,6 @@ a {
     &:hover::after {
       visibility: visible;
       opacity: 1;
-    }
-  }
-}
-.body {
-  --body-mobile-margin-top: 40vh;
-  --body-top-radius: 2.5rem;
-  --body-min-height: 60vh;
-  min-height: var(--body-min-height) !important;
-  padding-top: 1.25rem;
-  border-radius: var(--body-top-radius) var(--body-top-radius) 0 0;
-  box-shadow: rgba(var(--black-rgb), 0.25) 0px -12.5px 30px;
-  position: relative;
-  background-color: var(--white-color);
-  .indicator-body {
-    display: grid;
-    place-content: center;
-    .spinner-border {
-      color: var(--primary-color);
-    }
-  }
-  #form {
-    font-size: 1.2em;
-    margin-bottom: 12vh;
-    margin-inline: 7vw;
-
-    position: sticky;
-    bottom: 0 !important;
-
-    .note {
-      text-align: center;
-      font-weight: 600;
-      font-size: 0.7em;
-      padding-inline: 1.25em;
-      margin-block: 1em;
     }
   }
 }
@@ -414,10 +410,10 @@ dialog {
   &::backdrop {
     background: repeating-linear-gradient(
       45deg,
-      rgba(var(--black-rgb), 0.2),
-      rgba(var(--black-rgb), 0.2) 1px,
-      rgba(var(--black-rgb), 0.3) 1px,
-      rgba(var(--black-rgb), 0.3) 20px
+      color-mix(in srgb, var(--black-color) 20%, transparent),
+      color-mix(in srgb, var(--black-color) 20%, transparent) 1px,
+      color-mix(in srgb, var(--black-color) 30%, transparent) 1px,
+      color-mix(in srgb, var(--black-color) 30%, transparent) 20px
     );
     backdrop-filter: blur(3px);
   }
@@ -467,6 +463,7 @@ details {
 }
 
 #form {
+  --input-margin-top: 3vw;
   input {
     box-shadow: none;
     border: 3px color-mix(in srgb, var(--primary-color) 30%, transparent);
@@ -501,8 +498,13 @@ details {
       }
     }
     .form-control {
+      @media (orientation: portrait) {
+        & {
+          margin-top: revert;
+        }
+      }
       color: inherit;
-      margin-top: 3vw;
+      margin-top: var(--input-margin-top);
       box-shadow: none;
       border-bottom: solid;
       border-top: none;
@@ -719,6 +721,14 @@ details {
       color: var(--white-color);
     }
   }
+  tbody {
+    --bs-table-bg: var(--white-color);
+    td {
+      text-align: center !important;
+      margin: 5px;
+      color: var(--black-color);
+    }
+  }
 
   tr {
   }
@@ -726,6 +736,48 @@ details {
   tbody {
     tr {
       position: relative;
+    }
+  }
+}
+.date-range {
+  &.input-group {
+    width: 40%;
+    margin-inline: auto;
+    color: var(--primary-color);
+
+    @media (orientation: portrait) {
+      & {
+        width: 100%;
+      }
+    }
+
+    .input-group-text {
+      font-weight: 700;
+      color: inherit;
+      border: 4px var(--primary-color);
+      border-style: none none solid none;
+      background-color: var(--bg-color);
+    }
+
+    .form-control {
+      color: inherit;
+      margin-top: var(--input-margin-top);
+      box-shadow: none;
+      border-bottom: solid;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      border-color: var(--primary-color);
+      padding: 0.8em 1.25em;
+      background-color: var(--white-color);
+      text-align: center;
+      font-weight: 600;
+
+      &::placeholder {
+        font-weight: 700;
+        opacity: 0.7;
+        color: inherit;
+      }
     }
   }
 }
@@ -740,7 +792,18 @@ details {
   }
   /* Custom CSS for vertical line and column alignment */
   .dataTable {
+    input.dt-select-checkbox {
+      height: 0.65em;
+      width: 0.65em;
+      font-size: 2em;
+      font-weight: 900;
+      color: var(--primary-color);
+    }
     tr {
+      &.selected > * {
+        box-shadow: revert;
+        color: revert;
+      }
       &:hover {
       }
       &.dt-hasChild {
@@ -863,15 +926,6 @@ details {
       &::placeholder {
         font-weight: inherit;
         color: inherit;
-      }
-    }
-  }
-}
-@media screen and (max-width: 992px) {
-  #form {
-    .form-group {
-      .form-control {
-        margin-top: revert;
       }
     }
   }

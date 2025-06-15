@@ -15,12 +15,12 @@ class Auth extends Controller
       Route::Redirect('/Auth/login');
       exit;
     }
-    Route::Redirect('/Main');
+    Route::Redirect('/Record');
   }
   public function login()
   {
     if (CheckUser()) {
-      Route::Redirect('/Main');
+      Route::Redirect('/Record');
       exit;
     }
     $webAuthn = new WebAuthn(WEB_TITLE, $_SERVER['SERVER_NAME']);
@@ -31,7 +31,7 @@ class Auth extends Controller
         $unique_id = bin2hex(base64_decode($crendential_data['userHandle']));
         $passkey = new ModelsAuth()->get_passkey($credential_id);
         if (empty($passkey)) {
-          throw new \Exception("Kredential tidak dikenali");
+          throw new \Exception("Kredensial tidak dikenali");
         }
         $isValid = $webAuthn->processGet(
           base64_decode($crendential_data['clientDataJSON']),
@@ -44,10 +44,10 @@ class Auth extends Controller
           unset($_SESSION['challenge']);
           // Let's save the user id to the session, logging them in.
           $_SESSION['user'] = $passkey;
-          Route::Redirect('/Main');
+          Route::Redirect('/Transaction');
           return;
         } else {
-          throw new \Exception("Kredential invalid");
+          throw new \Exception("Kredensial invalid");
         }
       } catch (\Exception $e) {
         $_SESSION['alert'] = ['danger', $e->getMessage()];
@@ -78,6 +78,7 @@ class Auth extends Controller
   }
   public function regist()
   {
+    $data['title'] = 'Registrasi';
     $registering = new ModelsAuth()->is_registering();
     if (empty($registering)) {
       $_SESSION['alert'] = ['danger', 'Dilarang!!'];
@@ -111,6 +112,8 @@ class Auth extends Controller
     // $data['view'] = 'auth/regist';
     setCacheControl(0);
     // $this->view('templates/template', $data);
-    $this->view('auth/regist', $data);
+    // $this->view('auth/regist', $data);
+    $data['view'] = 'auth/regist';
+    $this->view('templates/template', $data);
   }
 }

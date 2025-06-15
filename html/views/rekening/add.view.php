@@ -64,4 +64,14 @@
     FORM.tgl_ditutup.disabled = e.target.checked;
     FORM.tgl_ditutup.required = !e.target.checked;
   });
+  FORM.addEventListener('submit', async e => {
+    await e.preventDefault()
+    const {
+      tgl_dibuat,
+      tgl_ditutup,
+    } = FORM
+    tgl_dibuat.value = tgl_dibuat.dataset.raw
+    tgl_ditutup.value = tgl_ditutup.dataset.raw
+    e.currentTarget.submit()
+  })
 </script>

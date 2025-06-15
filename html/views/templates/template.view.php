@@ -10,6 +10,7 @@
   <main>
     <?php $Controller->view('components/alert', $data); ?>
     <?php if (isset($data['top-left-view'])) $Controller->view($data['top-left-view'], $data) ?>
+    <?php $Controller->view('components/header', $data) ?>
     <!-- <div class="container">
       <div class="row">
         <div class="col-lg"></div>

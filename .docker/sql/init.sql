@@ -3,10 +3,11 @@
 -- init.sql
 CREATE TABLE AUTH (
   passkey_id INTEGER PRIMARY KEY AUTOINCREMENT,
-  nickname TEXT UNIQUE,
-  credential_id TEXT UNIQUE,
+  nickname TEXT,
+  credential_id TEXT,
   public_key TEXT,
-  created_at TEXT
+  created_at TEXT,
+  deleted_at TEXT DEFAULT null
 );
 INSERT INTO AUTH (nickname) VALUES ('Admin');
 CREATE TABLE DB_INFO (
@@ -48,7 +49,7 @@ CREATE TABLE TRANSAKSI (
   relasi_transaksi INTEGER,
   attachment TEXT,
   keterangan TEXT,
-  review TEXT
+  review TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -62,22 +63,31 @@ CREATE INDEX idx_transaksi_review ON TRANSAKSI(review);
 CREATE INDEX idx_transaksi_rutin ON TRANSAKSI(rutin);
 
 CREATE VIEW REKENING_SALDO AS
-SELECT r.*,
-      IFNULL(SUM(t.saldo), 0) AS saldo,
-      IFNULL(SUM(t.saldo), 0) AS saldo_asing,
-FROM REKENING r
-LEFT JOIN (
-  SELECT
-    rekening_masuk AS rekening_id,
-    (nominal * kuantitas) AS saldo,
-    (nominal_asing * kuantitas) AS saldo_asing,
-  FROM TRANSAKSI
-  WHERE jenis_transaksi IN ('Pemasukan', 'Pindah Buku')
-  UNION ALL
-    rekening_masuk AS rekening_id,
-    -(nominal * kuantitas) AS saldo,
-    -(nominal_asing * kuantitas) AS saldo_asing,
-  FROM TRANSAKSI
-  WHERE jenis_transaksi IN ('Pengeluaran', 'Pindah Buku')
-) t ON r.id = t.rekening_id
-GROUP BY r.id, r.nama;
+SELECT
+  r.*,
+  IFNULL(SUM(t.saldo), 0) AS saldo,
+  IFNULL(SUM(t.saldo_asing), 0) AS saldo_asing
+FROM
+  REKENING r
+  LEFT JOIN (
+    SELECT
+      rekening_masuk AS rekening_id,
+      (nominal * kuantitas) AS saldo,
+      (nominal_asing * kuantitas) AS saldo_asing
+    FROM
+      TRANSAKSI
+    WHERE
+      jenis_transaksi IN ('Pemasukan', 'Pindah Buku')
+    UNION ALL
+    SELECT
+      rekening_sumber AS rekening_id,
+      - (nominal * kuantitas) AS saldo,
+      - (nominal_asing * kuantitas) AS saldo_asing
+    FROM
+      TRANSAKSI
+    WHERE
+      jenis_transaksi IN ('Pengeluaran', 'Pindah Buku')
+  ) t ON r.id = t.rekening_id
+GROUP BY
+  r.id,
+  r.nama;

@@ -1,0 +1,50 @@
+# Use build arg for flexibility
+ARG PHP_VERSION=8.2
+FROM php:${PHP_VERSION}-apache-bullseye AS php-production
+
+# Install only necessary packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  sqlite3 \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Apache security hardening
+RUN echo "ServerSignature Off" >> /etc/apache2/conf-available/security.conf \
+  && echo "ServerTokens Prod" >> /etc/apache2/conf-available/security.conf \
+  && echo "expose_php = Off" > /usr/local/etc/php/conf.d/security.ini
+
+# Enable Apache modules
+RUN a2enmod rewrite headers ssl remoteip env
+
+# Generate self-signed certificate (optional, use real certs in prod)
+RUN mkdir -p /etc/apache2/ssl && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/apache2/ssl/server.key \
+    -out /etc/apache2/ssl/server.crt \
+    -subj "/C=ID/ST=Jakarta/L=Jakarta/O=Dev/OU=Prod/CN=localhost"
+
+# Add SSL vhost config
+COPY apache.conf /etc/apache2/sites-available/default-ssl.conf
+RUN a2ensite default-ssl.conf
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+
+# Copy source code from build context into container
+COPY ../ /var/www
+WORKDIR /var/www/html
+
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
+
+# Clean up
+RUN apt-get autoremove --purge -y && apt-get autoclean -y && apt-get clean -y \
+  && rm -rf /tmp/* /var/tmp/*
+
+EXPOSE 80
+EXPOSE 443
+
+COPY sql/ /docker-entrypoint-initdb.d/
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

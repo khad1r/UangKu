@@ -122,8 +122,9 @@ class Transaksi extends Database
     //Get Post Data
     $primaryKey = "id";
     $table = "{$this->table} ";
-    $table .= "LEFT JOIN (SELECT id rs_id, nama rs_nama, nominal_asing rs_mata_uang FROM REKENING) rs ON {$this->table}.rekening_sumber = rs_id ";
-    $table .= "LEFT JOIN (SELECT id rm_id, nama rm_nama, nominal_asing rm_mata_uang FROM REKENING) rm ON {$this->table}.rekening_masuk = rm_id ";
+    $table .= "LEFT JOIN (SELECT id rs_id, nama rs_nama, nominal_asing rs_mata_uang, harta rs_aset FROM REKENING) rs ON {$this->table}.rekening_sumber = rs_id ";
+    $table .= "LEFT JOIN (SELECT id rm_id, nama rm_nama, nominal_asing rm_mata_uang, harta rm_aset FROM REKENING) rm ON {$this->table}.rekening_masuk = rm_id ";
+    $where = " tanggal BETWEEN {$this->conn->quote($data['startDate'] ?? date('Y-m-01'))} AND {$this->conn->quote($data['endDate'] ?? date('Y-m-d'))} ";
     $columns = [
       [
         'db' => "printf('%04d', id)",
@@ -156,8 +157,10 @@ class Transaksi extends Database
         'dt' => 'rekening',
         'formatter' => function ($d, $row) {
           $html = '';
-          if (!empty($row['rs_nama'])) $html .= "<div class=\"fw-bold text-danger\"><i class=\"fas fa-sign-out-alt\"></i>&nbsp;{$row['rs_nama']}</div>";
-          if (!empty($row['rm_nama'])) $html .= "<div class=\"fw-bold text-success\"><i class=\"fas fa-sign-in-alt\"></i>&nbsp;{$row['rm_nama']}</div>";
+          $rs_aset = $row['rs_aset'] == 1 ? ' <small class="text-warning fas fa-coins"></small>' : '';
+          if (!empty($row['rs_nama'])) $html .= "<div class=\"fw-bold text-danger\"><i class=\"fas fa-sign-out-alt\"></i>&nbsp;{$row['rs_nama']}$rs_aset</div>";
+          $rm_aset = $row['rm_aset'] == 1 ? ' <small class="text-warning fas fa-coins"></small>' : '';
+          if (!empty($row['rm_nama'])) $html .= "<div class=\"fw-bold text-success\"><i class=\"fas fa-sign-in-alt\"></i>&nbsp;{$row['rm_nama']}$rm_aset</div>";
           return $html;
         }
       ],
@@ -167,8 +170,10 @@ class Transaksi extends Database
         'dt' => 'rekening2',
         'formatter' => function ($d, $row) {
           $html = '';
-          if (!empty($row['rs_nama'])) $html .= "<div class=\"fw-bold text-danger\"><i class=\"fas fa-sign-out-alt\"></i>&nbsp;{$row['rs_nama']}</div>";
-          if (!empty($row['rm_nama'])) $html .= "<div class=\"fw-bold text-success\"><i class=\"fas fa-sign-in-alt\"></i>&nbsp;{$row['rm_nama']}</div>";
+          $rs_aset = $row['rs_aset'] == 1 ? ' <small class="text-warning fas fa-coins"></small>' : '';
+          if (!empty($row['rs_nama'])) $html .= "<div class=\"fw-bold text-danger\"><i class=\"fas fa-sign-out-alt\"></i>&nbsp;{$row['rs_nama']}$rs_aset</div>";
+          $rm_aset = $row['rm_aset'] == 1 ? ' <small class="text-warning fas fa-coins"></small>' : '';
+          if (!empty($row['rm_nama'])) $html .= "<div class=\"fw-bold text-success\"><i class=\"fas fa-sign-in-alt\"></i>&nbsp;{$row['rm_nama']}$rm_aset</div>";
           return $html;
         }
       ],
@@ -225,14 +230,53 @@ class Transaksi extends Database
       ],
     ];
 
-    $return = SSP::complex(
+    return SSP::complex(
       $data,
       $this->conn,
       $table,
       $primaryKey,
       $columns,
-    );
-    // $return['total'] = $this->totalTransaction($data);
-    return $return;
+      $where
+    );;
+  }
+  public function cashFlowGraph($startDate, $endDate)
+  {
+    return $this
+      ->query(<<<SQL
+        SELECT
+          tanggal,
+          rutin,
+          jenis_transaksi,
+          SUM(nominal*kuantitas) trans,
+          SUM(nominal_asing*kuantitas) trans_asing
+        FROM {$this->table}
+        WHERE
+          harta = 0
+          AND jenis_transaksi in ('Pemasukan', 'Pengeluaran')
+          AND tanggal BETWEEN :startDate AND :endDate
+        GROUP BY jenis_transaksi, rutin, tanggal
+      SQL)
+      ->bind('startDate', $startDate)
+      ->bind('endDate', $endDate)
+      ->resultSet();
+  }
+  public function compsGraph($startDate, $endDate)
+  {
+    return $this->query(<<<SQL
+      SELECT
+        barang as 'name',
+        SUM(nominal*kuantitas) as 'value',
+        CASE WHEN rutin = 1 THEN '#03a9f4aa' ELSE '#f44336aa'
+          END as 'color'
+      FROM {$this->table}
+      WHERE
+        harta = 0
+        AND jenis_transaksi = 'Pengeluaran'
+        AND tanggal BETWEEN :startDate AND :endDate
+      GROUP BY kelompok, rutin
+    SQL)
+      ->bind('startDate', $startDate)
+      ->bind('endDate', $endDate)
+      ->resultSet();
   }
 }

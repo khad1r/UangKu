@@ -8,7 +8,8 @@ mb_internal_encoding("UTF-8");
 setlocale(LC_TIME, 'id_ID.UTF-8');
 
 define('BASEURL', getenv('HOSTNAME'));
-define('WEB_TITLE', 'BUKU TRANSAKSIKU');
+// define('BASEURL', 'http://localhost');
+define('WEB_TITLE', 'UangKu');
 define('DEFAULT_CONTROLLER', App\Controllers\Auth::class);
 define('USE_SESSION', true);
 define('TRANSFORM_RAW_TO_PHP_POST', true);

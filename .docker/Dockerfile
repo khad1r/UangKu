@@ -1,4 +1,4 @@
-ARG PHP_VERSION=$PHP_VERSION
+ARG PHP_VERSION=8.4
 FROM php:${PHP_VERSION}-apache-bullseye AS php-apache
 
 

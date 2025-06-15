@@ -1,5 +1,5 @@
 const CHANNEL = new BroadcastChannel('backgroundJob');
-const SERVER = "/Main/subscribe";
+const SERVER = "/Transaction/subscribe";
 const SERVICEWORKER = "/sw.js";
 
 const getNotificationState = () => localStorage.getItem('notification') === 'true' && Notification.permission === 'granted'

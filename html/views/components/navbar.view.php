@@ -12,7 +12,7 @@
       --nav-background-color: var(--primary-color);
       /* --nav-background-color: var(--primary-color); */
       /* --nav-background-color: color-mix(in srgb, var(--primary-color) 50%, transparent); */
-      --nav-box-shadow: 0px -2px 6px 5px rgba(var(--black-rgb), 0.3);
+      --nav-box-shadow: 0px -2px 6px 5px color-mix(in srgb, var(--black-color) 30%, transparent);
       box-shadow: var(--nav-box-shadow);
       -webkit-box-shadow: var(--nav-box-shadow);
       -moz-box-shadow: var(--nav-box-shadow);
@@ -88,21 +88,21 @@
     }
 
     .navbar-collapse {
-      box-shadow: 0px -5px 4px 3px rgba(var(--black-rgb), 0.3);
+      box-shadow: 0px -5px 4px 3px color-mix(in srgb, var(--black-color) 30%, transparent);
       border-radius: 5vh 5vh 0 0;
       bottom: 0;
       left: 0;
       padding-top: 2vh;
       position: absolute;
       width: 100%;
-      background: var(--secondary-color);
+      background: var(--white-color);
 
       .navbar-more {
 
         /* min-height: 40dvh; */
         .nav-link {
           padding-block: 1rem;
-          color: var(--white-color);
+          color: var(--secondary-color);
           font-weight: 500;
 
           &:hover,
@@ -132,9 +132,9 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <div class="navbar-more d-flex px-5 justify-content-around flex-column mb-3">
         <a class="nav-link" href="<?= BASEURL ?>/Rekening/"><i class="fas fa-wallet"></i>&nbsp;&nbsp; Rekening</a>
-        <a class="nav-link" href="<?= BASEURL ?>/Report/"><i class="fas fa-file-invoice"></i>&nbsp;&nbsp; Laporan</a>
+        <a class="nav-link" href="<?= BASEURL ?>/Report/"><i class="fas fa-file-invoice"></i>&nbsp;&nbsp; Laporan & Evaluasi</a>
+        <a class="nav-link" href="<?= BASEURL ?>/Users/"><i class="fas fa-user-shield"></i>&nbsp;&nbsp; Keamanan</a>
         <a class="nav-link" href="<?= BASEURL ?>/Database/"><i class="fas fa-server"></i>&nbsp;&nbsp; Basis Data</a>
-        <a class="nav-link" href="<?= BASEURL ?>/Users/"><i class="fas fa-users-cog"></i>&nbsp;&nbsp; Pengguna</a>
         <hr style="border: 2px solid var(--white-color);">
         <a class="nav-link" href="<?= BASEURL ?>/Auth/logout"><i class="fas fa-sign-out-alt"></i>&nbsp;&nbsp; Log Out</a>
       </div>
@@ -142,9 +142,9 @@
     </div>
     <div class="navbar navbar-light">
       <!-- Toggle button -->
-      <a href="<?= BASEURL ?>\Main" class="nav-link my-tooltip" data-tooltip="Dashboard"><i class="fas fa-chart-pie"></i></a>
+      <a href="<?= BASEURL ?>/Transaction" class="nav-link my-tooltip" data-tooltip="Dashboard"><i class="fas fa-chart-pie"></i></a>
       <div class="nav-link">
-        <a href="<?= BASEURL ?>\Record" class="special my-tooltip" data-tooltip="Transaksi"><i class="fas fa-money-bill-wave"></i></a>
+        <a href="<?= BASEURL ?>/Record" class="special my-tooltip" data-tooltip="Transaksi"><i class="fas fa-money-bill-wave"></i></a>
       </div>
       <button class="nav-link my-tooltip" data-tooltip="Menu" type="button"
         data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">

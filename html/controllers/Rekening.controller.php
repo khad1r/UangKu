@@ -20,6 +20,7 @@ class Rekening extends Controller
   public function index()
   {
     $data['title'] = 'Daftar Rekening';
+    $data['subTitle'] = '<i class="fas fa-wallet"></i> <strong><u>Rekening</u></strong> <i class="fas fa-money-bill-wave"></i>';
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'rekening/list';
     $data['right-bottom-view'] = 'components/navbar';
@@ -27,6 +28,8 @@ class Rekening extends Controller
   }
   public function add()
   {
+    $data['title'] = 'Tambah Rekening';
+    $data['subTitle'] = '<i class="fas fa-wallet"></i> <strong><u>Rekening</u></strong> <i class="fas fa-money-bill-wave"></i>';
     if (!empty($_POST)) {
       try {
         // if (!csrf_security('rekening-form', validate: $_POST)) return;
@@ -65,6 +68,8 @@ class Rekening extends Controller
   }
   public function edit($id_rekening = '')
   {
+    $data['title'] = 'Edit Rekening';
+    $data['subTitle'] = '<i class="fas fa-wallet"></i> <strong><u>Rekening</u></strong> <i class="fas fa-money-bill-wave"></i>';
     sanitize_input($id_rekening);
     $model = new ModelsRekening();
     $oldData = $model->getById($id_rekening);
@@ -117,7 +122,7 @@ class Rekening extends Controller
     $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }
-  public function datatable()
+  public function args()
   {
     $rate_limit_interval = 60; // 15 detik
     $rate_limit_max_request = 30; // 10 request
@@ -129,7 +134,21 @@ class Rekening extends Controller
 
     http_response_code(200);
     try {
-      $resp = new ModelsRekening()->datatable($_POST);
+      $model = new ModelsRekening();
+      if (isset($_GET['datatable']))
+        $resp = $model->datatable($_POST);
+      else if (isset($_GET['graph'])) {
+        foreach ($model->CashFlowGraph($_POST['startDate'], $_POST['endDate']) as $row)
+          $resp[$row['rekening']][] = [
+            new \DateTime($row['tanggal'], new \DateTimeZone('UTC'))->getTimestamp() * 1000,
+            $row['saldo_asing'] > 0 ? $row['saldo_asing'] : $row['saldo']
+          ];
+        $resp['all'] = array_map(fn($row) => [
+          new \DateTime($row['tanggal'], new \DateTimeZone('UTC'))->getTimestamp() * 1000,
+          $row['saldo']
+        ], $model->allCashFlowGraph($_POST['startDate'], $_POST['endDate']));
+        $resp['saldo'] = $model->getSaldoEfektif()['saldo'];
+      };
     } catch (\Throwable $th) {
       http_response_code(500);
       $resp = ['error' => $th->getMessage()];

@@ -96,13 +96,6 @@ let toDateShortMonth = ($date) => {
     year: "numeric"
   })).format($date);
 }
-
-const removeCache = async () => {
-  const cacheNames = await caches.keys();
-  await Promise.all(
-    cacheNames.map(cacheName => cacheName === 'private' && caches.delete(cacheName))
-  );
-}
 // Helper functions.
 var webAuthnHelper = {
   // array buffer to base64
@@ -127,3 +120,45 @@ var webAuthnHelper = {
     }
   }
 };
+const CHANNEL = new BroadcastChannel('backgroundJob');
+const SERVICEWORKER = "/sw.js";
+
+const getServiceWorker = async () => {
+  if ('serviceWorker' in navigator) {
+    let serviceWorker = await navigator.serviceWorker.getRegistration();
+    // Register the Service Worker if not already registered or active
+    if (!serviceWorker || !serviceWorker.active) {
+      try {
+        serviceWorker = await navigator.serviceWorker.register(SERVICEWORKER);
+        console.log("Service Worker registered with scope:", serviceWorker.scope);
+        return serviceWorker
+      } catch (error) {
+        console.error("Service Worker registration failed:", error);
+        return;
+      }
+    }
+    return serviceWorker;
+  } else {
+    console.error("ServiceWorkers are not supported by your browser!")
+    return;
+  };
+}
+async function getFileFromCache(cachedName) {
+  const cache = await caches.open('cached-files');
+  const response = await cache.match(cachedName);
+  if (!response) return null;
+  const {
+    file,
+    fileName,
+    type
+  } = await response.json();
+  file = {
+    blob: new Blob([file], {
+      type
+    }),
+    fileName: fileName
+  };
+  await caches.delete(cachedName); // Clear cache
+  return file
+}
+// getServiceWorker()

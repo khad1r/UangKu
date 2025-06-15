@@ -20,6 +20,8 @@ class Record extends Controller
   }
   public function index()
   {
+    $data['title'] = 'Uangku - Catat Transaksi';
+    $data['subTitle'] = 'Catat Transaksi <i class="far fa-edit"></i>';
     if (!empty($_POST)) {
       try {
         // if (!csrf_security('record-form', validate: $_POST)) return;
@@ -38,7 +40,7 @@ class Record extends Controller
           'kelompok'          => $post['kelompok'] ?? null,
           'tanggal'           => $post['tanggal'] ?? null,
           'relasi_transaksi'  => $post['relasi_transaksi'] ?? null,
-          'attachment'        => $this->handleFileUpload('attachment'),
+          'attachment'        => $_FILES['attachment']['size'] > 0 ? $this->handleFileUpload('attachment') : null,
           'keterangan'        => $post['keterangan'] ?? null,
           // 'review'            => $post['review'] ?? null,
         ];
@@ -51,7 +53,7 @@ class Record extends Controller
         $_SESSION['alert'] = ['danger', $e->getMessage()];
       }
     }
-    $data['view'] = 'record/record';
+    $data['view'] = 'transaction/record';
     $data['jenis_transaksi'] = JENIS_TRANSAKSI;
     $data['right-bottom-view'] = 'components/navbar';
     setCacheControl(259200/* 3 Day Expired */);
@@ -69,14 +71,14 @@ class Record extends Controller
         'review'            => $post['review'] ?? null,
       ];
       if (new Transaksi()->updateTransaksi($data, ['id' => $_POST['id']]) > 0) {
-        $_SESSION['alert'] = ['success', "Review {$_POST['id']} Berhasil"];
+        $_SESSION['alert'] = ['success', "Review Trx.{$_POST['id']} Berhasil"];
       } else {
         throw new \Exception("Error Processing Request", 1);
       }
     } catch (\Exception $e) {
       $_SESSION['alert'] = ['danger', $e->getMessage()];
     }
-    Route::Referer('/Main');
+    Route::Referer('/Transaction');
     return;
   }
   public function delete()
@@ -91,14 +93,14 @@ class Record extends Controller
         'review'            => $post['review'] ?? null,
       ];
       if (new Transaksi()->deleteTransaksi($_POST['id']) > 0) {
-        $_SESSION['alert'] = ['success', "Hapus {$_POST['id']} Berhasil"];
+        $_SESSION['alert'] = ['success', "Hapus Trx.{$_POST['id']} Berhasil"];
       } else {
         throw new \Exception("Error Processing Request", 1);
       }
     } catch (\Exception $e) {
       $_SESSION['alert'] = ['danger', $e->getMessage()];
     }
-    Route::Referer('/Main');
+    Route::Referer('/Transaction');
     return;
   }
   private function validateData($data)

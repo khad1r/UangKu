@@ -17,7 +17,7 @@
   <h6 class="text-white text-center">Sepertinya internet sedang tidak baik-baik saja...</h6>
   <h5 class="text-white text-center"><i>Yuk, coba cek koneksi dulu.</i></h5>
   <hr>
-  <a class="text-primary btn btn-warning btn-block fw-bold" href="<?= BASEURL . '/Main' ?>">
+  <a class="text-primary btn btn-warning btn-block fw-bold" href="<?= BASEURL  ?>">
     <i>Kembali</i>
   </a>
 </div>

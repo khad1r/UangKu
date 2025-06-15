@@ -3,69 +3,87 @@
     --bg-color: var(--primary-color) !important;
   }
 
-  .body {
-    --body-mobile-margin-top: 0;
-    --body-top-radius: clamp(0%, 10vw, 30%);
-    --body-min-height: 20dvh;
-    /* --body-min-height: calc(100dvh - var(--main-logo-height)); */
-    padding-bottom: 10px;
-    /* padding-top: auto; */
-    display: flex;
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: center;
-  }
-
   .wrapper .main-logo {
     width: 100%;
     height: 60dvh;
+  }
+
+  .body {
+    --body-mobile-margin-top: 0;
+    --body-top-radius: 8em;
+    --body-min-height: 40dvh;
+    min-height: var(--body-min-height) !important;
+    padding-top: 1.25rem;
+    width: 50em;
+    margin-inline: auto;
+    padding-bottom: 10px;
+    border-radius: var(--body-top-radius) var(--body-top-radius) 0 0;
+    box-shadow: color-mix(in srgb, var(--black-color) 25%, transparent) 0px -12.5px 30px;
+    position: relative;
+    background-color: var(--white-color);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+
+    .indicator-body {
+      display: grid;
+      place-content: center;
+
+      .spinner-border {
+        color: var(--primary-color);
+      }
+    }
+
+    @media (orientation: portrait) {
+      & {
+        /* min-width: none; */
+        width: 90%;
+      }
+    }
+  }
+
+  form {
+    font-size: 1.2em;
+
+    /* position: sticky;
+      bottom: 0 !important; */
+
+    .btn {
+      color: var(--primary-color);
+      font-size: 7em;
+
+      &:hover,
+      &:focus,
+      &:active {
+        outline: none;
+        border: none;
+        color: var(--primary-color-alt);
+      }
+    }
   }
 </style>
 <div class="wrapper">
   <div class="header">
   </div>
   <div class="main-logo">
-    <img src="<?= BASEURL ?>\assets\img\logo_512.png" class="">
+    <img src="<?= BASEURL ?>/assets/img/Logo.png" class="">
   </div>
   <div class="body px-3">
-    <div id="form">
-      <form method="post" name="login">
-        <div class="indicator-body mt-1 mb-5">
-          <i class="fa-solid fa-caret-up"></i>
+    <form method="post" name="login">
+      <input type="hidden" name="login" />
+      <div class="indicator-body text-primary mt-1 mb-5">
+        <i class="fa-solid fa-caret-up"></i>
+      </div>
+      <div class="indicator-body">
+        <div class="spinner-border mb-3" style="display:none;" role="status">
         </div>
-        <input type="hidden" name="login" />
-        <div class="indicator-body">
-          <div class="spinner-border mb-3" style="display:none;" role="status">
-          </div>
-        </div>
-        <hr>
-        <button role="button" class="btn w-100 text-white" id="login-btn">Login</button>
-        <div class="note">
-          <p>Apakah Anda sudah memiliki QRIS Bank Gresik?</p>
-          <a href="#" id="openModal">Ya, saya sudah</a> | <a href="#">Belum, saya
-            belum</a>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-<dialog>
-  <div class="dialog-header">
-    <p>Panduan Login</p>
-    <form method="dialog">
-      <button>X</button>
+      </div>
+      <button role="button" class="btn" id="login-btn"><i class="fas fa-fingerprint"></i></button>
     </form>
   </div>
-  <div class="dialog-body">
-    <p>Secara <b>Default</b>, gunakan <b>rekening Qris</b> anda tanpa tanda titik (.)
-      sebagai
-      username dan <b>NMID</b> sebagai password.</p>
-    <p>Temukan NMID pada Qris Bank Gresik Anda (<b class="text-primary">IDXXXXXXXXXX</b>).</p>
-    <img src="<?= BASEURL ?>/assets/img/qris_contoh.png" class="img-fluid qris" loading="lazy" alt="cara mendapatkan NMID" />
-  </div>
-</dialog>
+</div>
 <script>
-  const modal = document.querySelector('dialog')
   const DATA = <?= json_encode($data['webAuthnArgs']) ?>;
   webAuthnHelper.bta(DATA)
   const Authenticate = async () => {
@@ -85,10 +103,6 @@
     event.preventDefault();
     Authenticate()
   })
-  document.querySelector('#openModal').addEventListener('click', (e) => {
-    e.preventDefault()
-    modal.showModal()
-  })
   modal.addEventListener('click', function(event) {
     var rect = modal.getBoundingClientRect();
     var isInDialog = (rect.top <= event.clientY && event.clientY <= rect.top + rect.height &&
@@ -96,9 +110,6 @@
     if (!isInDialog) {
       modal.close();
     }
-  })
-  document.querySelector('form').addEventListener('input', () => {
-    sessionStorage.setItem('isInput', true)
   })
   document.querySelector('form').addEventListener('submit', () => {
     document.querySelector(".spinner-border.mb-3").style.display = "block"

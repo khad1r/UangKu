@@ -1,10 +1,4 @@
-<div class="container mt-5">
-  <div class="d-flex justify-content-center flex-column flex-md-row mb-3">
-    <span>
-      <h2 class="text-center text-secondary"><i class="fas fa-wallet"></i> <strong><u>Rekening</u></strong> <i class="fas fa-money-bill-wave"></i></h2>
-    </span>
-  </div>
-  <hr class="d-lg-none">
+<div class="container">
   <div>
     <strong>
       <ul class="nav nav-pills d-flex btn-group justify-content-center" id="myTab" role="tablist" style="margin-inline:10dvw;">
