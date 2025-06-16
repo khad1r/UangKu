@@ -46,6 +46,7 @@ class Users extends Controller
     $data['title'] = 'Daftar Rekening';
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'users/list';
+    $data['top-left-view'] = 'components/header';
     $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }

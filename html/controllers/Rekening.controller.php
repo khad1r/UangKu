@@ -23,6 +23,7 @@ class Rekening extends Controller
     $data['subTitle'] = '<i class="fas fa-wallet"></i> <strong><u>Rekening</u></strong> <i class="fas fa-money-bill-wave"></i>';
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'rekening/list';
+    $data['top-left-view'] = 'components/header';
     $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }
@@ -63,6 +64,7 @@ class Rekening extends Controller
     }
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'rekening/add';
+    $data['top-left-view'] = 'components/header';
     $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }
@@ -119,6 +121,7 @@ class Rekening extends Controller
     $data['oldData'] = $oldData;
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'rekening/edit';
+    $data['top-left-view'] = 'components/header';
     $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }

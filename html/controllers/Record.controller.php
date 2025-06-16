@@ -55,6 +55,7 @@ class Record extends Controller
     }
     $data['view'] = 'transaction/record';
     $data['jenis_transaksi'] = JENIS_TRANSAKSI;
+    $data['top-left-view'] = 'components/header';
     $data['right-bottom-view'] = 'components/navbar';
     setCacheControl(259200/* 3 Day Expired */);
     $this->view('templates/template', $data);

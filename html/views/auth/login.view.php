@@ -3,9 +3,29 @@
     --bg-color: var(--primary-color) !important;
   }
 
-  .wrapper .main-logo {
-    width: 100%;
-    height: 60dvh;
+  .wrapper {
+    .main-logo {
+      width: 100%;
+      min-height: 60dvh;
+      /* height: 90dvh; */
+      /* position: a; */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      img {
+        position: sticky;
+        top: 2vh;
+        padding: 1em;
+        height: 100%;
+        pointer-events: none;
+        width: 25dvw;
+
+        @media (orientation: portrait) {
+          width: 75dvw;
+        }
+      }
+    }
   }
 
   .body {
@@ -14,7 +34,7 @@
     --body-min-height: 40dvh;
     min-height: var(--body-min-height) !important;
     padding-top: 1.25rem;
-    width: 50em;
+    width: 40%;
     margin-inline: auto;
     padding-bottom: 10px;
     border-radius: var(--body-top-radius) var(--body-top-radius) 0 0;
@@ -36,10 +56,7 @@
     }
 
     @media (orientation: portrait) {
-      & {
-        /* min-width: none; */
-        width: 90%;
-      }
+      width: 90%;
     }
   }
 
@@ -64,8 +81,6 @@
   }
 </style>
 <div class="wrapper">
-  <div class="header">
-  </div>
   <div class="main-logo">
     <img src="<?= BASEURL ?>/assets/img/Logo.png" class="">
   </div>
@@ -102,14 +117,6 @@
   document.getElementById('login-btn').addEventListener('click', async (event) => {
     event.preventDefault();
     Authenticate()
-  })
-  modal.addEventListener('click', function(event) {
-    var rect = modal.getBoundingClientRect();
-    var isInDialog = (rect.top <= event.clientY && event.clientY <= rect.top + rect.height &&
-      rect.left <= event.clientX && event.clientX <= rect.left + rect.width);
-    if (!isInDialog) {
-      modal.close();
-    }
   })
   document.querySelector('form').addEventListener('submit', () => {
     document.querySelector(".spinner-border.mb-3").style.display = "block"

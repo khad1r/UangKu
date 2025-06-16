@@ -102,21 +102,22 @@
         /* min-height: 40dvh; */
         .nav-link {
           padding-block: 1rem;
+          padding-inline: 3rem;
           color: var(--secondary-color);
           font-weight: 500;
+          font-size: max(1em, 16px);
 
           &:hover,
           &:active,
           &:focus {
+            color: var(--primary-color);
             font-weight: 700;
             border-block: 5px solid;
             border-image-source: linear-gradient(to left,
                 transparent 20%,
-                var(--white-color) 50%,
+                var(--primary-color) 50%,
                 transparent 80%);
             border-image-slice: 1;
-            /* Ensures the gradient spans the entire border */
-            /* background-color: var(--primary-color); */
           }
         }
       }
@@ -130,7 +131,7 @@
   <div class="col"></div>
   <div class="col-xxl-3 col-lg-5 p-0 nav-container">
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <div class="navbar-more d-flex px-5 justify-content-around flex-column mb-3">
+      <div class="navbar-more d-flex justify-content-around flex-column mb-3">
         <a class="nav-link" href="<?= BASEURL ?>/Rekening/"><i class="fas fa-wallet"></i>&nbsp;&nbsp; Rekening</a>
         <a class="nav-link" href="<?= BASEURL ?>/Report/"><i class="fas fa-file-invoice"></i>&nbsp;&nbsp; Laporan & Evaluasi</a>
         <a class="nav-link" href="<?= BASEURL ?>/Users/"><i class="fas fa-user-shield"></i>&nbsp;&nbsp; Keamanan</a>

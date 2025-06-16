@@ -24,6 +24,7 @@ class Transaction extends Controller
     $data['subTitle'] = '<i class="fas fa-book"></i> Buku Transaksi <i class="fas fa-hand-holding-usd"></i>';
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'transaction/transaction';
+    $data['top-left-view'] = 'components/header';
     $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }
