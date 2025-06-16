@@ -52,7 +52,6 @@ class Users extends Controller
   }
   public function delete($id_passkey = '')
   {
-    showAlert('Something Happen ?!', 'warning');
     sanitize_input($id_passkey);
     if (!empty($_POST)) {
       try {

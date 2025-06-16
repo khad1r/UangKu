@@ -56,8 +56,12 @@ function showAlert(message, type = 'primary') {
   bsToast.show();
   // setTimeout(() => bsToast.hide(), 5000)
 }
-function showAlert(message, type = 'primary', title = '') {
-
+function showAlert(message, type = 'primary', title = null) {
+  const ref = {
+    'warning': 'Perhatian !',
+    'success': 'Berhasil',
+    'danger': 'Peringatan !!',
+  }
   const toastTemplate = document.querySelector("#toast-template");
   const toast = toastTemplate.cloneNode(true);
   toast.id = ''; // Clear the ID for the new toast
@@ -66,10 +70,12 @@ function showAlert(message, type = 'primary', title = '') {
   toast.querySelector('.toast-header').classList.add(`bg-${type}`);
   // // Set the message
   toast.querySelector('.toast-body').innerHTML = message;
-  toast.querySelector('strong').innerHTML = title;
+  toast.querySelector('strong').innerHTML = title ?? ref[type] ?? 'Pemberitahuan';
 
   document.querySelector('#toast-container').prepend(toast)
-  $(toast).toast('show')
+  const bsToast = bootstrap.Toast.getOrCreateInstance(toast)
+  // Show the toast
+  bsToast.show();
   // setTimeout(() => bsToast.hide(), 5000)
 }
 

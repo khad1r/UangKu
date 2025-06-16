@@ -236,46 +236,50 @@ a {
     animation: 0.75s linear infinite spinner-border;
   }
 }
-.batal.toast-container {
+#toast-container {
   position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 2vh;
+  right: 5rem;
+  z-index: 9999;
+  @media (orientation: portrait) {
+    right: 50%;
+    transform: translateX(50%);
+  }
   .toast {
-    padding-inline: 0.5rem;
-    font-size: 0.75em;
-    font-weight: 600;
-    word-break: break-word; /* Force wrap long words */
-    white-space: normal; /* Allow wrapping */
+    font-size: 1.3em;
+    margin-bottom: 10px;
+    /* margin: left; */
+    min-width: 25vw;
     --bs-toast-spacing: 0.75em;
-    .toast-body {
+    .toast-header {
+      display: flex;
+      justify-content: space-between;
       button {
+        background-color: inherit;
+        outline: none;
+        border: none;
+        font-weight: 900;
         font-size: inherit;
         color: inherit;
       }
     }
-  }
-}
-.wrapper {
-  --main-logo-height: 25dvh;
-  .main-logo {
-    width: 100%;
-    height: 90dvh;
-    /* position: a; */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    .toast-body {
+      padding-inline: 0.5rem;
+      font-size: 0.75em;
+      font-weight: 600;
+      word-break: break-word; /* Force wrap long words */
+      white-space: normal; /* Allow wrapping */
 
-    img {
-      position: sticky;
-      top: 2vh;
-      padding: 1em;
-      height: var(--main-logo-height);
-      max-width: 100%;
-      pointer-events: none;
+      display: -webkit-box;
+      -webkit-line-clamp: 3; /* Limit to 3 lines */
+      line-clamp: 3; /* Limit to 3 lines */
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 }
+
 .card-saldo {
   background-color: var(--primary-color);
   color: var(--white-color);

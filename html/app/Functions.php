@@ -9,8 +9,8 @@ function generateAlert()
   if (!empty($_SESSION['showToastNotification'])) foreach ($_SESSION['showToastNotification'] as $key => &$toast) {
     echo <<<JS
       showAlert(
-        "{$toast['type']}",
         "{$toast['msg']}",
+        "{$toast['type']}",
         "{$toast['title']}",
       );
     JS;

@@ -11,12 +11,12 @@
     </div>
   </div> -->
 
-  <div id="toast-container" style="position: fixed; bottom: 1rem; right: 1rem;">
-    <div id="toast-template" class="toast hide border" role="alert" style="min-width: 25vw;" aria-live="assertive" aria-atomic="true" data-delay="5000">
+  <div id="toast-container">
+    <div id="toast-template" class="toast hide border" role="alert" aria-live="assertive" aria-atomic="true" data-delay="5000">
       <div class="toast-header">
-        <strong class="mr-auto text-white">Bootstrap</strong>
-        <button type="button" class="ml-2 mb-1 close text-white" data-dismiss="toast" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
+        <strong class="mr-auto text-white">Pemberitahuan</strong>
+        <button type="button" class="close text-white" data-dismiss="toast" aria-label="Close">
+          <span aria-hidden="true"><i class="fas fw-bold fa-times"></i></span>
         </button>
       </div>
       <div class="toast-body" style="color: black;">
