@@ -8,7 +8,7 @@ mb_internal_encoding("UTF-8");
 setlocale(LC_TIME, 'id_ID.UTF-8');
 $is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
   || $_SERVER['SERVER_PORT'] == 443;
-
+$protocol = $is_https ? 'https://' : 'http://';
 $hostname = getenv('HOSTNAME') ?: $_SERVER['HTTP_HOST']; // fallback jika getenv kosong
 define('HOSTNAME', $hostname);
 define('BASEURL', $protocol . $hostname);

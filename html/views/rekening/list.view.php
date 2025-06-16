@@ -333,7 +333,7 @@
       .catch((e) => showAlert(e.message, 'danger'))
   }
   const drawGraph = () => {
-    document.querySelector('#text-saldo').innerHTML = 'Rp.&nbsp;' + accountsCashFlow.saldo.toLocaleString('id')
+    document.querySelector('#text-saldo').innerHTML = 'Rp.&nbsp;' + (+accountsCashFlow.saldo).toLocaleString('id')
     let selected = DT_TABLE.rows({
       selected: true
     }).data().toArray();

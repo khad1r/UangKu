@@ -229,10 +229,10 @@
     CompsChart.series[0].setData(data.comps, false)
     CashFlowChart.redraw()
     CompsChart.redraw()
-    document.querySelector('#text-pemasukan').innerHTML = 'Rp.&nbsp;' + data.cashIn.toLocaleString('id')
-    document.querySelector('#text-pengeluaran').innerHTML = 'Rp.&nbsp;' + data.cashOut.toLocaleString('id')
-    document.querySelector('#text-net').innerHTML = 'Rp.&nbsp;' + (data.cashIn - data.cashOut).toLocaleString('id')
-    document.querySelector('#text-saldo').innerHTML = 'Rp.&nbsp;' + data.saldo.toLocaleString('id')
+    document.querySelector('#text-pemasukan').innerHTML = 'Rp.&nbsp;' + (+data.cashIn).toLocaleString('id')
+    document.querySelector('#text-pengeluaran').innerHTML = 'Rp.&nbsp;' + (+data.cashOut).toLocaleString('id')
+    document.querySelector('#text-net').innerHTML = 'Rp.&nbsp;' + ((+data.cashIn) - (+data.cashOut)).toLocaleString('id')
+    document.querySelector('#text-saldo').innerHTML = 'Rp.&nbsp;' + (+data.saldo).toLocaleString('id')
   }
   const DT_TABLE = new DataTable(TABLE, {
     "dom": "ftlp",
