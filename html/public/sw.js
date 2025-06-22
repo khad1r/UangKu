@@ -7,7 +7,7 @@ const preCache = async () => {
     await caches.open(STATIC).then(cache => cache.addAll([
       "/assets/js/script.js",
       "/assets/css/style.css",
-      "/ShowError/notConnected",
+      "/error/notConnected",
     ]));
   } catch (error) {
     console.error('failed to precache:', error);
@@ -28,7 +28,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cache => {
-          if (![CACHENAME, STATIC].includes(cache)) {
+          if (![STATIC].includes(cache)) {
             console.log('Service Worker: Clearing Old Cache');
             return caches.delete(cache);
           }
@@ -38,9 +38,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', e => {
   // Handle Share Target file submission
   if (e.request.method === 'POST' && e.request.url.includes('/pwa-share-handle')) {
-    event.respondWith(
+    e.respondWith(
       (async () => {
-        const formData = await event.request.formData();
+        const formData = await e.request.formData();
         const file = formData.get('bukti-transaksi');
         // Store in Cache API// Get the original filename from share params (e.g., "bukti-transaksi.pdf")
         const fileName = formData.get('name') || 'shared-file'; // Fallback
@@ -98,7 +98,7 @@ self.addEventListener('fetch', e => {
         const networkResponse = await fetch(e.request);
         const cacheControl = networkResponse.headers.get('Cache-Control');
         if (networkResponse.ok && !(cacheControl && cacheControl.includes('no-store'))) {
-          const cacheDyn = await caches.open(CACHENAME)
+          const cacheDyn = await caches.open(STATIC)
           cacheDyn.put(e.request, networkResponse.clone())
         }
         return networkResponse;

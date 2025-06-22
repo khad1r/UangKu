@@ -338,6 +338,21 @@
     }
   }
 
+  function formState(e) {
+    let jenis_transaksi = e.target.value ?? FORM.jenis_transaksi.value;
+    // STATE.operasi = jenis_transaksi;
+    const state = J_TRANS.map(v => v === jenis_transaksi);
+    FORM.switchStateInput(FORM.harta, state[0] || state[1])
+    FORM.harta.switchState((state[0] || state[1]) && FORM.harta.checked)
+    FORM.rutin.switchState((state[0] || state[1]) && FORM.rutin.checked)
+    if (!(state[0] || state[2])) FORM.rekening_sumber.SlimSelect.setSelected()
+    FORM.switchStateInput(FORM.rekening_sumber, state[0] || state[2])
+    if (!state[1] || state[2]) FORM.rekening_masuk.SlimSelect.setSelected()
+    FORM.switchStateInput(FORM.rekening_masuk, state[1] || state[2])
+    FORM.switchStateInput(FORM.rutin, state[0] || state[1])
+    rekening_sumber_akhir.innerHTML = ''
+    rekening_masuk_akhir.innerHTML = ''
+  }
   FORM.rekening_sumber.addEventListener('change', rekeningSelectEvent)
   FORM.rekening_masuk.addEventListener('change', rekeningSelectEvent)
   FORM.switchStateInput = (element, state = null) => {
@@ -355,21 +370,7 @@
       setTimeout(() => element.SlimSelect.setSelected(''), 0);
   }
   /* Modify state by  */
-  FORM.jenis_transaksi.addEventListener('change', (e) => {
-    let jenis_transaksi = e.target.value;
-    // STATE.operasi = jenis_transaksi;
-    const state = J_TRANS.map(v => v === jenis_transaksi);
-    FORM.switchStateInput(FORM.harta, state[0] || state[1])
-    FORM.harta.switchState((state[0] || state[1]) && FORM.harta.checked)
-    FORM.rutin.switchState((state[0] || state[1]) && FORM.rutin.checked)
-    if (!(state[0] || state[2])) FORM.rekening_sumber.SlimSelect.setSelected()
-    FORM.switchStateInput(FORM.rekening_sumber, state[0] || state[2])
-    if (!state[1] || state[2]) FORM.rekening_masuk.SlimSelect.setSelected()
-    FORM.switchStateInput(FORM.rekening_masuk, state[1] || state[2])
-    FORM.switchStateInput(FORM.rutin, state[0] || state[1])
-    rekening_sumber_akhir.innerHTML = ''
-    rekening_masuk_akhir.innerHTML = ''
-  })
+  FORM.jenis_transaksi.addEventListener('change', formState)
   FORM.harta.State = FORM.harta.checked;
   FORM.harta.switchState = (state = !FORM.harta.State) => {
     if (state === FORM.harta.State) return;
@@ -594,4 +595,5 @@
       }
     })
   });
+  formState(null);
 </script>

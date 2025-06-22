@@ -183,4 +183,4 @@ async function getFileFromCache(cachedName) {
   await caches.delete(cachedName); // Clear cache
   return file
 }
-// getServiceWorker()
+getServiceWorker()

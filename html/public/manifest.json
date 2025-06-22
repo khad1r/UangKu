@@ -112,16 +112,13 @@
     }
   ],
   "share_target": {
-    "action": "/pwa-share-handle",
+    "action": "/Record",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
-      "title": "name",
-      "text": "description",
-      "url": "link",
       "files": [
         {
-          "name": "bukti-transaksi",
+          "name": "attachment",
           "accept": ["image/*", "application/pdf"]
         }
       ]
