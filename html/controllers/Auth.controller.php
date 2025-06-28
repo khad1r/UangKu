@@ -106,7 +106,17 @@ class Auth extends Controller
       $registering['passkey_id'],
       $registering['nickname'],
       $registering['nickname'],
+      requireResidentKey: true,
+      crossPlatformAttachment: false
     );
+    // $data['webAuthnArgs']->publicKey->authenticatorSelection->authenticatorAttachment =
+    // $data['webAuthnArgs']->authenticatorSelection = [
+    //   'authenticatorAttachment' => 'platform',
+    //   'residentKey' => 'required',
+    //   'requireResidentKey' => true,
+    //   'userVerification' => 'required'
+    // ];
+    // $data['webAuthnArgs']->attestation = 'none'; // Optional: skip attestation
     $_SESSION['challenge'] = ($webAuthn->getChallenge())->getBinaryString();
     // $_SESSION['challenge'] = $webAuthn->getChallenge();
     // $data['view'] = 'auth/regist';
