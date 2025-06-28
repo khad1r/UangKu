@@ -18,8 +18,8 @@
       </div>
     </div> -->
     <?php $Controller->view($data['view'], $data); ?>
-    <?php if (isset($data['right-bottom-view'])) $Controller->view($data['right-bottom-view'], $data) ?>
   </main>
+  <?php if (isset($data['right-bottom-view'])) $Controller->view($data['right-bottom-view'], $data) ?>
   <?php $Controller->view('templates/footer', $data); ?>
 </body>
 

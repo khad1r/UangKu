@@ -29,6 +29,8 @@
   }
 
   .body {
+    position: sticky;
+    bottom: 0;
     --body-mobile-margin-top: 0;
     --body-top-radius: 8em;
     --body-min-height: 40dvh;
@@ -84,7 +86,7 @@
   <div class="main-logo">
     <img src="<?= BASEURL ?>/assets/img/Logo.png" class="">
   </div>
-  <div class="body px-3">
+  <div class="body px-3 fixed-bottom">
     <form method="post" name="login">
       <input type="hidden" name="login" />
       <div class="indicator-body text-primary mt-1 mb-5">

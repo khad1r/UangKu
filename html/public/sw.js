@@ -37,25 +37,40 @@ self.addEventListener('activate', (event) => {
 });
 self.addEventListener('fetch', e => {
   // Handle Share Target file submission
-  if (e.request.method === 'POST' && e.request.url.includes('/pwa-share-handle')) {
+  if (e.request.url.includes('pwa-share-handle')) {
     e.respondWith(
       (async () => {
-        const formData = await e.request.formData();
-        const file = formData.get('bukti-transaksi');
-        // Store in Cache API// Get the original filename from share params (e.g., "bukti-transaksi.pdf")
-        const fileName = formData.get('name') || 'shared-file'; // Fallback
+        try {
+          const formData = await e.request.formData();
+          // console.log(formData);
+          // for (const [key, value] of formData.entries()) {
+          //   console.log(`${key}:`, value);
+          // }
+          const file = formData.get('attachment');
+          if (file && file instanceof File) {
+            const cache = await caches.open('shared-files');
 
-        // Store both file and filename
-        const cache = await caches.open('cached-files');
-        await cache.put('/pwa-share-handle', new Response(JSON.stringify({
-          file: await file.arrayBuffer(),
-          fileName: fileName,
-          type: file.type
-        })));
-        // Redirect to a page that processes the file
+            const fileResponse = new Response(file, {
+              headers: { 'Content-Type': file.type, 'File-name': file.name }
+            });
+
+            // Simpan file ke cache dengan nama unik (misalnya timestamp atau hash)
+            const timestamp = Date.now();
+            // const fileUrl = `/cached-share/${timestamp}-${file.name}`;
+
+            // await cache.put(fileUrl, fileResponse);
+            await cache.put('/pwa-share-handle', fileResponse);
+
+            // Redirect ke halaman yang bisa ambil dari cache nanti
+            // return Response.redirect(`/Record?shared-file=${encodeURIComponent(fileUrl)}`);
+          }
+        } catch (error) {
+          console.error("Cache handling sharing,", error, e.request.url);
+        }
         return Response.redirect('/Record', 303);
       })()
     );
+    return
   }
   /* Handle Not Connected Post Request (Req first the error on not connected) */
   if (e.request.method !== 'GET' || !e.request.url.startsWith('http')) {

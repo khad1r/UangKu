@@ -1,17 +1,19 @@
 <div class="container">
   <?php $Controller->view('rekening/topbar', $data); ?>
-  <table data-label="List Rekening" class="table table-responsive myTable border-bottom" id="FormatTable">
-    <thead class="sticky-top">
-      <tr>
-        <th scope="col" class="no-sort no-search"></th>
-        <th scope="col" class="no-sort no-search">ID</th>
-        <th scope="col" class="no-sort">Nama</th>
-        <th scope="col" class="no-sort">Saldo</th>
-        <th scope="col" class="no-sort">Keterangan</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div class="table-wrapper">
+    <table data-label="List Rekening" class="table table-responsive myTable border-bottom" id="FormatTable">
+      <thead class="sticky-top">
+        <tr>
+          <th scope="col" class="no-sort no-search"></th>
+          <th scope="col" class="no-sort no-search">ID</th>
+          <th scope="col" class="no-sort">Nama</th>
+          <th scope="col" class="no-sort">Saldo</th>
+          <th scope="col" class="no-sort">Keterangan</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
   <div class="my-3 card card-saldo">
     <div>Saldo Efektif</div>
     <h3 class="saldo" id="text-saldo"></h3>
@@ -45,10 +47,10 @@
 <script>
   document.querySelector("#list-tab")?.classList.add("active");
   const TABLE = document.querySelector('#FormatTable');
-  const rootStyle = getComputedStyle(document.documentElement);
-  const primaryColor = rootStyle.getPropertyValue('--primary-color').trim();
-  const warningColor = rootStyle.getPropertyValue('--yellow-color').trim(); // or another var
-  const bgColor = rootStyle.getPropertyValue('--bg-color').trim(); // or another var
+  // const rootStyle = getComputedStyle(document.documentElement);
+  // const primaryColor = rootStyle.getPropertyValue('--primary-color').trim();
+  // const warningColor = rootStyle.getPropertyValue('--yellow-color').trim(); // or another var
+  // const bgColor = rootStyle.getPropertyValue('--bg-color').trim(); // or another var
   let accountsCashFlow
   const d = new Date();
   let dateRange = [
@@ -59,6 +61,7 @@
   const startInput = document.querySelector('#startDate');
   const endInput = document.querySelector('#endDate');
   flatpickr(startInput, {
+    disableMobile: "true",
     plugins: [new rangePlugin({
       input: endInput
     })],
@@ -283,8 +286,8 @@
   const CashFlowChart = Highcharts.chart('arusRekeningChart', {
     title: false,
     chart: {
-      backgroundColor: bgColor,
-      plotBackgroundColor: bgColor,
+      backgroundColor: 'transparent',
+      plotBackgroundColor: 'transparent',
     },
     xAxis: {
       type: 'datetime',

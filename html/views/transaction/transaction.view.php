@@ -41,23 +41,25 @@
       </div>
     </div>
   </div>
-  <table data-label="List Rekening" class="table table-responsive myTable border-bottom display nowrap" id="FormatTable">
-    <thead class="sticky-top">
-      <tr>
-        <th scope="col" class="">ID</th>
-        <th scope="col" class="">Jenis Transaksi</th>
-        <th scope="col" class="">Barang / Judul</th>
-        <th scope="col" class="">Rekening</th>
-        <th scope="col" class="">Nominal</th>
-        <th scope="col" class="">Total</th>
-        <th scope="col" class="">Rutin</th>
-        <th scope="col" class="">Kelompok</th>
-        <th scope="col" class="">Tanggal</th>
-        <th scope="col" class="">Keterangan</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div class="table-wrapper">
+    <table data-label="List Rekening" class="table table-responsive myTable border-bottom display nowrap" id="FormatTable">
+      <thead class="sticky-top">
+        <tr>
+          <th scope="col" class="">ID</th>
+          <th scope="col" class="">Jenis Transaksi</th>
+          <th scope="col" class="">Barang / Judul</th>
+          <th scope="col" class="">Rekening</th>
+          <th scope="col" class="">Nominal</th>
+          <th scope="col" class="">Total</th>
+          <th scope="col" class="">Rutin</th>
+          <th scope="col" class="">Kelompok</th>
+          <th scope="col" class="">Tanggal</th>
+          <th scope="col" class="">Keterangan</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </div>
 <dialog>
   <div class="dialog-header mb-2">
@@ -104,14 +106,10 @@
   document.querySelector("#list-tab")?.classList.add("active");
   const TABLE = document.querySelector('#FormatTable');
   const MODAL = document.querySelector('dialog')
-  const rootStyle = getComputedStyle(document.documentElement);
-  const primaryColor = rootStyle.getPropertyValue('--primary-color').trim();
-  const warningColor = rootStyle.getPropertyValue('--yellow-color').trim(); // or another var
-  const bgColor = rootStyle.getPropertyValue('--bg-color').trim(); // or another var
   Highcharts.setOptions({
     chart: {
-      backgroundColor: bgColor,
-      plotBackgroundColor: bgColor,
+      backgroundColor: 'transparent',
+      plotBackgroundColor: 'transparent',
       // plotShadow: true,
     }
   });
@@ -125,6 +123,7 @@
   const startInput = document.querySelector('#startDate');
   const endInput = document.querySelector('#endDate');
   flatpickr(startInput, {
+    disableMobile: "true",
     plugins: [new rangePlugin({
       input: endInput
     })],

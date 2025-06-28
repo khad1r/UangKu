@@ -143,9 +143,10 @@
   FORM.tanggal.value = new Date().toISOString().split("T")[0];
   fetch(`<?= BASEURL ?>/Record/args?rekening=true`)
     .then(r => r.ok ? r.json() : Promise.reject(new Error(`Error ${r.status}`)))
-    .then(d => {
+    .then(async d => {
       ARGS = d
-      loadArgs()
+      await loadArgs()
+      formState(null);
     })
     .catch((e) => showAlert(e.message, 'danger'))
   const rekeningSelectFormater = (d) => {
@@ -339,7 +340,7 @@
   }
 
   function formState(e) {
-    let jenis_transaksi = e.target.value ?? FORM.jenis_transaksi.value;
+    let jenis_transaksi = e?.target.value ?? FORM.jenis_transaksi.value;
     // STATE.operasi = jenis_transaksi;
     const state = J_TRANS.map(v => v === jenis_transaksi);
     FORM.switchStateInput(FORM.harta, state[0] || state[1])
@@ -578,7 +579,7 @@
   /* PWA Share handle */
 
   window.addEventListener('DOMContentLoaded', async () => {
-    const file = await getFileFromCache('/pwa-share-handle');
+    const file = await getFileFromCache();
     if (!file) return
     const {
       blob,
@@ -588,12 +589,9 @@
       type: blob.type
     }); // Use original filename
     handleFileUpload({
-      event: {
-        target: {
-          files: [cachedFile]
-        }
+      target: {
+        files: [cachedFile]
       }
     })
   });
-  formState(null);
 </script>

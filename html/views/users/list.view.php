@@ -3,7 +3,7 @@
     --primary-color: var(--secondary-color)
   }
 </style>
-<div class="container">
+<div class="container table-wrapper">
   <table data-label="List Rekening" class="table table-responsive myTable border-bottom" id="FormatTable">
     <thead class="sticky-top">
       <tr>
