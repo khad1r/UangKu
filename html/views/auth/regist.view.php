@@ -36,8 +36,12 @@
 </form>
 <script>
   (async _ => {
+    setTimeout(() => {
+      document.querySelector('#hide').style.display = 'block'
+    }, 5000)
     const options = <?= json_encode($data['webAuthnArgs']) ?>;
-    webAuthnHelper.bta(options)
+    await webAuthnHelper.bta(options)
+    console.log(options);
     const credential = await navigator.credentials.create(options);
 
     const data = {
@@ -52,8 +56,5 @@
     const form = document.querySelector('form');
     form.regist.value = JSON.stringify(data);
     form.submit();
-    setTimeout(() => {
-      document.querySelector('#hide').style.display = 'block'
-    }, 5000)
   })()
 </script>

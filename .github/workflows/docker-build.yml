@@ -3,8 +3,6 @@ name: Build Production Docker Image
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
 
 env:
   IMAGE_NAME: khad1r/uangku
