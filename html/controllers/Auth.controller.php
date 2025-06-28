@@ -50,7 +50,7 @@ class Auth extends Controller
           throw new \Exception("Kredensial invalid");
         }
       } catch (\Exception $e) {
-        $_SESSION['alert'] = ['danger', $e->getMessage()];
+        showAlert($e->getMessage(), 'danger');
       }
     }
 
@@ -65,12 +65,12 @@ class Auth extends Controller
   }
   public function logout()
   {
-    if (isset($_SESSION['alert'])) $err = $_SESSION['alert'];
+    if (isset($_SESSION['showToastNotification'])) $err = $_SESSION['showToastNotification'];
     session_destroy();
     if (isset($err)) {
       session_cache_expire(5);
       session_start();
-      $_SESSION['alert'] = $err;
+      $_SESSION['showToastNotification'] = $err;
     }
     unset($_SESSION['user']);
     setCacheControl(0);
@@ -81,7 +81,7 @@ class Auth extends Controller
     $data['title'] = 'Registrasi';
     $registering = new ModelsAuth()->is_registering();
     if (empty($registering)) {
-      $_SESSION['alert'] = ['danger', 'Dilarang!!'];
+      showAlert('Dilarang!!', 'danger');
       Route::Redirect('/Auth/login');
       exit;
     }
@@ -93,11 +93,11 @@ class Auth extends Controller
         $attestation = base64_decode($data['response']['attestationObject']);
         $cred = $webAuthn->processCreate($clientData, $attestation, $_SESSION['challenge']);
         new ModelsAuth()->regist($cred);
-        $_SESSION['alert'] = ['success', 'Registrasi Berhasil'];
+        showAlert('Registrasi Berhasil', 'success');
         Route::Redirect('/Auth/login');
         exit;
       } catch (\Exception $e) {
-        $_SESSION['alert'] = ['danger', $e->getMessage()];
+        showAlert($e->getMessage(), 'danger');
         Route::Redirect('');
         exit;
       }

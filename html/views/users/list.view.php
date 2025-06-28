@@ -3,7 +3,7 @@
     --primary-color: var(--secondary-color)
   }
 </style>
-<div class="container">
+<div class="container table-wrapper">
   <table data-label="List Rekening" class="table table-responsive myTable border-bottom" id="FormatTable">
     <thead class="sticky-top">
       <tr>
@@ -106,7 +106,7 @@
           errorMessage = 'Terjadi kesalahan pada server.<br><small>Silakan coba lagi nanti.</small>';
         }
         if (DT_TABLE.rows().data().toArray().length === 0) {}
-        showAlert('danger', errorMessage)
+        showAlert(errorMessage, 'danger');
         loadingPage.style.display = "none";
       }
     },

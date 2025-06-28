@@ -10,7 +10,6 @@
   <main>
     <?php $Controller->view('components/alert', $data); ?>
     <?php if (isset($data['top-left-view'])) $Controller->view($data['top-left-view'], $data) ?>
-    <?php $Controller->view('components/header', $data) ?>
     <!-- <div class="container">
       <div class="row">
         <div class="col-lg"></div>
@@ -19,8 +18,8 @@
       </div>
     </div> -->
     <?php $Controller->view($data['view'], $data); ?>
-    <?php if (isset($data['right-bottom-view'])) $Controller->view($data['right-bottom-view'], $data) ?>
   </main>
+  <?php if (isset($data['right-bottom-view'])) $Controller->view($data['right-bottom-view'], $data) ?>
   <?php $Controller->view('templates/footer', $data); ?>
 </body>
 

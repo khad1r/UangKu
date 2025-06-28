@@ -143,11 +143,12 @@
   FORM.tanggal.value = new Date().toISOString().split("T")[0];
   fetch(`<?= BASEURL ?>/Record/args?rekening=true`)
     .then(r => r.ok ? r.json() : Promise.reject(new Error(`Error ${r.status}`)))
-    .then(d => {
+    .then(async d => {
       ARGS = d
-      loadArgs()
+      await loadArgs()
+      formState(null);
     })
-    .catch((e) => showAlert('danger', e.message))
+    .catch((e) => showAlert(e.message, 'danger'))
   const rekeningSelectFormater = (d) => {
     let option = {
       text: `${d.nama}`,
@@ -255,17 +256,17 @@
       setTimeout(() => e.target.SlimSelect.setSelected(''), 0);
     }
     if (masukVal && sumberVal && masukVal === sumberVal) {
-      showAlert('warning', 'Tidak bisa pindah buku sama rekening');
+      showAlert('Tidak bisa pindah buku sama rekening', 'warning');
       resetSlimSelect(e);
       return false;
     }
     if (masukRek?.harta || sumberRek?.harta) {
-      showAlert('warning', 'Rekening Aset Harta tidak boleh langsung pindah buku');
+      showAlert('Rekening Aset Harta tidak boleh langsung pindah buku', 'warning');
       resetSlimSelect(e);
       return false;
     }
     if (masukRek?.isAsing && sumberRek?.isAsing) {
-      showAlert('warning', 'Tidak bisa pindah buku antar nominal asing');
+      showAlert('Tidak bisa pindah buku antar nominal asing', 'warning');
       resetSlimSelect(e);
       return false;
     }
@@ -338,6 +339,21 @@
     }
   }
 
+  function formState(e) {
+    let jenis_transaksi = e?.target.value ?? FORM.jenis_transaksi.value;
+    // STATE.operasi = jenis_transaksi;
+    const state = J_TRANS.map(v => v === jenis_transaksi);
+    FORM.switchStateInput(FORM.harta, state[0] || state[1])
+    FORM.harta.switchState((state[0] || state[1]) && FORM.harta.checked)
+    FORM.rutin.switchState((state[0] || state[1]) && FORM.rutin.checked)
+    if (!(state[0] || state[2])) FORM.rekening_sumber.SlimSelect.setSelected()
+    FORM.switchStateInput(FORM.rekening_sumber, state[0] || state[2])
+    if (!state[1] || state[2]) FORM.rekening_masuk.SlimSelect.setSelected()
+    FORM.switchStateInput(FORM.rekening_masuk, state[1] || state[2])
+    FORM.switchStateInput(FORM.rutin, state[0] || state[1])
+    rekening_sumber_akhir.innerHTML = ''
+    rekening_masuk_akhir.innerHTML = ''
+  }
   FORM.rekening_sumber.addEventListener('change', rekeningSelectEvent)
   FORM.rekening_masuk.addEventListener('change', rekeningSelectEvent)
   FORM.switchStateInput = (element, state = null) => {
@@ -355,21 +371,7 @@
       setTimeout(() => element.SlimSelect.setSelected(''), 0);
   }
   /* Modify state by  */
-  FORM.jenis_transaksi.addEventListener('change', (e) => {
-    let jenis_transaksi = e.target.value;
-    // STATE.operasi = jenis_transaksi;
-    const state = J_TRANS.map(v => v === jenis_transaksi);
-    FORM.switchStateInput(FORM.harta, state[0] || state[1])
-    FORM.harta.switchState((state[0] || state[1]) && FORM.harta.checked)
-    FORM.rutin.switchState((state[0] || state[1]) && FORM.rutin.checked)
-    if (!(state[0] || state[2])) FORM.rekening_sumber.SlimSelect.setSelected()
-    FORM.switchStateInput(FORM.rekening_sumber, state[0] || state[2])
-    if (!state[1] || state[2]) FORM.rekening_masuk.SlimSelect.setSelected()
-    FORM.switchStateInput(FORM.rekening_masuk, state[1] || state[2])
-    FORM.switchStateInput(FORM.rutin, state[0] || state[1])
-    rekening_sumber_akhir.innerHTML = ''
-    rekening_masuk_akhir.innerHTML = ''
-  })
+  FORM.jenis_transaksi.addEventListener('change', formState)
   FORM.harta.State = FORM.harta.checked;
   FORM.harta.switchState = (state = !FORM.harta.State) => {
     if (state === FORM.harta.State) return;
@@ -491,7 +493,7 @@
       };
       img.src = URL.createObjectURL(file);
     } else {
-      return showAlert('warning', "Unsupported file type: " + file.type);
+      return showAlert("Unsupported file type: " + file.type, 'warning');
     }
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(file);
@@ -532,7 +534,7 @@
           resolve(newOption)
         })
         .catch((e) => {
-          showAlert('danger', e.message)
+          showAlert(e.message, 'danger');
           return reject('Error')
         })
     })
@@ -567,7 +569,7 @@
           resolve(newOption)
         })
         .catch((e) => {
-          showAlert('danger', e.message)
+          showAlert(e.message, 'danger');
           return reject('Error')
         })
     })
@@ -577,7 +579,7 @@
   /* PWA Share handle */
 
   window.addEventListener('DOMContentLoaded', async () => {
-    const file = await getFileFromCache('/pwa-share-handle');
+    const file = await getFileFromCache();
     if (!file) return
     const {
       blob,
@@ -587,10 +589,8 @@
       type: blob.type
     }); // Use original filename
     handleFileUpload({
-      event: {
-        target: {
-          files: [cachedFile]
-        }
+      target: {
+        files: [cachedFile]
       }
     })
   });

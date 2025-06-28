@@ -5,7 +5,7 @@
   "description": "Catat Transaksi dan Cashflow",
   "start_url": "/",
   "scope": "/",
-  "theme_color": "#ffffff",
+  "theme_color": "#04a5e5",
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "natural",
@@ -121,7 +121,7 @@
       "url": "link",
       "files": [
         {
-          "name": "bukti-transaksi",
+          "name": "attachment",
           "accept": ["image/*", "application/pdf"]
         }
       ]

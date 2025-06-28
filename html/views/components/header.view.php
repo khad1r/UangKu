@@ -7,6 +7,11 @@
 
     img {
       width: 15dvw;
+
+      @media (orientation: portrait) {
+        width: 40dvw;
+      }
+
       /* height: 10dvh; */
     }
   }

@@ -12,7 +12,7 @@ class Rekening extends Controller
   {
     parent::__construct();
     if (!CheckUser()) {
-      $_SESSION['alert'] = array('warning', 'Akses Ditolak');
+      showAlert('Akses Ditolak', 'warning');
       Route::Redirect('/Auth/Logout');
       exit;
     }
@@ -23,6 +23,7 @@ class Rekening extends Controller
     $data['subTitle'] = '<i class="fas fa-wallet"></i> <strong><u>Rekening</u></strong> <i class="fas fa-money-bill-wave"></i>';
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'rekening/list';
+    $data['top-left-view'] = 'components/header';
     $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }
@@ -51,18 +52,19 @@ class Rekening extends Controller
           'keterangan'    => $_POST['keterangan'] ?? null,
         ];
         if (new ModelsRekening()->insertRekening($insert) > 0) {
-          $_SESSION['alert'] = ['success', "Penambahan Rekening Berhasil"];
+          showAlert("Penambahan Rekening Berhasil", 'success');
           Route::Redirect('/Rekening');
           return;
         } else {
-          $_SESSION['alert'] = ['danger', 'Operasi Gagal'];
+          showAlert('Operasi Gagal', 'danger');
         }
       } catch (\Exception $e) {
-        $_SESSION['alert'] = ['danger', $e->getMessage()];
+        showAlert($e->getMessage(), 'danger');
       }
     }
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'rekening/add';
+    $data['top-left-view'] = 'components/header';
     $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }
@@ -74,7 +76,7 @@ class Rekening extends Controller
     $model = new ModelsRekening();
     $oldData = $model->getById($id_rekening);
     if (empty($oldData)) {
-      $_SESSION['alert'] = array('danger', 'Data tidak ditemukan');
+      showAlert('Data tidak ditemukan', 'danger');
       Route::Redirect('/Rekening');
       exit;
     }
@@ -84,7 +86,7 @@ class Rekening extends Controller
         if ($_POST['id'] === 'DELETE') {
           /* Might Not Needed so no Rekening being deleted */
           // if ($model->deleteRekening($id_rekening) > 0) {
-          //   $_SESSION['alert'] = ['warning', "Penghapusan Rekening Berhasil"];
+          //   showAlert("Penghapusan Rekening Berhasil", 'warning');
           //   Route::Redirect('/Rekening');
           //   return;
           // }
@@ -106,19 +108,20 @@ class Rekening extends Controller
             'keterangan'    => $_POST['keterangan'] ?? null,
           ];
           if ($model->updateRekening($update, ['id' => $id_rekening]) > 0) {
-            $_SESSION['alert'] = ['success', "Perubahan Rekening Berhasil"];
+            showAlert("Perubahan Rekening Berhasil", 'success');
             Route::Redirect('/Rekening');
             return;
           }
         }
-        $_SESSION['alert'] = ['danger', 'Operasi Gagal'];
+        showAlert('Operasi Gagal', 'danger');
       } catch (\Exception $e) {
-        $_SESSION['alert'] = ['danger', $e->getMessage()];
+        showAlert($e->getMessage(), 'danger');
       }
     }
     $data['oldData'] = $oldData;
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'rekening/edit';
+    $data['top-left-view'] = 'components/header';
     $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }

@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
     format()
   })
 })
-function showAlert(type, message) {
+function showAlert(message, type = 'primary') {
   const toastTemplate = document.querySelector("#toast-template");
   const toast = toastTemplate.cloneNode(true);
 
@@ -51,6 +51,28 @@ function showAlert(type, message) {
   toast.querySelector('.toast-body>span').innerHTML = message;
 
   document.querySelector('.toast-container').prepend(toast)
+  const bsToast = bootstrap.Toast.getOrCreateInstance(toast)
+  // Show the toast
+  bsToast.show();
+  // setTimeout(() => bsToast.hide(), 5000)
+}
+function showAlert(message, type = 'primary', title = null) {
+  const ref = {
+    'warning': 'Perhatian !',
+    'success': 'Berhasil',
+    'danger': 'Peringatan !!',
+  }
+  const toastTemplate = document.querySelector("#toast-template");
+  const toast = toastTemplate.cloneNode(true);
+  toast.id = ''; // Clear the ID for the new toast
+  // Add the appropriate class for the alert type
+  toast.classList.add(`border-${type}`);
+  toast.querySelector('.toast-header').classList.add(`bg-${type}`);
+  // // Set the message
+  toast.querySelector('.toast-body').innerHTML = message;
+  toast.querySelector('strong').innerHTML = title ?? ref[type] ?? 'Pemberitahuan';
+
+  document.querySelector('#toast-container').prepend(toast)
   const bsToast = bootstrap.Toast.getOrCreateInstance(toast)
   // Show the toast
   bsToast.show();
@@ -143,22 +165,29 @@ const getServiceWorker = async () => {
     return;
   };
 }
-async function getFileFromCache(cachedName) {
-  const cache = await caches.open('cached-files');
-  const response = await cache.match(cachedName);
+async function getFileFromCache() {
+  // const params = new URLSearchParams(window.location.search);
+  // if (!url) return null
+  const url = 'pwa-share-handle'; // e.g. "/cached-share/1722060300000-receipt.jpg"
+  const cache = await caches.open('shared-files');
+  const response = await cache.match(url);
   if (!response) return null;
-  const {
-    file,
-    fileName,
-    type
-  } = await response.json();
-  file = {
-    blob: new Blob([file], {
-      type
-    }),
-    fileName: fileName
+  await cache.delete(url); // Clear cache
+  return {
+    blob: await response.blob(),
+    fileName: await response.headers.get('File-name'),
   };
-  await caches.delete(cachedName); // Clear cache
-  return file
+  // const {
+  //   raw,
+  //   fileName,
+  //   type
+  // } = await response.json();
+  // file = {
+  //   blob: new Blob([raw], {
+  //     type
+  //   }),
+  //   fileName: fileName
+  // };
+  // return file
 }
 // getServiceWorker()
