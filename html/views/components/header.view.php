@@ -18,7 +18,7 @@
 </style>
 <div class="container">
   <div class="header">
-    <img src="<?= BASEURL ?>/assets/img/Logo.png" class="">
+    <img src="<?= BASEURL ?>/assets/img/logo.png" class="">
     <span>
       <h4 class="text-center text-secondary fw-bold"><?= $data['subTitle'] ?? '' ?></h4>
     </span>

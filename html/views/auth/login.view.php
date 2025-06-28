@@ -84,7 +84,7 @@
 </style>
 <div class="wrapper">
   <div class="main-logo">
-    <img src="<?= BASEURL ?>/assets/img/Logo.png" class="">
+    <img src="<?= BASEURL ?>/assets/img/logo.png" class="">
   </div>
   <div class="body px-3 fixed-bottom">
     <form method="post" name="login">
