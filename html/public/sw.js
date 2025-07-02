@@ -1,6 +1,6 @@
 const CHANNEL = new BroadcastChannel('backgroundJob');
 /* CACHE */
-const STATIC = 'static-v1.0'
+const STATIC = 'static-v1.1'
 const CACHEMAXAGE = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 const preCache = async () => {
   try {
