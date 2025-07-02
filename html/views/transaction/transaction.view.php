@@ -388,7 +388,7 @@
         'render': (item, type, data, meta) => {
           return /* HTML */ `
             <div class="small w-lg-50 truncate-text"><span class="fw-bold text-warning">${data.attachment? '<i class="fas fa-paperclip"></i>' : ''}</span>${data.keterangan}</div>
-            <div class="small w-lg-50 truncate-text text-secondary">${data.review}</div>
+            <div class="small w-lg-50 truncate-text text-secondary">${data.review ?? ''}</div>
             `
         }
       },
@@ -460,40 +460,42 @@
     // FORM.review.textContent = row.review;
     FORM.review.value = row.review;
     FORM.id.value = row.id
-    const loadingTask = pdfjsLib.getDocument(row.attachment);
     const canvas = document.querySelector('#preview-canvas');
     const ctx = canvas.getContext('2d');
     canvas.style.display = 'none';
-    loadingTask.promise.then(function(pdf) {
-      pdf.getPage(1).then(function(page) {
-        const scale = 1.5;
-        const viewport = page.getViewport({
-          scale: scale
+    if (row.attachment) {
+      const loadingTask = pdfjsLib.getDocument(row.attachment);
+      loadingTask.promise.then(function(pdf) {
+        pdf.getPage(1).then(function(page) {
+          const scale = 1.5;
+          const viewport = page.getViewport({
+            scale: scale
+          });
+
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+          };
+          page.render(renderContext);
+          canvas.style.display = 'block';
         });
+      }).catch(e => {
+        const img = new Image();
+        img.onload = () => {
+          const maxWidth = 600;
+          const scale = Math.min(maxWidth / img.width, 1);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.style.display = "block";
 
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: viewport
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         };
-        page.render(renderContext);
-        canvas.style.display = 'block';
+        img.src = row.attachment;
       });
-    }).catch(e => {
-      const img = new Image();
-      img.onload = () => {
-        const maxWidth = 600;
-        const scale = Math.min(maxWidth / img.width, 1);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        canvas.style.display = "block";
-
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      };
-      img.src = row.attachment;
-    });
+    }
 
     MODAL.querySelector('a#attachment').href = row.attachment;
     MODAL.showModal()
