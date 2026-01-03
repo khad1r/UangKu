@@ -129,7 +129,7 @@
     <div id="ss-dropdown"></div>
   </form>
 </div>
-<script src="https://unpkg.com/slim-select@latest/dist/slimselect.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/slim-select@latest/dist/slimselect.js" crossorigin="anonymous"></script>
 <link href="https://unpkg.com/slim-select@latest/dist/slimselect.css" rel="stylesheet" crossorigin="anonymous">
 </link>
 <script>
