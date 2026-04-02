@@ -70,6 +70,9 @@
       tgl_dibuat,
       tgl_ditutup,
     } = FORM
+    await showAlert('Memproses....', 'warning')
+    FORM.record.disabled = true;
+    FORM.record.value = "Memproses...";
     tgl_dibuat.value = tgl_dibuat.dataset.raw
     tgl_ditutup.value = tgl_ditutup.dataset.raw
     e.currentTarget.submit()

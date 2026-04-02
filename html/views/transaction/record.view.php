@@ -129,7 +129,7 @@
     <div id="ss-dropdown"></div>
   </form>
 </div>
-<script src="https://unpkg.com/slim-select@latest/dist/slimselect.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/slim-select@latest/dist/slimselect.js" crossorigin="anonymous"></script>
 <link href="https://unpkg.com/slim-select@latest/dist/slimselect.css" rel="stylesheet" crossorigin="anonymous">
 </link>
 <script>
@@ -401,33 +401,50 @@
   FORM.kuantitas.addEventListener('change', function(e) {
     hitung()
   })
-  FORM.nominal.addEventListener('change', function(e) {
-    // e.currentTarget.nominal = e.currentTarget.value.replace(/\./g, "")
-    hitung()
-  })
-  FORM.nominal.addEventListener('keyup', function(e) {
-    let v = e.target.value.replace(/\D/g, '');
-    e.target.value = v && +v ? (+v).toLocaleString('id') : '';
-  });
-  FORM.nominal_asing.addEventListener('change', function(e) {
-    // e.currentTarget.nominal = e.currentTarget.value.replace(/\./g, "")
-    hitung()
-  })
-  FORM.nominal_asing.addEventListener('keyup', function(e) {
-    let v = e.target.value.replace(/\D/g, '');
-    e.target.value = v && +v ? (+v).toLocaleString('id') : '';
+  // Helper to format as Indonesian Currency/Number
+  const formatID = (val) => {
+    if (!val) return '';
+    // Split parts to handle decimals separately
+    let parts = val.toString().replace(/[^0-9,]/g, '').split(',');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return parts.length > 1 ? parts[0] + ',' + parts[1].substring(0, 4) : parts[0];
+  };
+  [FORM.nominal, FORM.nominal_asing].forEach(el => {
+    el.addEventListener('change', () => hitung());
+    el.addEventListener('keyup', function(e) {
+      // Allow digits and a single comma
+      let v = e.target.value.replace(/[^0-9,]/g, '');
+
+      // Prevent multiple commas
+      const commaCount = (v.match(/,/g) || []).length;
+      if (commaCount > 1) {
+        v = v.lastIndexOf(',') !== -1 ? v.substring(0, v.lastIndexOf(',')) : v;
+      }
+
+      e.target.value = formatID(v);
+    });
   });
   FORM.addEventListener('submit', async e => {
     await e.preventDefault()
+    const processValue = (input) => {
+      // Convert Indonesian format (1.250,50) to standard Float (1250.50)
+      let raw = input.value.replace(/\./g, '').replace(',', '.');
+      return parseFloat(raw) || 0;
+    };
+    await showAlert('Memproses....', 'warning')
+    FORM.record.disabled = true;
+    FORM.record.value = "Memproses...";
     const {
       nominal,
       nominal_asing,
       tanggal
     } = FORM
-    nominal.value = +nominal.value.replace(/\./g, "")
-    nominal_asing.value = +nominal_asing.value.replace(/\./g, "")
-    tanggal.value = tanggal.dataset.raw
-    e.currentTarget.submit()
+    // Set the values to raw floats for backend processing
+    nominal.value = processValue(nominal);
+    nominal_asing.value = processValue(nominal_asing);
+    tanggal.value = tanggal.dataset.raw;
+
+    e.currentTarget.submit();
   })
   const formBreakpoint = window.matchMedia('(min-width: 768px)');
   const moveSummary = () => {
