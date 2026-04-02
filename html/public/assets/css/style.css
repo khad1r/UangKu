@@ -771,7 +771,7 @@ details {
       color: inherit;
       border: 4px var(--primary-color);
       border-style: none none solid none;
-      background-color: var(--bg-color);
+      /* background-color: var(--bg-color); */
     }
 
     .form-control {
@@ -866,6 +866,8 @@ details {
     display: flex;
     justify-content: center;
     nav {
+      font-size: 0.75em;
+      position: relative;
       .dt-paging-button {
         /* &:is(button) {
           color: var(--white-color);
@@ -944,4 +946,12 @@ details {
       }
     }
   }
+}
+.highcharts-text-outline {
+  display: none !important;
+}
+
+.highcharts-label text,
+.highcharts-data-label text {
+  text-shadow: none !important;
 }
