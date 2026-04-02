@@ -42,14 +42,14 @@ class Rekening extends Controller
         sanitize_input($_POST);
         validate_required_input($_POST, $required_field);
         $insert = [
-          'nama'          => $_POST['nama_rekening'],
-          'no_asli'       => $_POST['no_asli'] ?? null,
-          'nominal_asing' => $_POST['nominal_asing'] ?? null,
-          'tgl_dibuat'    => $_POST['tgl_dibuat'],
-          'aktif'         => $_POST['aktif'] ?? true,
-          'harta'         => $_POST['harta'] ?? true,
-          'tgl_ditutup'   => $_POST['aktif'] ? $_POST['tgl_ditutup'] : null,
-          'keterangan'    => $_POST['keterangan'] ?? null,
+            'nama'          => $_POST['nama_rekening'],
+            'no_asli'       => !empty($_POST['no_asli']) ? $_POST['no_asli'] : null,
+            'nominal_asing' => !empty($_POST['nominal_asing']) ? $_POST['nominal_asing'] : null,
+            'tgl_dibuat'    => $_POST['tgl_dibuat'],
+            'aktif'         => $_POST['aktif'] ?? true,
+            'harta'         => $_POST['harta'] ?? true,
+            'tgl_ditutup'   => $_POST['aktif'] ? $_POST['tgl_ditutup'] : null,
+            'keterangan'    => !empty($_POST['keterangan']) ? $_POST['keterangan'] : null,
         ];
         if (new ModelsRekening()->insertRekening($insert) > 0) {
           showAlert("Penambahan Rekening Berhasil", 'success');

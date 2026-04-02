@@ -78,7 +78,7 @@
   startInput.value = toDateShortMonth(dateRange[0]);
   endInput.value = toDateShortMonth(dateRange[1]); // use start date if end is not selected
   const DT_TABLE = new DataTable(TABLE, {
-    "dom": "ftlp",
+    "dom": "ftpl",
     "language": {
       "lengthMenu": "Per _MENU_ Data",
       "zeroRecords": "Tidak ada rekening",
