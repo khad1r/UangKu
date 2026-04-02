@@ -136,7 +136,8 @@ body {
   &:has(nav) {
     footer {
       div {
-        box-shadow: 0px -6px 12px color-mix(in srgb, var(--black-color) 30%, transparent);
+        box-shadow: 0px -6px 12px
+          color-mix(in srgb, var(--black-color) 30%, transparent);
       }
     }
   }
@@ -247,7 +248,7 @@ a {
   }
   .toast {
     font-size: 1.3em;
-    margin-bottom: 10px;
+    margin-top: 10px;
     /* margin: left; */
     min-width: 25vw;
     --bs-toast-spacing: 0.75em;
@@ -570,7 +571,9 @@ details {
       top: -6%;
       opacity: 1;
       visibility: 1;
-      transition: visibility 0.5s, opacity 0.5s;
+      transition:
+        visibility 0.5s,
+        opacity 0.5s;
     }
     .input-group {
       .input-group-text {
@@ -620,7 +623,8 @@ details {
     }
     &:has(.form-control:focus),
     &:has(input:focus) {
-      box-shadow: 0 -7px 4px -4px
+      box-shadow:
+        0 -7px 4px -4px
           color-mix(in srgb, var(--primary-color) 30%, transparent),
         0 7px 4px -4px color-mix(in srgb, var(--primary-color) 30%, transparent);
     }
@@ -680,7 +684,8 @@ details {
       }
     }
     &:has(input:focus) {
-      box-shadow: 0 -7px 4px -4px
+      box-shadow:
+        0 -7px 4px -4px
           color-mix(in srgb, var(--primary-color) 30%, transparent),
         0 7px 4px -4px color-mix(in srgb, var(--primary-color) 30%, transparent);
     }

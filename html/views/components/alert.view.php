@@ -12,7 +12,7 @@
   </div> -->
 
   <div id="toast-container">
-    <div id="toast-template" class="toast hide border" role="alert" aria-live="assertive" aria-atomic="true" data-delay="5000">
+    <div id="toast-template" class="toast hide border" role="alert" aria-live="assertive" aria-atomic="true" data-delay="5000" data-bs-dismiss="toast">
       <div class="toast-header">
         <strong class="mr-auto text-white">Pemberitahuan</strong>
         <button type="button" class="close text-white" data-dismiss="toast" aria-label="Close">
