@@ -189,7 +189,7 @@ class Transaksi extends Database
         'formatter' => fn($d, $row) => floatval($d)
       ],
       [
-        'db' => "coalesce(rs_mata_uang,rm_mata_uang)",
+        'db' => "COALESCE(NULLIF(rs_mata_uang, ''), NULLIF(rm_mata_uang, ''))",
         'dt' => 'mata_uang',
       ],
       [

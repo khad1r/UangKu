@@ -24,7 +24,7 @@ CREATE TABLE REKENING (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   nama TEXT NOT NULL,
   no_asli TEXT,
-  nominal_asing TEXT,
+  nominal_asing TEXT DEFAULT '',
   harta BOOLEAN NOT NULL DEFAULT FALSE,
   tgl_dibuat TEXT,
   tgl_ditutup TEXT,
