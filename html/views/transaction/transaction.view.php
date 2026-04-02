@@ -234,7 +234,7 @@
     document.querySelector('#text-saldo').innerHTML = 'Rp.&nbsp;' + (+data.saldo).toLocaleString('id')
   }
   const DT_TABLE = new DataTable(TABLE, {
-    "dom": "ftlp",
+    "dom": "ftpl",
     "language": {
       "lengthMenu": "Per _MENU_ Data",
       "zeroRecords": "Tidak ada transaksi",

@@ -53,7 +53,7 @@
   })
   const TABLE = document.querySelector('#FormatTable');
   const DT_TABLE = new DataTable(TABLE, {
-    "dom": "ftlp",
+    "dom": "ftpl",
     "language": {
       "lengthMenu": "Per _MENU_ Data",
       "zeroRecords": "Tidak ada kredensial",
