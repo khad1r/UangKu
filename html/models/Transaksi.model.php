@@ -149,7 +149,7 @@ class Transaksi extends Database
       [
         'db' => "penyusutan_bunga",
         'dt' => 'penyusutan_bunga',
-        'formatter' => fn($d, $row) => intval($d)
+        'formatter' => fn($d, $row) => floatval($d)
       ],
       [
         'db' => "rs_nama",
@@ -180,13 +180,13 @@ class Transaksi extends Database
       [
         'db' => "nominal",
         'dt' => 'nominal',
-        'formatter' => fn($d, $row) => intval($d)
+        'formatter' => fn($d, $row) => floatval($d)
       ],
       [
         'db' => "nominal_asing",
         'dbcol' => 'nominal_asing',
         'dt' => 'nominal_asing',
-        'formatter' => fn($d, $row) => intval($d)
+        'formatter' => fn($d, $row) => floatval($d)
       ],
       [
         'db' => "coalesce(rs_mata_uang,rm_mata_uang)",
