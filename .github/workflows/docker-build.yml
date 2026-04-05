@@ -1,4 +1,4 @@
-name: Build Production Docker Image
+name: Build Production Docker Image And Deploy To Cloud RUn
 
 on:
   push:
@@ -7,13 +7,27 @@ on:
 
 env:
   IMAGE_NAME: khad1r/uangku
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: ${{ vars.GC_CR_REGION }}
+  SERVICE_NAME: uangku
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Set Docker tag
+        run: |
+          if [ "${{ github.ref_type }}" == "tag" ]; then
+            echo "DOCKER_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+          else
+            echo "DOCKER_TAG=latest" >> $GITHUB_ENV
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -24,14 +38,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set Docker tag
-        run: |
-          if [ "${{ github.ref_type }}" == "tag" ]; then
-            echo "DOCKER_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
-          else
-            echo "DOCKER_TAG=latest" >> $GITHUB_ENV
-          fi
-
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -39,4 +45,18 @@ jobs:
           file: .docker/Dockerfile.production
           push: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
           tags: ${{ env.IMAGE_NAME }}:${{ env.DOCKER_TAG }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v8
+          platforms: linux/amd64 #,linux/arm64,linux/arm/v7,linux/arm/v8
+
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          # This tells Cloud Run exactly which tag to pull
+          image: docker.io/${{ env.IMAGE_NAME }}:${{ env.DOCKER_TAG }}
