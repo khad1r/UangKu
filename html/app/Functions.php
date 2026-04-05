@@ -1,6 +1,7 @@
 <?php
 function checkUser(...$level)
 {
+  if (!ENABLE_AUTH) return true;
   if (empty($level)) return isset($_SESSION['user']);
   return isset($_SESSION['user']) && in_array($_SESSION['user']['level_user'], $level);
 }

@@ -15,10 +15,11 @@ define('BASEURL', $protocol . $hostname);
 unset($is_https, $protocol, $hostname);
 // define('BASEURL', 'http://localhost');
 define('WEB_TITLE', 'UangKu');
-define('DEFAULT_CONTROLLER', App\Controllers\Auth::class);
 define('USE_SESSION', true);
 define('TRANSFORM_RAW_TO_PHP_POST', true);
 define('IS_PROD', getenv('ENV') !== 'development');
+define('ENABLE_AUTH', getenv('ENABLE_AUTH') ?: true);
+define('DEFAULT_CONTROLLER', ENABLE_AUTH ? App\Controllers\Auth::class : App\Controllers\Transaction::class);
 define('JENIS_TRANSAKSI', ['Pengeluaran', 'Pemasukan', 'Pindah Buku']);
 
 /** app/autoload.php depth for searching classes
