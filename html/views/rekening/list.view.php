@@ -39,11 +39,11 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/rangePlugin.js" crossorigin="anonymous"></script>
-<script src="https://code.highcharts.com/highcharts.js" crossorigin="anonymous"></script>
-<script src="https://code.highcharts.com/modules/treemap.js" crossorigin="anonymous"></script>
-<script src="https://code.highcharts.com/modules/series-label.js" crossorigin="anonymous"></script>
-<script src="https://code.highcharts.com/modules/exporting.js" crossorigin="anonymous"></script>
-<script src="https://code.highcharts.com/modules/accessibility.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11/highcharts.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11/modules/treemap.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11/modules/series-label.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11/modules/exporting.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11/modules/accessibility.js" crossorigin="anonymous"></script>
 <script>
   document.querySelector("#list-tab")?.classList.add("active");
   const TABLE = document.querySelector('#FormatTable');
