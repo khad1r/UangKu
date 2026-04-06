@@ -18,7 +18,7 @@ define('WEB_TITLE', 'UangKu');
 define('USE_SESSION', true);
 define('TRANSFORM_RAW_TO_PHP_POST', true);
 define('IS_PROD', getenv('ENV') !== 'development');
-define('ENABLE_AUTH', getenv('ENABLE_AUTH') ?: true);
+define('ENABLE_AUTH', (getenv('ENABLE_AUTH') ?: 'true') === 'true');
 define('DEFAULT_CONTROLLER', ENABLE_AUTH ? App\Controllers\Auth::class : App\Controllers\Transaction::class);
 define('JENIS_TRANSAKSI', ['Pengeluaran', 'Pemasukan', 'Pindah Buku']);
 
