@@ -95,11 +95,11 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/rangePlugin.js" crossorigin="anonymous"></script>
 <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap" crossorigin="anonymous"></script> -->
-<script src="https://code.highcharts.com/highcharts.js" crossorigin="anonymous"></script>
-<script src="https://code.highcharts.com/modules/treemap.js" crossorigin="anonymous"></script>
-<script src="https://code.highcharts.com/modules/series-label.js" crossorigin="anonymous"></script>
-<script src="https://code.highcharts.com/modules/exporting.js" crossorigin="anonymous"></script>
-<script src="https://code.highcharts.com/modules/accessibility.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11/highcharts.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11/modules/treemap.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11/modules/series-label.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11/modules/exporting.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11/modules/accessibility.js" crossorigin="anonymous"></script>
 
 <script>
   const FORM = document.querySelector('form#form');
@@ -360,11 +360,16 @@
       {
         'title': 'Total',
         'data': function(data, type, dataToSet) {
+          const textColor = {
+            'PENGELUARAN': 'danger',
+            'PEMASUKAN': 'success',
+            'PINDAH BUKU': 'warning'
+          };
           if (data.mata_uang.length > 0) return /* HTML */ `
-            <div class="nominal fw-bold text-primary">${formattedNumber.format(data.nominal_asing*data.kuantitas)},- ${data.mata_uang} <span class="small">(${data.kuantitas} Qty)</span></div>
+            <div class="nominal fw-bold text-${textColor[data.jenis_transaksi]}">${formattedNumber.format(data.nominal_asing*data.kuantitas)},- ${data.mata_uang} <span class="small">(${data.kuantitas} Qty)</span></div>
             <div class="small text-secondary">Rp.&nbsp${formattedNumber.format(data.nominal*data.kuantitas)},-</div>`
           else return /* HTML */ `
-            <div class="nominal fw-bold text-primary">Rp.&nbsp${formattedNumber.format(data.nominal*data.kuantitas)},- <span class="small">(${data.kuantitas} Qty)</span></div>`
+            <div class="nominal fw-bold text-${textColor[data.jenis_transaksi]}">Rp.&nbsp${formattedNumber.format(data.nominal*data.kuantitas)},- <span class="small">(${data.kuantitas} Qty)</span></div>`
         }
       },
       {
@@ -414,14 +419,14 @@
         }).count() > 0) {
         const tooltipRows = TABLE.querySelectorAll('tbody tr');
 
-        tooltipRows.forEach(row => {
+        tooltipRows.forEach(async row => {
           row.setAttribute('data-bs-toggle', 'tooltip');
           row.setAttribute('data-bs-placement', 'bottom');
           row.setAttribute('data-bs-html', 'true');
           row.setAttribute('title', 'Klik 2x untuk membuka');
 
           // Initialize Bootstrap tooltip
-          new bootstrap.Tooltip(row, {
+          await new bootstrap.Tooltip(row, {
             template: /* HTML */ `
               <div class="tooltip" role="tooltip">
                 <div class="arrow"></div>

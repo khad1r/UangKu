@@ -264,7 +264,10 @@ class Transaksi extends Database
   {
     return $this->query(<<<SQL
       SELECT
-        barang as 'name',
+        CASE
+          WHEN kelompok IS NULL OR kelompok = '' THEN 'Lainnya'
+          ELSE kelompok
+        END as 'name',
         SUM(nominal*kuantitas) as 'value',
         CASE WHEN rutin = 1 THEN '#03a9f4aa' ELSE '#f44336aa'
           END as 'color'
