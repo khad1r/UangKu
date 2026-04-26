@@ -27,17 +27,24 @@ class Transaksi extends Database
   public function getAll()
   {
     $rows = $this
-      ->query("SELECT * FROM {$this->table}")
+      ->query("SELECT
+                    t.*,
+                    rs.nama AS nama_rekening_sumber,
+                    rm.nama AS nama_rekening_masuk
+                FROM TRANSAKSI t
+                LEFT JOIN REKENING rs ON t.rekening_sumber = rs.id
+                LEFT JOIN REKENING rm ON t.rekening_masuk = rm.id;")
       ->resultSet();
-    return array_map(
-      fn($row) =>
-      [
-        ...$row,
-        'aktif' => isset($row['rutin']) ? $row['rutin'] == 1 : true,
-        'harta' => isset($row['harta']) ? $row['harta'] == 1 : false,
-      ],
-      $rows
-    );
+    // return array_map(
+    //   fn($row) =>
+    //   [
+    //     ...$row,
+    //     'aktif' => isset($row['rutin']) ? $row['rutin'] == 1 : true,
+    //     'harta' => isset($row['harta']) ? $row['harta'] == 1 : false,
+    //   ],
+    //   $rows
+    // );
+    return $rows;
   }
   public function searchKelompok(string $search)
   {
@@ -125,6 +132,13 @@ class Transaksi extends Database
     $table .= "LEFT JOIN (SELECT id rs_id, nama rs_nama, nominal_asing rs_mata_uang, harta rs_aset FROM REKENING) rs ON {$this->table}.rekening_sumber = rs_id ";
     $table .= "LEFT JOIN (SELECT id rm_id, nama rm_nama, nominal_asing rm_mata_uang, harta rm_aset FROM REKENING) rm ON {$this->table}.rekening_masuk = rm_id ";
     $where = " tanggal BETWEEN {$this->conn->quote($data['startDate'] ?? date('Y-m-01'))} AND {$this->conn->quote($data['endDate'] ?? date('Y-m-d'))} ";
+    if (isset($data['id_rekening'])) {
+      $where .= " AND (rekening_sumber = {$this->conn->quote($data['id_rekening'])} OR rekening_masuk = {$this->conn->quote($data['id_rekening'])}) ";
+    }
+    if ($data["columns"][7]["search"]["value"] === "Lainnya") {
+      $where .= " AND (kelompok IS NULL OR kelompok = '') ";
+      $data["columns"][7]["search"]["value"] = '';
+    }
     $columns = [
       [
         'db' => "printf('%04d', id)",
@@ -202,7 +216,9 @@ class Transaksi extends Database
         'dt' => 'kuantitas',
       ],
       [
+        // 'db' => "case when kelompok is null or kelompok = '' then 'Lainnya' else kelompok end",
         'db' => "kelompok",
+        // 'dbcol' => "kelompok",
         'dt' => 'kelompok',
       ],
       [
@@ -260,6 +276,38 @@ class Transaksi extends Database
       ->bind('endDate', $endDate)
       ->resultSet();
   }
+  public function rekeningCashFlowGraph($startDate, $endDate, $id_rekening)
+  {
+    return $this
+      ->query(<<<SQL
+        SELECT
+          tanggal,
+          rutin,
+          CASE
+            WHEN rekening_sumber = :id_rekening THEN 'Pengeluaran'
+            WHEN rekening_masuk = :id_rekening THEN 'Pemasukan'
+          END as jenis_transaksi,
+        SUM(nominal*kuantitas) trans,
+        SUM(nominal_asing*kuantitas) trans_asing
+        FROM {$this->table}
+        WHERE
+          harta = 0
+          AND tanggal BETWEEN :startDate AND :endDate
+          AND (
+            rekening_sumber = :id_rekening OR
+            rekening_masuk = :id_rekening
+          )
+          GROUP BY tanggal, rutin,
+            CASE
+              WHEN rekening_sumber = :id_rekening THEN 'Pengeluaran'
+              WHEN rekening_masuk = :id_rekening THEN 'Pemasukan'
+            END
+      SQL)
+      ->bind('startDate', $startDate)
+      ->bind('endDate', $endDate)
+      ->bind('id_rekening', $id_rekening)
+      ->resultSet();
+  }
   public function compsGraph($startDate, $endDate)
   {
     return $this->query(<<<SQL
@@ -282,4 +330,34 @@ class Transaksi extends Database
       ->bind('endDate', $endDate)
       ->resultSet();
   }
+  public function rekeningCompsGraph($startDate, $endDate, $id_rekening)
+  {
+    return $this->query(<<<SQL
+      SELECT
+        CASE
+          WHEN kelompok IS NULL OR kelompok = '' THEN 'Lainnya'
+          ELSE kelompok
+        END as name,
+        SUM(nominal*kuantitas) as value,
+        CASE WHEN rutin = 1 THEN '#03a9f4aa' ELSE '#f44336aa'
+          END as color
+      FROM {$this->table}
+      WHERE
+        harta = 0
+        AND (jenis_transaksi = 'Pengeluaran'
+          OR (jenis_transaksi = 'Pindah Buku' AND rekening_sumber = :id_rekening)
+        )
+        AND tanggal BETWEEN :startDate AND :endDate
+        AND (
+          rekening_sumber = :id_rekening OR
+          rekening_masuk = :id_rekening
+        )
+      GROUP BY kelompok, rutin
+    SQL)
+      ->bind('startDate', $startDate)
+      ->bind('endDate', $endDate)
+      ->bind('id_rekening', $id_rekening)
+      ->resultSet();
+  }
+  public function importFromCSV($csv) {}
 }

@@ -155,28 +155,29 @@ class SSP
    */
   static function filter($request, $columns, &$bindings)
   {
-    $globalSearch = array();
-    $columnSearch = array();
+    $globalSearch = [];
+    $columnSearch = [];
     $dtColumns = self::pluck($columns, 'dt');
 
     if (isset($request['search']) && $request['search']['value'] != '') {
       $str = $request['search']['value'];
 
-      for ($i = 0, $ien = count($request['columns']); $i < $ien; $i++) {
+      for ($i = 0, $ien = \count($request['columns']); $i < $ien; $i++) {
         $requestColumn = $request['columns'][$i];
         $columnIdx = array_search($requestColumn['data'], $dtColumns);
         $column = $columns[$columnIdx];
 
         if ($requestColumn['searchable'] == 'true') {
+          $dbCol = isset($column['dbcol']) ? $column['dbcol'] : $column['db'];
           $binding = self::bind($bindings, '%' . strtolower($str) . '%', \PDO::PARAM_STR);
-          $globalSearch[] = "LOWER({$column['db']}) LIKE $binding";
+          $globalSearch[] = "LOWER({$dbCol}) LIKE {$binding}";
         }
       }
     }
 
     // Individual column filtering
     if (isset($request['columns'])) {
-      for ($i = 0, $ien = count($request['columns']); $i < $ien; $i++) {
+      for ($i = 0, $ien = \count($request['columns']); $i < $ien; $i++) {
         $requestColumn = $request['columns'][$i];
         $columnIdx = array_search($requestColumn['data'], $dtColumns);
         $column = $columns[$columnIdx];
@@ -187,8 +188,9 @@ class SSP
           $requestColumn['searchable'] == 'true' &&
           $str != ''
         ) {
-          $binding = self::bind($bindings, '%' . $str . '%', \PDO::PARAM_STR);
-          $columnSearch[] = "`" . $column['db'] . "` LIKE " . $binding;
+          $dbCol = isset($column['dbcol']) ? $column['dbcol'] : $column['db'];
+          $binding = self::bind($bindings, "%{$str}%", \PDO::PARAM_STR);
+          $columnSearch[] = "`{$dbCol}` LIKE {$binding}";
         }
       }
     }

@@ -48,6 +48,7 @@ class Rekening extends Controller
           'tgl_dibuat'    => $_POST['tgl_dibuat'],
           'aktif'         => $_POST['aktif'] ?? true,
           'harta'         => $_POST['harta'] ?? true,
+          'jenis_uang'    => $_POST['jenis_uang'] ?? null,
           'tgl_ditutup'   => $_POST['aktif'] ? $_POST['tgl_ditutup'] : null,
           'keterangan'    => $_POST['keterangan'] ?? null,
         ];
@@ -103,6 +104,7 @@ class Rekening extends Controller
             'nominal_asing' => $_POST['nominal_asing'] ?? null,
             'tgl_dibuat'    => $_POST['tgl_dibuat'],
             'aktif'         => $_POST['aktif'] ?? true,
+            'jenis_uang'    => $_POST['jenis_uang'] ?? null,
             'harta'         => $_POST['harta'] ?? true,
             'tgl_ditutup'   => $_POST['aktif'] ? $_POST['tgl_ditutup'] : null,
             'keterangan'    => $_POST['keterangan'] ?? null,
@@ -151,6 +153,7 @@ class Rekening extends Controller
           $row['saldo']
         ], $model->allCashFlowGraph($_POST['startDate'], $_POST['endDate']));
         $resp['saldo'] = $model->getSaldoEfektif()['saldo'];
+        $resp['saldo_by_jenis_uang'] = $model->getSaldoByJenisUang();
       };
     } catch (\Throwable $th) {
       http_response_code(500);

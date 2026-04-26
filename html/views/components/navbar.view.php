@@ -158,9 +158,9 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <div class="navbar-more d-flex justify-content-around flex-column mb-3">
         <a class="nav-link" href="<?= BASEURL ?>/Rekening/"><i class="fas fa-wallet"></i>&nbsp;&nbsp; Rekening</a>
-        <a class="nav-link" href="<?= BASEURL ?>/Report/"><i class="fas fa-file-invoice"></i>&nbsp;&nbsp; Laporan & Evaluasi</a>
+        <!-- <a class="nav-link" href="<?= BASEURL ?>/Transaction/database"><i class="fas fa-file-invoice"></i>&nbsp;&nbsp; Laporan & Evaluasi</a> -->
         <a class="nav-link" href="<?= BASEURL ?>/Users/"><i class="fas fa-user-shield"></i>&nbsp;&nbsp; Keamanan</a>
-        <a class="nav-link" href="<?= BASEURL ?>/Database/"><i class="fas fa-server"></i>&nbsp;&nbsp; Basis Data</a>
+        <a class="nav-link" href="<?= BASEURL ?>/Transaction/database"><i class="fas fa-server"></i>&nbsp;&nbsp; Basis Data</a>
         <hr style="border: 2px solid var(--white-color);">
         <a class="nav-link" href="<?= BASEURL ?>/Auth/logout"><i class="fas fa-sign-out-alt"></i>&nbsp;&nbsp; Log Out</a>
       </div>
