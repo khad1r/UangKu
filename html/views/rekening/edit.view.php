@@ -6,8 +6,10 @@
     FORM.no_asli.value = OLD_DATA.no_asli;
     FORM.nominal_asing.value = OLD_DATA.nominal_asing;
     FORM.tgl_dibuat.value = OLD_DATA.tgl_dibuat;
+    FORM.tgl_dibuat.dispatchEvent(new Event('blur'));
     FORM.aktif.checked = OLD_DATA.aktif;
     FORM.harta.checked = OLD_DATA.harta;
+    FORM.jenis_uang.value = OLD_DATA.jenis_uang;
     FORM.tgl_ditutup.value = OLD_DATA.tgl_ditutup;
     FORM.tgl_ditutup.disabled = OLD_DATA.aktif;
     FORM.tgl_ditutup.required = !OLD_DATA.aktif;

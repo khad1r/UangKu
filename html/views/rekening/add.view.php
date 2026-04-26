@@ -18,6 +18,16 @@
         <input class="form-check-input" type="checkbox" id="harta" name="harta">
         <?php InputValidator('harta') ?>
       </div>
+      <div class="form-group center-input">
+        <label>Jenis Uang</label>
+        <select class="form-control" id="jenis_uang" placeholder="Jenis Uang" name="jenis_uang">
+          <option class="hide" value="" data-placeholder="true" readonly="true" selected>Jenis Uang</option>
+          <?php foreach (JENIS_UANG as $jenis) { ?>
+            <option value="<?= $jenis ?>"><?= $jenis ?></option>
+          <?php } ?>
+        </select>
+        <?php InputValidator('jenis_uang') ?>
+      </div>
       <div class="form-group">
         <label>Nominal Asing</label>
         <input type="text" id="nominal_asing" placeholder="Nominal Asing" name="nominal_asing" class="form-control">

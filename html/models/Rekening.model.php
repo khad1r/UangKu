@@ -52,6 +52,41 @@ class Rekening extends Database
       WHERE harta = 0
     SQL)->resultSingle();
   }
+  public function getSaldoByJenisUang()
+  {
+    return $this->query(<<<SQL
+      SELECT
+      r.jenis_uang,
+      SUM(CASE WHEN t.jenis_transaksi = 'Pemasukan' THEN t.nominal * t.kuantitas
+           WHEN t.jenis_transaksi = 'Pindah Buku' AND t.rekening_masuk = r.id THEN t.nominal * t.kuantitas ELSE 0 END) -
+      SUM(CASE WHEN t.jenis_transaksi = 'Pengeluaran' THEN t.nominal * t.kuantitas
+           WHEN t.jenis_transaksi = 'Pindah Buku' AND t.rekening_sumber = r.id THEN t.nominal * t.kuantitas ELSE 0 END) AS saldo
+      FROM TRANSAKSI t
+      JOIN REKENING r ON (t.rekening_masuk = r.id OR t.rekening_sumber = r.id)
+      WHERE t.harta = 0
+      GROUP BY r.jenis_uang
+    SQL)->resultSet();
+  }
+  public function getSaldoRekening($id_rekening)
+  {
+    return $this->query(<<<SQL
+      SELECT
+        r.id,
+        r.nama,
+        (
+          SUM(CASE WHEN t.jenis_transaksi = 'Pemasukan' AND t.rekening_masuk = r.id THEN t.nominal * t.kuantitas ELSE 0 END) +
+          SUM(CASE WHEN t.jenis_transaksi = 'Pindah Buku' AND t.rekening_masuk = r.id THEN t.nominal * t.kuantitas ELSE 0 END)
+        ) -
+        (
+          SUM(CASE WHEN t.jenis_transaksi = 'Pengeluaran' AND t.rekening_sumber = r.id THEN t.nominal * t.kuantitas ELSE 0 END) +
+          SUM(CASE WHEN t.jenis_transaksi = 'Pindah Buku' AND t.rekening_sumber = r.id THEN t.nominal * t.kuantitas ELSE 0 END)
+        ) AS saldo
+      FROM REKENING r
+      LEFT JOIN TRANSAKSI t ON (t.rekening_masuk = r.id OR t.rekening_sumber = r.id)
+      WHERE r.id = :id_rekening AND t.harta = 0
+      GROUP BY r.id, r.nama
+    SQL)->bind('id_rekening', $id_rekening)->resultSingle();
+  }
   public function insertRekening($data)
   {
     return $this->insert($this->table, $data)->affectedRows();
@@ -100,6 +135,48 @@ class Rekening extends Database
     SQL)
       ->bind('startDate', $startDate)
       ->bind('endDate', $endDate)
+      ->resultSet();
+  }
+  public function rekeningAllCashFlowGraph($startDate, $endDate, $id_rekening)
+  {
+    return $this->query(<<<SQL
+      WITH saldo_dasar AS (
+        SELECT
+          tanggal,
+          SUM(CASE
+                WHEN jenis_transaksi = 'Pemasukan' THEN nominal * kuantitas
+                WHEN jenis_transaksi = 'Pengeluaran' THEN -nominal * kuantitas
+                WHEN jenis_transaksi = 'Pindah Buku' AND rekening_masuk = :id_rekening THEN nominal * kuantitas
+                WHEN jenis_transaksi = 'Pindah Buku' AND rekening_sumber = :id_rekening THEN -nominal * kuantitas
+                ELSE 0
+              END) AS nilai
+        FROM TRANSAKSI
+        WHERE tanggal <= :endDate
+          AND harta = 0
+          AND (
+            rekening_sumber = :id_rekening OR
+            rekening_masuk = :id_rekening OR
+            :id_rekening IS NULL
+          )
+        GROUP BY tanggal
+      ),
+      saldo_berjalan AS (
+        SELECT
+          tanggal,
+          SUM(nilai) OVER (
+            ORDER BY tanggal
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+          ) AS saldo
+        FROM saldo_dasar
+      )
+      SELECT *
+      FROM saldo_berjalan
+      WHERE tanggal BETWEEN :startDate AND :endDate
+      ORDER BY tanggal;
+    SQL)
+      ->bind('startDate', $startDate)
+      ->bind('endDate', $endDate)
+      ->bind('id_rekening', $id_rekening)
       ->resultSet();
   }
   public function CashFlowGraph($startDate, $endDate)
@@ -212,6 +289,10 @@ class Rekening extends Database
       [
         'db' => "saldo",
         'dt' => 'saldo'
+      ],
+      [
+        'db' => "jenis_uang",
+        'dt' => 'jenis_uang'
       ],
       [
         'db' => "saldo_asing",

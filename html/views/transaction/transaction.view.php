@@ -151,6 +151,20 @@
       data: []
     }],
     title: false,
+    plotOptions: {
+      treemap: {
+        point: {
+          events: {
+            click: function() {
+              DT_TABLE.columns().search('') // Clear all
+                .column(7).search(this.name)
+                .column(6).search((this.color === '#03a9f4aa') ? 1 : 0)
+                .draw();
+            }
+          }
+        }
+      }
+    }
   });
   const CashFlowChart = Highcharts.chart('arusKasChart', {
     title: false,
@@ -174,7 +188,15 @@
     plotOptions: {
       column: {
         stacking: 'normal', // ✅ Enable stacking for bar series
-        borderWidth: 0
+        borderWidth: 0,
+        point: {
+          events: {
+            click: function() {
+              const dateStr = new Date(this.x).toLocaleDateString('sv-SE');
+              DT_TABLE.columns().search('').column(8).search(dateStr).draw(); // column 8 = Tanggal
+            }
+          }
+        }
       },
       area: {
         stacking: null,
@@ -259,6 +281,7 @@
         d.startDate = dateRange[0].toLocaleDateString('sv-SE')
         d.endDate = dateRange[1].toLocaleDateString('sv-SE')
         d.queryGraph = refreshGraph
+        if (typeof extraQuery === 'function') Object.assign(d, extraQuery(d));
         return d;
       },
       "dataSrc": (json) => {
@@ -380,7 +403,7 @@
       },
       {
         'title': 'Kelompok',
-        'data': 'kelompok',
+        'data': 'kelompok'
       },
       {
         'title': 'Tanggal',
@@ -401,6 +424,12 @@
     initComplete: function() {
       const input = document.querySelector('#FormatTable_wrapper .dt-search input');
       input.placeholder = '🔍 Cari Disini...';
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'btn btn-sm text-primary';
+      resetBtn.innerHTML = '<i class="fas fa-redo"></i>';
+      resetBtn.type = 'button';
+      resetBtn.addEventListener('click', resetTable);
+      input.parentElement.prepend(resetBtn);
     },
     createdRow: function(row, data, dataIndex) {
       const cells = row.querySelectorAll('td');
@@ -518,6 +547,15 @@
   const findData = (id) => {
     DT_TABLE.search(id).draw();
     MODAL.close()
+  }
+  const resetTable = () => {
+    DT_TABLE
+      .search('') // Clear global search
+      .columns().search('') // Clear all column filters
+      .order([
+        [0, 'desc']
+      ]) // Reset to default sorting (1st column)
+      .draw(); // Apply all changes in one redraw
   }
   const deleteRekeing = () => {
     Swal.fire({

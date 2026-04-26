@@ -21,6 +21,7 @@ define('IS_PROD', getenv('ENV') !== 'development');
 define('ENABLE_AUTH', (getenv('ENABLE_AUTH') ?: 'true') === 'true');
 define('DEFAULT_CONTROLLER', ENABLE_AUTH ? App\Controllers\Auth::class : App\Controllers\Transaction::class);
 define('JENIS_TRANSAKSI', ['Pengeluaran', 'Pemasukan', 'Pindah Buku']);
+define('JENIS_UANG', ['Uang Hijau', 'Uang Biru', 'Uang Merah']);
 
 /** app/autoload.php depth for searching classes
  * Interpret MAX_AUTOLOAD_DEPTH as follows:

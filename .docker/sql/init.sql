@@ -29,6 +29,7 @@ CREATE TABLE REKENING (
   tgl_dibuat TEXT,
   tgl_ditutup TEXT,
   aktif BOOLEAN NOT NULL,
+  jenis_uang TEXT,
   keterangan TEXT
 );
 

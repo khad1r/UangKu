@@ -1,5 +1,25 @@
 <div class="container">
   <?php $Controller->view('rekening/topbar', $data); ?>
+  <div class="my-3 card card-saldo" style="background-color: var(--yellow-color);">
+    <div class="text-center">$ Net Worth $</div>
+    <h3 class="saldo" id="text-saldo"></h3>
+    <hr>
+  </div>
+  <div class="flex-row gap-3 d-flex flex-wrap">
+    <?php foreach (JENIS_UANG as $jenis) {
+      $colorMap = [
+        'Uang Hijau' => '--green-color',
+        'Uang Merah' => '--red-color',
+        'Uang Biru' => '--blue-color'
+      ];
+    ?>
+      <div class="my-3 card card-saldo" style="background-color: var(<?= $colorMap[$jenis] ?? '--light-color' ?>);">
+        <div>Saldo <?= $jenis ?></div>
+        <h3 class="saldo" id="text-saldo-<?= str_replace(' ', '-', $jenis) ?>"></h3>
+        <hr>
+      </div>
+    <?php } ?>
+  </div>
   <div class="table-wrapper">
     <table data-label="List Rekening" class="table table-responsive myTable border-bottom" id="FormatTable">
       <thead class="sticky-top">
@@ -8,17 +28,15 @@
           <th scope="col" class="no-sort no-search">ID</th>
           <th scope="col" class="no-sort">Nama</th>
           <th scope="col" class="no-sort">Saldo</th>
+          <th scope="col" class="no-sort">Jenis Uang</th>
           <th scope="col" class="no-sort">Keterangan</th>
+          <th scope="col" class="no-sort"></th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </div>
-  <div class="my-3 card card-saldo">
-    <div>Saldo Efektif</div>
-    <h3 class="saldo" id="text-saldo"></h3>
-    <hr>
-  </div>
+
   <div class="card rounded">
     <div class="card-body">
 
@@ -193,9 +211,29 @@
         }
       },
       {
+        width: '20%',
+        'title': 'Jenis Uang',
+        'data': 'jenis_uang',
+        'render': function(item, type, data, meta) {
+          const colorMap = {
+            'Uang Hijau': 'text-success',
+            'Uang Merah': 'text-danger',
+            'Uang Biru': 'text-primary'
+          };
+          const jenis = (data.jenis_uang || '');
+          const colorClass = colorMap[jenis] || 'text-secondary';
+          return `<span class="${colorClass}">${data.jenis_uang || 'Tidak Ditentukan'}</span>`;
+        }
+      },
+      {
         'title': 'Keterangan',
         'data': 'keterangan',
         // 'render': (data, type, full, meta) => /* HTML */ `<pre>${}</pre>`;
+      },
+      {
+        'title': '',
+        'data': 'id',
+        'render': (data, type, full, meta) => /* HTML */ `<a href="<?= BASEURL ?>/Transaction/rekening/${data}" class="btn btn-sm btn-link" title="Mutasi Rekening"><i class="fas fa-exchange-alt"></i></a>`
       },
     ],
     initComplete: function() {
@@ -337,6 +375,13 @@
   }
   const drawGraph = () => {
     document.querySelector('#text-saldo').innerHTML = 'Rp.&nbsp;' + (+accountsCashFlow.saldo).toLocaleString('id')
+    accountsCashFlow.saldo_by_jenis_uang.forEach(row => {
+      const jenis = row.jenis_uang || 'Tidak Ditentukan';
+      const saldoElement = document.querySelector(`#text-saldo-${jenis.replace(/\s+/g, '-')}`);
+      if (saldoElement) {
+        saldoElement.innerHTML = 'Rp.&nbsp;' + (+row.saldo).toLocaleString('id');
+      }
+    });
     let selected = DT_TABLE.rows({
       selected: true
     }).data().toArray();
