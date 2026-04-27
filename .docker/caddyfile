@@ -1,0 +1,24 @@
+{
+    frankenphp
+}
+
+:80, :443 {
+    # Set your project root
+    root * /var/www/html/public
+
+    # 1. Handle standard PHP routing (The "try_files" equivalent)
+    # This automatically does: if file exists, serve it; else, send to index.php
+    php_server
+
+    # 2. Replicating your 'uploads' commented logic (if you need it later)
+    # rewrite /uploads/* /index.php?file={path}
+
+    # 3. Static file handling (Images, CSS, JS)
+    file_server
+
+    # 4. Security: Disable access to hidden files (like .git or .env)
+    @hidden {
+        path */.*
+    }
+    respond @hidden 403
+}

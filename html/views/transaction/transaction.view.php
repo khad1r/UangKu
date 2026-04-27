@@ -157,6 +157,7 @@
           events: {
             click: function() {
               DT_TABLE.columns().search('') // Clear all
+                .column(1).search('Pengeluaran')
                 .column(7).search(this.name)
                 .column(6).search((this.color === '#03a9f4aa') ? 1 : 0)
                 .draw();

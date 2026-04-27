@@ -1,6 +1,13 @@
 {
   "require": {
     "php": ">=7.2",
-    "lbuchs/webauthn": "*"
+    "lbuchs/webauthn": "*",
+    "mcp/sdk": "^0.5.0",
+    "laminas/laminas-httphandlerrunner": "^2.13"
+  },
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
   }
 }

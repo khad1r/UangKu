@@ -59,6 +59,16 @@ class Transaksi extends Database
       ->bind('search', $search)
       ->resultSet();
   }
+  public function getKelompok()
+  {
+    return $this
+      ->query(<<<SQL
+        SELECT kelompok, COUNT(1) as count FROM {$this->table}
+        GROUP BY kelompok
+        order BY count DESC;
+      SQL)
+      ->resultSet();
+  }
   public function find(string $search)
   {
     $search = trim(strtolower($search));

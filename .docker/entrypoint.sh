@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 # Define path to SQLite DB
-DB_PATH=/var/www/.databases/$SQLITE_DEFAULT_NAME
+DB_PATH=/var/www/.databases/${SQLITE_DEFAULT_NAME:-default.sqlite}
 
 # Create DB if it doesn't exist
 if [ ! -f "$DB_PATH" ]; then
@@ -24,7 +24,9 @@ else
   echo "SQLite database already exists at $DB_PATH."
 fi
 chown -R www-data:www-data /var/www
+git config --global --add safe.directory /var/www
 cd /var/www/html
-composer install
+# composer install
 # Start Apache in the foreground
-exec apache2-foreground
+# exec apache2-foreground
+exec "$@"
