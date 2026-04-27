@@ -115,4 +115,8 @@ class Database
 
     return $this->execute();
   }
+  public function lastInsertId()
+  {
+    return $this->conn->lastInsertId();
+  }
 }
