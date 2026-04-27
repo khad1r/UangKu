@@ -23,33 +23,33 @@ class MCP
       'harta'             => ['type' => 'boolean', 'description' => 'Apakah ini transaksi aset/harta?'],
       'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat'],
       'rekening_sumber'   => [
-        'type' => 'integer',
+        'type' => ['integer', 'null'],
         'description' => 'ID Rekening asal. Gunakan tool get_rekening untuk mencari ID yang tepat. (Wajib jika Pengeluaran/Pindah Buku)'
       ],
       'rekening_masuk'    => [
-        'type' => 'integer',
+        'type' => ['integer', 'null'],
         'description' => 'ID Rekening tujuan. Gunakan tool get_rekening untuk mencari ID yang tepat. (Wajib jika Pemasukan/Pindah Buku)'
       ],
       'nominal'           => [
         'type' => 'number',
         'description' => 'Jumlah uang dalam angka'
       ],
-      'nominal_asing'     => ['type' => 'number'],
+      'nominal_asing'     => ['type' => ['number', 'null']],
       'kuantitas'         => ['type' => 'number', 'default' => 1],
       'penyusutan_bunga'  => ['type' => 'number', 'default' => 0],
       'rutin'             => ['type' => 'boolean', 'default' => false],
       'kelompok'          => [
-        'type' => 'string',
+        'type' => ['string', 'null'],
         'description' => 'Kategori transaksi. Gunakan get_kelompok untuk referensi.'
       ],
       'tanggal'           => [
-        'type' => 'string',
+        'type' => ['string', 'null'],
         'format' => 'date',
         'description' => 'Format: YYYY-MM-DD'
       ],
-      'relasi_transaksi'  => ['type' => 'integer', 'description' => 'ID transaksi lain yang berhubungan'],
-      'keterangan'        => ['type' => 'string'],
-      'attachment_base64' => ['type' => 'string', 'description' => 'Optional: Base64 string of receipt image']
+      'relasi_transaksi'  => ['type' => ['integer', 'null'], 'description' => 'ID transaksi lain yang berhubungan'],
+      'keterangan'        => ['type' => ['string', 'null'], 'default' => ''],
+      'attachment_base64' => ['type' => ['string', 'null'], 'description' => 'Optional: Base64 string of receipt image']
     ],
     required: ['jenis_transaksi', 'barang', 'nominal', 'kuantitas', 'tanggal']
   )]
@@ -94,11 +94,11 @@ class MCP
         'attachment'        => $finalFileName,
         'keterangan'        => $keterangan,
       ];
-
-      $result = (new Transaksi())->insertTransaksi($data);
+      $trasaksi = new Transaksi();
+      $result = $trasaksi->insertTransaksi($data);
 
       return ($result > 0)
-        ? "✅ Berhasil! Transaksi #$result telah dicatat."
+        ? "✅ Berhasil! Transaksi Id #{$trasaksi->lastInsertId()} telah dicatat."
         : throw new ToolCallException("❌ Gagal menyimpan ke database.");
     } catch (\Exception $e) {
       throw new ToolCallException("⚠️ Error: " . $e->getMessage());
@@ -112,7 +112,11 @@ class MCP
   public function getRekening(): array
   {
     try {
-      return (new Rekening())->getAll();
+      $list = (new Rekening())->getAll();
+      // FIX: Wrap the list in a key so the result is a 'record' (JSON Object)
+      return [
+        'data' => $list
+      ];
     } catch (\Exception $e) {
       throw new ToolCallException("Error: " . $e->getMessage());
     }
@@ -125,7 +129,11 @@ class MCP
   public function getKelompok(): array
   {
     try {
-      return (new Transaksi())->getKelompok();
+      $list = (new Transaksi())->getKelompok();
+      // FIX: Wrap the list in a key so the result is a 'record' (JSON Object)
+      return [
+        'data' => $list
+      ];
     } catch (\Exception $e) {
       throw new ToolCallException("Error: " . $e->getMessage());
     }
