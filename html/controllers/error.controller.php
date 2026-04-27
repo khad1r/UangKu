@@ -7,7 +7,7 @@ use App\Controller;
 class error extends Controller
 {
   public function __construct() {}
-
+  public function options() {}
   public function index()
   {
     http_response_code(500);

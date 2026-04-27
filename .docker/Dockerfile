@@ -1,78 +1,61 @@
 ARG PHP_VERSION=8.4
-FROM php:${PHP_VERSION}-apache-bullseye AS php-apache
+FROM dunglas/frankenphp:1.3-php${PHP_VERSION}-alpine AS php-franken
 
+# Install system dependencies
+# Note: Alpine uses 'apk'. 'unzip' and 'libcap' are essential for FrankenPHP operations.
+RUN apk add sqlite git unzip zip libcap
 
-# # Install dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  sqlite3 git\
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# Build arguments
+ARG DOCKER_ENV=production
+ARG XDEBUG_VERSION=xdebug
+ARG XDEBUG_PORT=9003
+ARG XDEBUG_CLIENT_HOST=host.docker.internal
 
-# Define a build argument
-ARG DOCKER_ENV
-ARG XDEBUG_VERSION
-ARG XDEBUG_PORT
-ARG XDEBUG_CLIENT_HOST
-# Use the build argument in a RUN instruction
+# Use the 'install-php-extensions' helper (pre-installed in the FrankenPHP image)
+# pcntl is vital for FrankenPHP's worker mode.
+RUN install-php-extensions pcntl opcache zip intl
+
+# Conditional Dev/Production Logic
 RUN if [ "$DOCKER_ENV" = "development" ]; then \
-  # Commands to run if ENV is development
-    yes | pecl install ${XDEBUG_VERSION} && docker-php-ext-enable xdebug \
-    && rm -rf /tmp/pear; \
-    echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)" > /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    install-php-extensions xdebug; \
+    echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
     && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
     && echo "xdebug.client_port=${XDEBUG_PORT}" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
     && echo "xdebug.client_host=${XDEBUG_CLIENT_HOST}" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "error_reporting = E_ALL" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "display_startup_errors = On" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "display_errors = On" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
+    && { \
+        echo "error_reporting = E_ALL"; \
+        echo "display_startup_errors = On"; \
+        echo "display_errors = On"; \
+    } > /usr/local/etc/php/conf.d/error-reporting.ini; \
   else \
-    # Commands to run if ENV is not development
-    echo "Not running in development mode"; \
-    # Disable Apache's ServerSignature and limit ServerTokens
-    echo "ServerSignature Off" >> /etc/apache2/conf-available/security.conf \
-    && echo "ServerTokens Prod" >> /etc/apache2/conf-available/security.conf \
-    # Disable the X-Powered-By header in PHP
-    echo "expose_php = Off" > /usr/local/etc/php/conf.d/security.ini;\
+    mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && echo "expose_php = Off" > /usr/local/etc/php/conf.d/security.ini; \
   fi
-
-# Clean
-RUN apt-get autoremove --purge -y && apt-get autoclean -y && apt-get clean -y \
-  && rm -rf /var/lib/apt/lists/* \
-  && rm -rf /tmp/* /var/tmp/*
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
-# Generate self-signed cert
-RUN mkdir -p /etc/apache2/ssl && \
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /etc/apache2/ssl/server.key \
-    -out /etc/apache2/ssl/server.crt \
-    -subj "/C=ID/ST=Jakarta/L=Jakarta/O=Dev/OU=Dev/CN=localhost"
-
-# Add SSL vhost config
-COPY apache.conf /etc/apache2/sites-available/default-ssl.conf
-
-# Enable site
-RUN a2ensite default-ssl.conf
-
 # Expose port HTTP & HTTPS
 EXPOSE 443
 EXPOSE 80
-
-# Enable mod_rewrite
-RUN a2enmod rewrite headers remoteip env ssl
-
-
-
+WORKDIR /var/www/html
+# FrankenPHP Environment Defaults
+# SERVER_NAME handles automatic HTTPS and Caddy routing.
+ENV SERVER_NAME=https://localhost
 ENV TZ=Asia/Jakarta
 ENV SQLITE_DEFAULT_NAME=default.sqlite
+
 COPY sql/ /docker-entrypoint-initdb.d/
+COPY caddyfile /etc/caddy/Caddyfile
+# Entrypoint setup
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+# FORCE CLEAN: Remove Windows line endings and ensure shebang is compatible
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# WORKDIR /var/www/html
-# RUN composer install
+# Recommended: Give the binary permission to bind to low ports without root
+RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# CMD ["frankenphp", "php-server"]
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

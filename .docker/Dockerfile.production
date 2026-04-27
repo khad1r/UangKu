@@ -1,30 +1,17 @@
 # Use build arg for flexibility
 ARG PHP_VERSION=8.4
-FROM php:${PHP_VERSION}-apache-bullseye AS php-production
+FROM dunglas/frankenphp:1.3-php${PHP_VERSION}-alpine AS php-production
 
 # Install only necessary packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  sqlite3 zip unzip\
-  && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Apache security hardening
-RUN echo "ServerSignature Off" >> /etc/apache2/conf-available/security.conf \
-  && echo "ServerTokens Prod" >> /etc/apache2/conf-available/security.conf \
-  && echo "expose_php = Off" > /usr/local/etc/php/conf.d/security.ini
+RUN apk add sqlite libcap
 
 # Enable Apache modules
-RUN a2enmod rewrite headers ssl remoteip env
+RUN install-php-extensions pcntl opcache intl
 
-# Generate self-signed certificate (optional, use real certs in prod)
-RUN mkdir -p /etc/apache2/ssl && \
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /etc/apache2/ssl/server.key \
-    -out /etc/apache2/ssl/server.crt \
-    -subj "/C=ID/ST=Jakarta/L=Jakarta/O=Dev/OU=Prod/CN=localhost"
+# Conditional Dev/Production Logic
+RUN  mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && echo "expose_php = Off" > /usr/local/etc/php/conf.d/security.ini;
 
-# Add SSL vhost config
-COPY .docker/apache.conf /etc/apache2/sites-available/default-ssl.conf
-RUN a2ensite default-ssl.conf
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
@@ -35,21 +22,23 @@ WORKDIR /var/www/html
 
 # Env'
 ENV DOCKER_ENV=production
+ENV SERVER_NAME=https://localhost
 ENV TZ=Asia/Jakarta
 ENV SQLITE_DEFAULT_NAME=default.sqlite
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Clean up
-RUN apt-get autoremove --purge -y && apt-get autoclean -y && apt-get clean -y \
-  && rm -rf /tmp/* /var/tmp/*
-
 EXPOSE 80
 EXPOSE 443
 
 COPY .docker/sql/ /docker-entrypoint-initdb.d/
+COPY .docker/caddyfile /etc/caddy/Caddyfile
 COPY .docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp
+
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

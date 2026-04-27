@@ -6,6 +6,12 @@ use App\Controller;
 use App\models\Rekening;
 use App\models\Transaksi;
 use App\Route;
+use Http\Discovery\Psr17Factory;
+use Mcp\Server;
+use Mcp\Server\Transport\StreamableHttpTransport;
+use Mcp\Server\Session\FileSessionStore;
+use Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
+
 
 class Record extends Controller
 {
@@ -18,6 +24,7 @@ class Record extends Controller
       exit;
     }
   }
+
   public function index()
   {
     $data['title'] = 'Uangku - Catat Transaksi';
@@ -181,5 +188,27 @@ class Record extends Controller
       // http_response_code(404);
       return new error()->notFound();
     }
+  }
+  public function mcp()
+  {
+
+    $psr17Factory = new Psr17Factory();
+    $request = $psr17Factory->createServerRequestFromGlobals();
+
+    $server = Server::builder()
+      ->setServerInfo('MCP UangKu', '1.0.0')
+      ->addTool([\App\libs\MCP::class, 'getRekening'], 'get_rekening')
+      ->addTool([\App\libs\MCP::class, 'getKelompok'], 'get_kelompok')
+      ->addTool([\App\libs\MCP::class, 'catatTransaksi'], 'catat_transaksi')
+      ->setSession(new FileSessionStore('/tmp/mcp_sessions')) // HTTP needs persistent sessions
+
+      ->build();
+
+    $transport = new StreamableHttpTransport($request);
+
+
+    $response = $server->run($transport);
+
+    (new SapiEmitter())->emit($response);
   }
 }
