@@ -265,12 +265,11 @@
       resetSlimSelect(e);
       return false;
     }
-    if (masukRek?.isAsing && sumberRek?.isAsing) {
-      showAlert('Tidak bisa pindah buku antar nominal asing', 'warning');
+    if (masukRek?.isAsing && sumberRek?.isAsing && masukRek.nominal_asing === sumberRek.nominal_asing) {
+      showAlert('Tidak bisa pindah buku antar rekening dengan jenis uang asing berbeda', 'warning');
       resetSlimSelect(e);
       return false;
     }
-
     return true;
   }
 

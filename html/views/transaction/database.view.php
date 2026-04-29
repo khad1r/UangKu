@@ -5,6 +5,7 @@
         <a href="/Transaction/database?export=true" class="btn bg-success font-weight-bold w-100" id="export">Download CSV</a>
         <input type="file" placeholder="Upload CSV File" class="form-control" accept="text/csv" name="attachment" />
         <?php InputValidator('attachment') ?>
+        <small style="font-size: .5em;">Ini hanya akan mengupdate data yang ada di CSV sesuai id saja, silahkan hapus yang tidak perlu diupdate</small>
       </div>
       <div class="form-group center-input">
         <label>DB Version</label>
