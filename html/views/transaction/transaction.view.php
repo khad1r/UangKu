@@ -113,9 +113,9 @@
       // plotShadow: true,
     }
   });
-  let refreshGraph = true;
+  var refreshGraph = typeof refreshGraph !== 'undefined' ? refreshGraph : true;
   const d = new Date();
-  let dateRange = [
+  var dateRange = dateRange || [
     new Date(d.getFullYear(), d.getMonth(), 1),
     d
   ];
@@ -508,7 +508,7 @@
     })
     const divEl = document.createElement('div');
     divEl.classList.add('d-flex', 'flex-row', 'justify-content-between', 'w-100', 'pt-3', 'px-5');
-    divEl.innerHTML = /* HTML */ `<pre class="no-decoration">${row.keterangan}<pre>`
+    divEl.innerHTML = /* HTML */ `<pre class="no-decoration" style="white-space: pre-wrap;">${row.keterangan}</pre>`
     MODAL.querySelector('.dialog-body').children[0].append(divEl);
     // FORM.review.textContent = row.review;
     FORM.review.value = row.review;

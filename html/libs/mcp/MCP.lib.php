@@ -64,7 +64,7 @@ class MCP
       'penyusutan_bunga'  => [
         'type' => 'number',
         'default' => 0,
-        'description' => 'Persentase penyusutan buku per tahun. Hanya diisi jika jenis_transaksi adalah Pemasukan dan harta = true dan Jenis Rekening adalah Harta, untuk mencatat penyusutan bunga aset (misal: bunga deposito).'
+        'description' => 'Nominal Penyusutan / Bunga buku per tahun dalam Rupiah. Hanya diisi jika jenis_transaksi adalah Pemasukan dan harta = true dan Jenis Rekening adalah Harta, untuk mencatat penyusutan atau bunga aset (misal: bunga deposito).'
       ],
       'rutin'             => [
         'type' => 'boolean',
@@ -95,7 +95,10 @@ class MCP
         '
       ],
       'keterangan'        => ['type' => ['string', 'null'], 'default' => ''],
-      'attachment_base64' => ['type' => ['string', 'null'], 'description' => 'Optional: Base64 string of receipt image']
+      'attachment_base64' => [
+        'type' => ['string', 'null'],
+        'description' => 'Optional: Base64 string of receipt image. Untuk Struk masukan saja ke transaksi utama (item pertama), tidak perlu untuk item berikutnya yang menggunakan relasi_transaksi.'
+      ]
     ],
     required: ['jenis_transaksi', 'barang', 'nominal', 'kuantitas', 'tanggal']
   )]
@@ -160,10 +163,9 @@ class MCP
   public function getRekening(): array
   {
     try {
-      $list = (new Rekening())->getAll();
       // FIX: Wrap the list in a key so the result is a 'record' (JSON Object)
       return [
-        'data' => $list
+        'data' => new Rekening()->getAll()
       ];
     } catch (\Exception $e) {
       throw new ToolCallException("Error: " . $e->getMessage());
@@ -179,10 +181,8 @@ class MCP
   public function getKelompok(): array
   {
     try {
-      $list = (new Transaksi())->getKelompok();
-      // FIX: Wrap the list in a key so the result is a 'record' (JSON Object)
       return [
-        'data' => $list
+        'data' => new Transaksi()->getKelompok()
       ];
     } catch (\Exception $e) {
       throw new ToolCallException("Error: " . $e->getMessage());
@@ -191,11 +191,21 @@ class MCP
 
   /**
    * Mendapatkan daftar harta/aset yang sudah ada dan saldo pembukuannya
-   * Gunakan tool ini untuk referensi saat mencatat transaksi yang melibatkan aset permanen seperti HP, Motor, Emas, Furnitur. Tool ini akan menampilkan semua rekening dengan tipe
+   * Gunakan tool ini untuk referensi saat mencatat transaksi yang melibatkan aset permanen seperti HP, Motor, Emas, Furnitur. Tool ini akan menampilkan semua rekening dengan tipe harta
    */
-  /*  #[McpTool(name: 'get_Harta', description: 'Mendapatkan daftar harta/aset yang sudah ada dan saldo pembukuannya
+  #[McpTool(name: 'get_Harta', description: 'Mendapatkan daftar harta/aset yang sudah ada dan saldo pembukuannya
     Dengan format data [kelompok,count]
-  ')]*/
+  ')]
+  public function getHarta(): array
+  {
+    try {
+      return [
+        'data' => new Transaksi()->getDaftarHarta()
+      ];
+    } catch (\Exception $e) {
+      throw new ToolCallException("Error: " . $e->getMessage());
+    }
+  }
 
   /*  */
   private function processFile($fileSource, $fileName, $delete_old = null)
