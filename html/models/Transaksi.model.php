@@ -369,5 +369,4 @@ class Transaksi extends Database
       ->bind('id_rekening', $id_rekening)
       ->resultSet();
   }
-  public function importFromCSV($csv) {}
 }

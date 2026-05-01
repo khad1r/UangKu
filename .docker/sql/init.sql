@@ -51,7 +51,7 @@ CREATE TABLE TRANSAKSI (
   attachment TEXT,
   keterangan TEXT,
   review TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT DEFAULT (datetime('now', 'localtime'))
 );
 
 CREATE INDEX idx_transaksi_masuk ON TRANSAKSI(rekening_masuk);
