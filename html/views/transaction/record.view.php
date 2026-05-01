@@ -139,8 +139,7 @@
   let rekening_sumber_akhir = document.querySelector('#rekening_sumber_akhir')
   let rekening_masuk_akhir = document.querySelector('#rekening_masuk_akhir')
 
-
-  FORM.tanggal.value = new Date().toISOString().split("T")[0];
+  FORM.tanggal.value = new Intl.DateTimeFormat('sv-SE').format(new Date());
   fetch(`<?= BASEURL ?>/Record/args?rekening=true`)
     .then(r => r.ok ? r.json() : Promise.reject(new Error(`Error ${r.status}`)))
     .then(async d => {

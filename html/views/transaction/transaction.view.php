@@ -133,6 +133,7 @@
       startInput.value = toDateShortMonth(start);
       endInput.value = toDateShortMonth(end || start); // use start date if end is not selected
       dateRange = [start, end || start]
+      refreshGraph = true
       DT_TABLE.draw();
     }
   });
@@ -202,6 +203,7 @@
       area: {
         stacking: null,
         // stacking: 'normal',
+
         lineColor: '#666666',
         lineWidth: 4,
         marker: {
@@ -342,7 +344,8 @@
       },
       {
         'data': 'jenis_transaksi',
-        'title': 'Jenis Transaksi',
+        'title': '',
+        'orderable': false,
       },
       {
         // 'width': '30%',
@@ -414,6 +417,7 @@
       {
         'title': 'Keterangan',
         'data': 'keterangan',
+        'orderable': false,
         'render': (item, type, data, meta) => {
           return /* HTML */ `
             <div class="small w-lg-50 truncate-text"><span class="fw-bold text-warning">${data.attachment? '<i class="fas fa-paperclip"></i>' : ''}</span>${data.keterangan}</div>
@@ -431,6 +435,20 @@
       resetBtn.type = 'button';
       resetBtn.addEventListener('click', resetTable);
       input.parentElement.prepend(resetBtn);
+      // add filter ("Pengeluaran', 'Pemasukan', 'Pinbuk') to column #1
+      const column = this.api().column(1);
+      const select = document.createElement('select');
+      select.className = 'form-select bg-transparent font-weight-bold w-auto ms-2';;
+      select.innerHTML = /* HTML */ `
+        <option value="" class="text-white font-weight-bold bg-dark">Jenis Transaksi</option>
+        <option value="Pengeluaran" class="text-white font-weight-bold bg-dark">Pengeluaran</option>
+        <option value="Pemasukan" class="text-white font-weight-bold bg-dark">Pemasukan</option>
+        <option value="Pindah Buku" class="text-white font-weight-bold bg-dark">Pindah Buku</option>
+      `;
+      select.addEventListener('change', function() {
+        column.search(this.value).draw();
+      });
+      column.header().appendChild(select);
     },
     createdRow: function(row, data, dataIndex) {
       const cells = row.querySelectorAll('td');
@@ -549,14 +567,17 @@
     DT_TABLE.search(id).draw();
     MODAL.close()
   }
-  const resetTable = () => {
-    DT_TABLE
+  const resetTable = async () => {
+    await DT_TABLE
       .search('') // Clear global search
       .columns().search('') // Clear all column filters
       .order([
         [0, 'desc']
-      ]) // Reset to default sorting (1st column)
-      .draw(); // Apply all changes in one redraw
+      ]) // Reset to default sorting (1st column), this make other column orderable again,
+      // fix by set column orderable false again after draw
+      .draw() // Apply all changes in one redraw
+    // .column(1).orderable(false) // Keep column 1 unsortable
+    // .column(9).orderable(false) // Keep column 9 unsortable
   }
   const deleteRekeing = () => {
     Swal.fire({
