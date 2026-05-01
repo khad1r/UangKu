@@ -83,10 +83,34 @@ class Rekening extends Database
         ) AS saldo
       FROM REKENING r
       LEFT JOIN TRANSAKSI t ON (t.rekening_masuk = r.id OR t.rekening_sumber = r.id)
-      WHERE r.id = :id_rekening AND t.harta = 0
+      WHERE r.id = :id_rekening
       GROUP BY r.id, r.nama
     SQL)->bind('id_rekening', $id_rekening)->resultSingle();
   }
+  public function getSaldoHarta($id_rekening)
+  {
+    return $this->query(<<<SQL
+      SELECT
+        r.id,
+        r.nama,
+      SUM(MAX(1,
+          (t.nominal - (t.penyusutan_bunga * CAST((julianday('now') - julianday(t.tanggal)) / 30.44 AS INTEGER))) * t.kuantitas
+        )) AS saldo
+      FROM REKENING r
+      LEFT JOIN TRANSAKSI t ON t.rekening_masuk = r.id
+      WHERE t.harta = 1
+        AND r.id = :id_rekening
+        AND t.jenis_transaksi = 'Pemasukan'
+        -- Filter Harta yang belum terjual atau keluar
+        AND t.id NOT IN (
+            SELECT relasi_transaksi
+            FROM TRANSAKSI
+            WHERE harta = 1 AND jenis_transaksi = 'Pengeluaran' AND relasi_transaksi IS NOT NULL
+        );
+      GROUP BY r.id, r.nama
+    SQL)->bind('id_rekening', $id_rekening)->resultSingle();
+  }
+
   public function insertRekening($data)
   {
     return $this->insert($this->table, $data)->affectedRows();
@@ -137,6 +161,41 @@ class Rekening extends Database
       ->bind('endDate', $endDate)
       ->resultSet();
   }
+  public function rangeFlowGraph($startDate, $endDate)
+  {
+    return $this->query(<<<SQL
+      WITH saldo_dasar AS (
+        SELECT
+          tanggal,
+          SUM(CASE
+                WHEN jenis_transaksi = 'Pemasukan' THEN nominal * kuantitas
+                WHEN jenis_transaksi = 'Pengeluaran' THEN -nominal * kuantitas
+                ELSE 0
+              END) AS nilai
+        FROM TRANSAKSI
+        WHERE tanggal BETWEEN :startDate AND :endDate
+          AND jenis_transaksi in ('Pemasukan', 'Pengeluaran')
+          AND harta = 0  -- optional: exclude non-cash asset movement
+        GROUP BY tanggal
+      ),
+      saldo_berjalan AS (
+        SELECT
+          tanggal,
+          SUM(nilai) OVER (
+            ORDER BY tanggal
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+          ) AS saldo
+        FROM saldo_dasar
+      )
+      SELECT *
+      FROM saldo_berjalan
+      WHERE tanggal BETWEEN :startDate AND :endDate
+      ORDER BY tanggal;
+    SQL)
+      ->bind('startDate', $startDate)
+      ->bind('endDate', $endDate)
+      ->resultSet();
+  }
   public function rekeningAllCashFlowGraph($startDate, $endDate, $id_rekening)
   {
     return $this->query(<<<SQL
@@ -152,7 +211,7 @@ class Rekening extends Database
               END) AS nilai
         FROM TRANSAKSI
         WHERE tanggal <= :endDate
-          AND harta = 0
+          -- AND harta = 0
           AND (
             rekening_sumber = :id_rekening OR
             rekening_masuk = :id_rekening OR
