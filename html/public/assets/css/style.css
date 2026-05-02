@@ -382,7 +382,7 @@ dialog {
   /* width: calc(75% - (50vw - 20vh)); */
   /* max-width: min(calc(100% - (50vw - 20vh)), 95%); */
   border: none;
-  background-color: var(--white-color);
+  /* background-color: var(--white-color); */
   border-radius: 1em;
   .dialog-header {
     display: flex;
@@ -517,7 +517,7 @@ details {
       border-right: none;
       border-color: var(--primary-color);
       padding: 0.8em 1.25em;
-      background-color: var(--white-color);
+      /* background-color: var(--white-color); */
       text-align: center;
       font-weight: 600;
       &::placeholder {

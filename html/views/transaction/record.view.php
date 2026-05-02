@@ -139,8 +139,7 @@
   let rekening_sumber_akhir = document.querySelector('#rekening_sumber_akhir')
   let rekening_masuk_akhir = document.querySelector('#rekening_masuk_akhir')
 
-
-  FORM.tanggal.value = new Date().toISOString().split("T")[0];
+  FORM.tanggal.value = new Intl.DateTimeFormat('sv-SE').format(new Date());
   fetch(`<?= BASEURL ?>/Record/args?rekening=true`)
     .then(r => r.ok ? r.json() : Promise.reject(new Error(`Error ${r.status}`)))
     .then(async d => {
@@ -265,12 +264,11 @@
       resetSlimSelect(e);
       return false;
     }
-    if (masukRek?.isAsing && sumberRek?.isAsing) {
-      showAlert('Tidak bisa pindah buku antar nominal asing', 'warning');
+    if (masukRek?.isAsing && sumberRek?.isAsing && masukRek.nominal_asing === sumberRek.nominal_asing) {
+      showAlert('Tidak bisa pindah buku antar rekening dengan jenis uang asing berbeda', 'warning');
       resetSlimSelect(e);
       return false;
     }
-
     return true;
   }
 

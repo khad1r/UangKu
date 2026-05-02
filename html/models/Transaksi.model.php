@@ -31,6 +31,8 @@ class Transaksi extends Database
                     t.*,
                     rs.nama AS nama_rekening_sumber,
                     rm.nama AS nama_rekening_masuk
+                    rs.jenis_uang AS jenis_budget_sumber,
+                    rm.jenis_uang AS jenis_budget_masuk,
                 FROM TRANSAKSI t
                 LEFT JOIN REKENING rs ON t.rekening_sumber = rs.id
                 LEFT JOIN REKENING rm ON t.rekening_masuk = rm.id;")
@@ -66,6 +68,38 @@ class Transaksi extends Database
         SELECT kelompok, COUNT(1) as count FROM {$this->table}
         GROUP BY kelompok
         order BY count DESC;
+      SQL)
+      ->resultSet();
+  }
+  public function getDaftarHarta()
+  {
+    return $this
+      ->query(<<<SQL
+        SELECT
+          r.nama AS nama_rekening,
+          -- 1. Hitung selisih bulan berjalan
+          CAST((julianday('now') - julianday(t.tanggal)) / 30.44 AS INTEGER) AS bulan_berjalan,
+
+        -- 2. Total akumulasi penyusutan hingga saat ini
+          (t.penyusutan_bunga * CAST((julianday('now') - julianday(t.tanggal)) / 30.44 AS INTEGER)) AS total_penyusutan_per_unit,
+
+          -- 2. Nilai sekarang dengan batas minimum 1
+          -- Logika: MAX(1, (Nominal - (Penyusutan * Bulan)) * Kuantitas)
+          MAX(1,
+            (t.nominal - (t.penyusutan_bunga * CAST((julianday('now') - julianday(t.tanggal)) / 30.44 AS INTEGER))) * t.kuantitas
+          ) AS nilai_sekarang,
+
+          t.*
+        FROM {$this->table} t
+        JOIN REKENING r ON t.rekening_masuk = r.id
+        WHERE t.harta = 1
+          AND t.jenis_transaksi = 'Pemasukan'
+          -- Filter Harta yang belum terjual atau keluar
+          AND t.id NOT IN (
+              SELECT relasi_transaksi
+              FROM {$this->table}
+              WHERE harta = 1 AND jenis_transaksi = 'Pengeluaran' AND relasi_transaksi IS NOT NULL
+          );
       SQL)
       ->resultSet();
   }
@@ -237,6 +271,7 @@ class Transaksi extends Database
       ],
       [
         'db' => "keterangan",
+        'dbcol' => 'keterangan',
         'dt' => 'keterangan',
       ],
       [
@@ -255,7 +290,28 @@ class Transaksi extends Database
         'formatter' => fn($d, $row) => !empty($d) ? BASEURL . "/uploads/$d" : null
       ],
     ];
+    if ((isset($data['id_rekening'])) && isset($data['rekening_is_harta']) && $data['rekening_is_harta'] == 1) {
+      // Jika rekening adalah harta, tambahkan kolom penyusutan
+      $columns[7] = [
+        'db' => "MAX(1, (nominal - (penyusutan_bunga * CAST((julianday('now') - julianday(tanggal)) / 30.44 AS INTEGER))) * kuantitas)",
+        'dt' => 'nominal',
+        'formatter' => fn($d, $row) => floatval($d)
+      ];
+      $columns[14] = [
+        'db' => "
+          keterangan ||
+          ' [' || x'0A' || x'09' ||
+          'Bulan: ' || CAST((julianday('now') - julianday(tanggal)) / 30.44 AS INTEGER) || ', ' || x'0A' || x'09' ||
 
+          'Total Susut/Unit: ' || printf('%,d', (penyusutan_bunga * CAST((julianday('now') - julianday(tanggal)) / 30.44 AS INTEGER))) || ', ' || x'0A' || x'09' ||
+
+          'Nilai Awal Buku: ' || printf('%,d', nominal * kuantitas) || ', ' || x'0A' || x'09' ||
+          x'0A' || ']' as keterangan
+        ",
+        'dbcol' => 'keterangan',
+        'dt' => 'keterangan',
+      ];
+    }
     return SSP::complex(
       $data,
       $this->conn,
@@ -301,8 +357,8 @@ class Transaksi extends Database
         SUM(nominal_asing*kuantitas) trans_asing
         FROM {$this->table}
         WHERE
-          harta = 0
-          AND tanggal BETWEEN :startDate AND :endDate
+          -- harta = 0 AND
+          tanggal BETWEEN :startDate AND :endDate
           AND (
             rekening_sumber = :id_rekening OR
             rekening_masuk = :id_rekening
@@ -353,8 +409,8 @@ class Transaksi extends Database
           END as color
       FROM {$this->table}
       WHERE
-        harta = 0
-        AND (jenis_transaksi = 'Pengeluaran'
+        -- harta = 0 AND
+        (jenis_transaksi = 'Pengeluaran'
           OR (jenis_transaksi = 'Pindah Buku' AND rekening_sumber = :id_rekening)
         )
         AND tanggal BETWEEN :startDate AND :endDate
@@ -369,5 +425,4 @@ class Transaksi extends Database
       ->bind('id_rekening', $id_rekening)
       ->resultSet();
   }
-  public function importFromCSV($csv) {}
 }

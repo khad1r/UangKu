@@ -51,7 +51,7 @@ CREATE TABLE TRANSAKSI (
   attachment TEXT,
   keterangan TEXT,
   review TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT DEFAULT (datetime('now', 'localtime'))
 );
 
 CREATE INDEX idx_transaksi_masuk ON TRANSAKSI(rekening_masuk);
@@ -73,7 +73,9 @@ FROM
   LEFT JOIN (
     SELECT
       rekening_masuk AS rekening_id,
-      (nominal * kuantitas) AS saldo,
+      (CASE WHEN harta = 1
+        THEN MAX(1, (nominal - (penyusutan_bunga * CAST((julianday('now') - julianday(tanggal)) / 30.44 AS INTEGER))) * kuantitas)
+        ELSE (nominal * kuantitas) END) AS saldo,
       (nominal_asing * kuantitas) AS saldo_asing
     FROM
       TRANSAKSI

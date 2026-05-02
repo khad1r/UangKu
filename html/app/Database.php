@@ -119,4 +119,84 @@ class Database
   {
     return $this->conn->lastInsertId();
   }
+  /**
+   * Reinitializes the database state without dropping tables.
+   * Preserves AUTH, REKENING, and handles Foreign Currency.
+   */
+  public function reinitialize()
+  {
+    try {
+      $this->beginTransaction();
+
+      // 1. Hitung saldo akhir (IDR & Asing) untuk setiap rekening sebagai Saldo Awal
+      $this->query(<<<SQL
+        SELECT
+            r.id,
+            -- Total Saldo dalam IDR[cite: 1, 2]
+            (IFNULL(SUM(CASE WHEN t.jenis_transaksi IN ('Pemasukan', 'Pindah Buku') AND t.rekening_masuk = r.id THEN (t.nominal * t.kuantitas) ELSE 0 END), 0) -
+            IFNULL(SUM(CASE WHEN t.jenis_transaksi IN ('Pengeluaran', 'Pindah Buku') AND t.rekening_sumber = r.id THEN (t.nominal * t.kuantitas) ELSE 0 END), 0)) as total,
+
+            -- Total Saldo Asing: Hanya dihitung jika rekening memang memiliki label nominal_asing[cite: 1, 2]
+            CASE
+                WHEN r.nominal_asing IS NULL OR r.nominal_asing = '' THEN 0
+                ELSE (
+                    IFNULL(SUM(CASE WHEN t.jenis_transaksi IN ('Pemasukan', 'Pindah Buku') AND t.rekening_masuk = r.id THEN (t.nominal_asing * t.kuantitas) ELSE 0 END), 0) -
+                    IFNULL(SUM(CASE WHEN t.jenis_transaksi IN ('Pengeluaran', 'Pindah Buku') AND t.rekening_sumber = r.id THEN (t.nominal_asing * t.kuantitas) ELSE 0 END), 0)
+                )
+            END as total_asing
+        FROM REKENING r
+        LEFT JOIN TRANSAKSI t ON r.id = t.rekening_masuk OR r.id = t.rekening_sumber
+        WHERE r.harta = 0
+        GROUP BY r.id, r.nominal_asing; -- Tambahkan r.nominal_asing di sini untuk keamanan standar SQL
+      SQL);
+      $balances = $this->resultSet();
+
+      // 2. Ambil Transaksi Harta Pemasukan yang belum terealisasi (tanpa relasi pengeluaran)[cite: 1]
+      $this->query(<<<SQL
+        SELECT * FROM TRANSAKSI
+        WHERE harta = 1 AND jenis_transaksi = 'Pemasukan'
+        AND id NOT IN (SELECT relasi_transaksi FROM TRANSAKSI WHERE harta = 1 AND jenis_transaksi = 'Pengeluaran' AND relasi_transaksi IS NOT NULL)
+      SQL);
+      $hartaToKeep = $this->resultSet();
+
+      // 3. Bersihkan data transaksi dan reset auto-increment[cite: 1]
+      $this->query("DELETE FROM TRANSAKSI")->execute();
+      $this->query("DELETE FROM DB_INFO")->execute();
+      $this->query("DELETE FROM sqlite_sequence WHERE name='TRANSAKSI'")->execute();
+
+      // 4. Perbarui info database dengan fingerprint baru[cite: 1]
+      $this->insert('DB_INFO', [
+        'version_date' => date('Y-m-d H:i:s'),
+        'fingerprint'  => 'v1-' . date('YmdHis')
+      ]);
+
+      // 5. Masukkan Saldo Awal (termasuk Nominal Asing)[cite: 1, 2]
+      foreach ($balances as $b) {
+        if ($b['total'] != 0 || $b['total_asing'] != 0) {
+          $this->insert('TRANSAKSI', [
+            'jenis_transaksi' => 'Pemasukan',
+            'barang'          => 'Saldo Awal',
+            'rekening_masuk'  => $b['id'],
+            'nominal'         => $b['total'],
+            'nominal_asing'   => $b['total_asing'], // Tetap tercatat untuk akun valas
+            'kuantitas'       => 1,
+            'tanggal'         => date('Y-m-d'),
+            'keterangan'      => 'Reinitialization Saldo Awal'
+          ]);
+        }
+      }
+
+      // 6. Kembalikan data Harta yang utuh[cite: 1]
+      foreach ($hartaToKeep as $h) {
+        unset($h['id']);
+        $this->insert('TRANSAKSI', $h);
+      }
+
+      $this->commit();
+      return true;
+    } catch (\Exception $e) {
+      $this->rollback();
+      throw $e;
+    }
+  }
 }

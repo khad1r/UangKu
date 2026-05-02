@@ -30,4 +30,29 @@ class Controller
       require_once './views/' . $renderView . '.view.php';
     }
   }
+  protected function generateCSRFToken()
+  {
+    $token = bin2hex(random_bytes(32));
+    $_SESSION['csrf_token'] = [
+      'value' => $token,
+      'expires' => time() + 300 // Token valid for 5 minutes
+    ];
+    return $token;
+  }
+  protected function validateCSRFToken($token)
+  {
+    if (!isset($_SESSION['csrf_token'])) {
+      return false;
+    }
+    $csrfToken = $_SESSION['csrf_token'];
+    if ($csrfToken['expires'] < time()) {
+      unset($_SESSION['csrf_token']);
+      return false;
+    }
+    if (hash_equals($csrfToken['value'], $token)) {
+      unset($_SESSION['csrf_token']);
+      return true;
+    }
+    return false;
+  }
 }
