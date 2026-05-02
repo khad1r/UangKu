@@ -196,10 +196,11 @@ class Record extends Controller
     $request = $psr17Factory->createServerRequestFromGlobals();
 
     $server = Server::builder()
-      ->setServerInfo('MCP UangKu', '1.0.0')
+      ->setServerInfo('MCP UangKu', '1.0.10')
       ->addTool([\App\libs\MCP::class, 'getRekening'], 'get_rekening')
       ->addTool([\App\libs\MCP::class, 'getKelompok'], 'get_kelompok')
       ->addTool([\App\libs\MCP::class, 'catatTransaksi'], 'catat_transaksi')
+      ->addTool([\App\libs\MCP::class, 'getHarta'], 'get_harta')
       ->setSession(new FileSessionStore('/tmp/mcp_sessions')) // HTTP needs persistent sessions
 
       ->build();
