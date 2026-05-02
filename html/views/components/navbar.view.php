@@ -157,6 +157,7 @@
   <div class="col-xxl-3 col-lg-5 p-0 nav-container">
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <div class="navbar-more d-flex justify-content-around flex-column mb-3">
+        <a class="nav-link" href="<?= BASEURL ?>/Transaction/pencarian"><i class="fas fa-magnifying-glass"></i>&nbsp;&nbsp; Pencarian</a>
         <a class="nav-link" href="<?= BASEURL ?>/Rekening/"><i class="fas fa-wallet"></i>&nbsp;&nbsp; Rekening</a>
         <!-- <a class="nav-link" href="<?= BASEURL ?>/Transaction/database"><i class="fas fa-file-invoice"></i>&nbsp;&nbsp; Laporan & Evaluasi</a> -->
         <?php if (ENABLE_AUTH) { ?>
@@ -164,7 +165,9 @@
         <?php } ?>
         <a class="nav-link" href="<?= BASEURL ?>/Databases"><i class="fas fa-server"></i>&nbsp;&nbsp; Basis Data</a>
         <hr style="border: 2px solid var(--white-color);">
-        <a class="nav-link" href="<?= BASEURL ?>/Auth/logout"><i class="fas fa-sign-out-alt"></i>&nbsp;&nbsp; Log Out</a>
+        <?php if (ENABLE_AUTH) { ?>
+          <a class="nav-link" href="<?= BASEURL ?>/Auth/logout"><i class="fas fa-sign-out-alt"></i>&nbsp;&nbsp; Log Out</a>
+        <?php } ?>
       </div>
       <div style="height: 15dvh;"></div>
     </div>

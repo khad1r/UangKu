@@ -57,7 +57,8 @@
           <th scope="col" class="">Keterangan</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+      </tbody>
     </table>
   </div>
 </div>
@@ -258,6 +259,37 @@
     document.querySelector('#text-net').innerHTML = 'Rp.&nbsp;' + ((+data.cashIn) - (+data.cashOut)).toLocaleString('id')
     document.querySelector('#text-saldo').innerHTML = 'Rp.&nbsp;' + (+data.saldo).toLocaleString('id')
   }
+
+  // const findData = (id) => {
+  //   DT_TABLE.column(0).search(id).draw();
+  //   MODAL.close()
+  // }
+  const resetTable = async () => {
+    await DT_TABLE
+      .search('') // Clear global search
+      .columns().search('') // Clear all column filters
+      .order([
+        [0, 'desc']
+      ]) // Reset to default sorting (1st column), this make other column orderable again,
+      // fix by set column orderable false again after draw
+      .draw() // Apply all changes in one redraw
+    // .column(1).orderable(false) // Keep column 1 unsortable
+    // .column(9).orderable(false) // Keep column 9 unsortable
+  }
+  const deleteRekeing = () => {
+    Swal.fire({
+      title: `Hapus ${MODAL.querySelector('#dialog-title').textContent}..?`,
+      text: "Tindakan ini tidak bisa dikembalikan",
+      icon: "warning",
+      target: "dialog",
+      showCancelButton: true,
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      FORM.action = "<?= BASEURL ?>/Record/delete"
+      console.log(FORM);
+      FORM.submit()
+    });
+  }
   const DT_TABLE = new DataTable(TABLE, {
     "dom": "ftpl",
     "language": {
@@ -272,7 +304,9 @@
         "previous": "⇐"
       }
     },
+    'deferLoading': typeof dontLoad === 'undefined' ? null : 1,
     'bInfo': false,
+    "searchDelay": 800, // Wait 500ms after typing stops before hitting the server
     'fixedHeader': false,
     'processing': true,
     'serverSide': true,
@@ -315,7 +349,7 @@
         } else if (xhr.status >= 500) {
           errorMessage = 'Terjadi kesalahan pada server.<br><small>Silakan coba lagi nanti.</small>';
         }
-        if (DT_TABLE.rows().data().toArray().length === 0) {}
+        if (this.api().rows().data().toArray().length === 0) {}
         showAlert(errorMessage, 'danger');
         loadingPage.style.display = "none";
       }
@@ -360,7 +394,8 @@
           // `<a href="<?= BASEURL ?>/Transaction/detail/${data.relasi_transaksi}" class="kuitansi small"><i class="fas fa-link"></i>${data.relasi_transaksi}</a>` :
           relas = data.relasi_transaksi ?
             /* HTML */
-            `<div><a href="javascript:findData('${data.relasi_transaksi}')" class="kuitansi small"><i class="fas fa-link"></i> trx.${data.relasi_transaksi}</a></div>` :
+            `<div><a href="/Transaction/pencarian?id=${data.relasi_transaksi}" class="kuitansi small"><i class="fas fa-link"></i> trx.${data.relasi_transaksi}</a></div>` :
+            // `<div><a href="javascript:findData('${data.relasi_transaksi}')" class="kuitansi small"><i class="fas fa-link"></i> trx.${data.relasi_transaksi}</a></div>` :
             '';
           return /* HTML */ `
           <strong>${data.barang}${harta}</strong>${bunga}${relas}
@@ -453,16 +488,18 @@
     createdRow: function(row, data, dataIndex) {
       const cells = row.querySelectorAll('td');
       cells.forEach((td, index) => {
-        const header = DT_TABLE.column(index).header();
+        const header = this.api().column(index).header();
         td.setAttribute('data-label', header.textContent);
       });
     },
     'drawCallback': function(settings) {
       // Convert DataTable to array (assumes DT_TABLE is a DataTables instance)
-      var tableData = DT_TABLE.rows().data().toArray();
+      // check if DT_TABLE is defined to avoid errors during initialization
+      // var tableData = DT_TABLE.rows().data().toArray();
+      var tableData = this.api().rows().data().toArray();
 
       // Only proceed if table has visible records
-      if (DT_TABLE.rows({
+      if (this.api().rows({
           filter: 'applied'
         }).count() > 0) {
         const tooltipRows = TABLE.querySelectorAll('tbody tr');
@@ -563,34 +600,4 @@
       MODAL.close();
     }
   })
-  const findData = (id) => {
-    DT_TABLE.search(id).draw();
-    MODAL.close()
-  }
-  const resetTable = async () => {
-    await DT_TABLE
-      .search('') // Clear global search
-      .columns().search('') // Clear all column filters
-      .order([
-        [0, 'desc']
-      ]) // Reset to default sorting (1st column), this make other column orderable again,
-      // fix by set column orderable false again after draw
-      .draw() // Apply all changes in one redraw
-    // .column(1).orderable(false) // Keep column 1 unsortable
-    // .column(9).orderable(false) // Keep column 9 unsortable
-  }
-  const deleteRekeing = () => {
-    Swal.fire({
-      title: `Hapus ${MODAL.querySelector('#dialog-title').textContent}..?`,
-      text: "Tindakan ini tidak bisa dikembalikan",
-      icon: "warning",
-      target: "dialog",
-      showCancelButton: true,
-    }).then((result) => {
-      if (!result.isConfirmed) return;
-      FORM.action = "<?= BASEURL ?>/Record/delete"
-      console.log(FORM);
-      FORM.submit()
-    });
-  }
 </script>

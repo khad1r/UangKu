@@ -175,7 +175,10 @@ class Transaksi extends Database
     $table = "{$this->table} ";
     $table .= "LEFT JOIN (SELECT id rs_id, nama rs_nama, nominal_asing rs_mata_uang, harta rs_aset FROM REKENING) rs ON {$this->table}.rekening_sumber = rs_id ";
     $table .= "LEFT JOIN (SELECT id rm_id, nama rm_nama, nominal_asing rm_mata_uang, harta rm_aset FROM REKENING) rm ON {$this->table}.rekening_masuk = rm_id ";
-    $where = " tanggal BETWEEN {$this->conn->quote($data['startDate'] ?? date('Y-m-01'))} AND {$this->conn->quote($data['endDate'] ?? date('Y-m-d'))} ";
+    $where = "";
+    if (isset($data['startDate']) || isset($data['endDate'])) {
+      $where .= " tanggal BETWEEN {$this->conn->quote($data['startDate'] ?? date('Y-m-01'))} AND {$this->conn->quote($data['endDate'] ?? date('Y-m-d'))} ";
+    }
     if (isset($data['id_rekening'])) {
       $where .= " AND (rekening_sumber = {$this->conn->quote($data['id_rekening'])} OR rekening_masuk = {$this->conn->quote($data['id_rekening'])}) ";
     }
@@ -186,7 +189,7 @@ class Transaksi extends Database
     $columns = [
       [
         'db' => "printf('%04d', id)",
-        // 'dbcol' => 'id',
+        'dbcol' => 'id',
         'dt' => 'id',
       ],
       [
