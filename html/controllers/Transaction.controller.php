@@ -47,6 +47,26 @@ class Transaction extends Controller
     $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }
+  public function pencarian()
+  {
+    $id_transaksi = $_GET['id'] ?? '';
+    sanitize_input($id_transaksi);
+    $model = new Transaksi();
+    $transaksi = $model->getById($id_transaksi);
+    if (empty($transaksi)) {
+      showAlert('Data tidak ditemukan', 'danger');
+      Route::Redirect('/Transaction');
+      exit;
+    }
+    $data['title'] = "Pencarian Transaksi";
+    $data['subTitle'] = "<i class='fas fa-wallet'></i> <strong><u>Pencarian Transaksi</u></strong> <i class='fas fa-magnifying-glass'></i>";
+    $data['transaksi'] = $transaksi;
+    setCacheControl(259200/* 3 Day Expired */);
+    $data['view'] = 'transaction/pencarian';
+    $data['top-left-view'] = 'components/header';
+    $data['right-bottom-view'] = 'components/navbar';
+    $this->view('templates/template', $data);
+  }
 
 
   public function datatable()
