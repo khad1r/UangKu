@@ -239,7 +239,7 @@ a {
 }
 #toast-container {
   position: fixed;
-  bottom: 2vh;
+  top: 2vh;
   right: 5rem;
   z-index: 9999;
   @media (orientation: portrait) {
@@ -831,8 +831,9 @@ details {
             justify-content: space-between;
             display: flex;
             .dtr-data {
-              width: 100%;
+              width: 50vw;
               text-align: end;
+              text-overflow: ellipsis;
             }
           }
         }

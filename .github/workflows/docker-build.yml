@@ -21,13 +21,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      # Optimization: Use SHA for branch builds, Tag for releases
-      - name: Set Docker tag
+
+      - name: Set Docker tags
         run: |
           if [ "${{ github.ref_type }}" == "tag" ]; then
-            echo "DOCKER_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+            echo "DOCKER_TAGS=${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_ENV
           else
-            echo "DOCKER_TAG=sha-${{ github.sha }}" >> $GITHUB_ENV
+            echo "DOCKER_TAGS=${{ env.IMAGE_NAME }}:sha-${{ github.sha }},${{ env.IMAGE_NAME }}:latest" >> $GITHUB_ENV
           fi
 
       - name: Set up Docker Buildx
@@ -45,7 +45,7 @@ jobs:
           context: .
           file: .docker/Dockerfile.production
           push: true
-          tags: ${{ env.IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+          tags: ${{ env.DOCKER_TAGS }}
           platforms: linux/amd64
 
       - name: Google Auth
@@ -55,10 +55,11 @@ jobs:
           service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
 
       - name: Deploy to Cloud Run
-        # Explicit guard: Only deploy when a version tag is pushed
-        if: startsWith(github.ref, 'refs/tags/v')
+        # ONLY deploy on main branch pushes, NOT on tags
+        if: github.ref == 'refs/heads/main'
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
-          image: docker.io/${{ env.IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+          # Explicitly use the SHA tag for the deployment to ensure immutability
+          image: docker.io/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
