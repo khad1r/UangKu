@@ -1,11 +1,20 @@
 {
     frankenphp
+    # Global log settings for internal Caddy/FrankenPHP events
+    log {
+        output stdout
+        format json
+    }
 }
 
 :80, :443 {
     # Set your project root
     root * /var/www/html/public
 
+    # Enable HTTP access logging (Who visited what)
+    log {
+        output stdout
+    }
     # 1. Handle standard PHP routing (The "try_files" equivalent)
     # This automatically does: if file exists, serve it; else, send to index.php
     php_server

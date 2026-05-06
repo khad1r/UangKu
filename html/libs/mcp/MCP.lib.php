@@ -76,7 +76,7 @@ class MCP
       'kelompok'          => [
         'type' => ['string', 'null'],
         'default' => null,
-        'description' => 'Kategori transaksi. Gunakan get_kelompok untuk referensi.
+        'description' => 'Kategori transaksi. Gunakan get_kelompok untuk referensi saja tidak wajib diikuti, boleh buat baru sesuai kebutuhan. Aturan penentuan kelompok:
           1. OPERASIONAL (Rutin): Gunakan kategori umum (contoh: "Konsumsi", "Transportasi", "Listrik") jika dilakukan untuk kebutuhan dasar harian.
           2. LIFESTYLE (Non-Rutin Umum): Gunakan kategori umum jika terjadi di hari Minggu atau bersifat insidentil (bukan kebutuhan kerja harian).
           3. PROYEK/EVENT: Wajib buat/gunakan satu nama kelompok unik (contoh: "Liburan Bali 2026", "Perjadin 7 April") untuk SEMUA item (makan, tiket, dll) jika transaksi adalah bagian dari agenda khusus tersebut.

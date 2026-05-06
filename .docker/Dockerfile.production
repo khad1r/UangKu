@@ -10,7 +10,10 @@ RUN install-php-extensions pcntl opcache intl
 
 # Conditional Dev/Production Logic
 RUN  mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
-    && echo "expose_php = Off" > /usr/local/etc/php/conf.d/security.ini;
+    && echo "expose_php = Off" > /usr/local/etc/php/conf.d/security.ini \
+    # Add these three lines:
+    && echo "log_errors = On" >> "$PHP_INI_DIR/php.ini" \
+    && echo "error_log = /proc/self/fd/2" >> "$PHP_INI_DIR/php.ini"
 
 
 # Install Composer
