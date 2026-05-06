@@ -35,7 +35,7 @@ class MCP
         'description' => 'Tipe transaksi'
       ],
       'harta'             => ['type' => 'boolean', 'description' => 'Set TRUE untuk aset permanen (HP, Motor, Emas, Furnitur). Set FALSE untuk barang habis pakai.'],
-      'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat'],
+      'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat, Harus di generalkan jangan terlalu spesifik (contoh: "Makan siang" bukan "Nasi Padang Sari Ratu"), Gunakan Keterangan untuk lainnya.'],
       'rekening_sumber'   => [
         'type' => ['integer', 'null'],
         'description' => 'ID Rekening asal. Gunakan tool get_rekening untuk mencari ID yang tepat. (Wajib jika Pengeluaran/Pindah Buku)
@@ -75,6 +75,7 @@ class MCP
       ],
       'kelompok'          => [
         'type' => ['string', 'null'],
+        'default' => null,
         'description' => 'Kategori transaksi. Gunakan get_kelompok untuk referensi.
           1. OPERASIONAL (Rutin): Gunakan kategori umum (contoh: "Konsumsi", "Transportasi", "Listrik") jika dilakukan untuk kebutuhan dasar harian.
           2. LIFESTYLE (Non-Rutin Umum): Gunakan kategori umum jika terjadi di hari Minggu atau bersifat insidentil (bukan kebutuhan kerja harian).
@@ -94,7 +95,7 @@ class MCP
           - Jika menginput struk belanja, catat item pertama, dapatkan ID-nya, lalu gunakan ID tersebut di field ini untuk item-item selanjutnya.
         '
       ],
-      'keterangan'        => ['type' => ['string', 'null'], 'default' => ''],
+      'keterangan'        => ['type' => ['string', 'null'], 'default' => '', 'description' => 'Informasi tambahan tentang transaksi. Gunakan untuk detail spesifik yang tidak tercakup di field lain (contoh: nama toko, metode pembayaran, alasan pembelian).'],
       'attachment_base64' => [
         'type' => ['string', 'null'],
         'description' => 'Optional: Base64 string of receipt image. Untuk Struk masukan saja ke transaksi utama (item pertama), tidak perlu untuk item berikutnya yang menggunakan relasi_transaksi.'
