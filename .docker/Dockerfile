@@ -26,6 +26,8 @@ RUN if [ "$DOCKER_ENV" = "development" ]; then \
         echo "error_reporting = E_ALL"; \
         echo "display_startup_errors = On"; \
         echo "display_errors = On"; \
+        echo "log_errors = On" ; \
+        echo "error_log = /proc/self/fd/2" ; \
     } > /usr/local/etc/php/conf.d/error-reporting.ini; \
   else \
     mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
