@@ -30,7 +30,7 @@ class Transaksi extends Database
       ->query("SELECT
                     t.*,
                     rs.nama AS nama_rekening_sumber,
-                    rm.nama AS nama_rekening_masuk
+                    rm.nama AS nama_rekening_masuk,
                     rs.jenis_uang AS jenis_budget_sumber,
                     rm.jenis_uang AS jenis_budget_masuk,
                 FROM TRANSAKSI t

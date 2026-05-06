@@ -1,6 +1,11 @@
 <?php
 date_default_timezone_set(getenv('TZ'));
-error_reporting(getenv('DOCKER_ENV') == 'development'); // Turn off error reporting
+// error_reporting(getenv('DOCKER_ENV') == 'development'); // Turn off error reporting
+error_reporting(E_ALL);
+// Ensure they aren't displayed to the browser
+ini_set('display_errors', getenv('DOCKER_ENV') == 'development' ? '1' : '0');
+// Ensure they ARE sent to the log stream (stderr)
+ini_set('log_errors', '1');
 // header("Content-type:text/plain");
 /* set character encoding to utf-8*/
 mb_http_output("UTF-8");
