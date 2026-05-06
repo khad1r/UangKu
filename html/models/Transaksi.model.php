@@ -32,7 +32,7 @@ class Transaksi extends Database
                     rs.nama AS nama_rekening_sumber,
                     rm.nama AS nama_rekening_masuk,
                     rs.jenis_uang AS jenis_budget_sumber,
-                    rm.jenis_uang AS jenis_budget_masuk,
+                    rm.jenis_uang AS jenis_budget_masuk
                 FROM TRANSAKSI t
                 LEFT JOIN REKENING rs ON t.rekening_sumber = rs.id
                 LEFT JOIN REKENING rm ON t.rekening_masuk = rm.id;")
