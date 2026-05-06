@@ -88,7 +88,7 @@
       </div>
       <div class="p-3 mb-4 border-bottom border-top border-2 border-primary form-check form-switch d-flex justify-content-between ps-0" style="font-size: .75em;font-weight: 600;">
         <label class="form-check-label text-primary w-100" for="rutin">Rutin / Non Rutin</label>
-        <input class="form-check-input hide-group" type="checkbox" id="rutin" name="rutin" disabled="true">
+        <input class="form-check-input" type="checkbox" id="rutin" name="rutin">
         <?php InputValidator('rutin') ?>
       </div>
       <div class="form-group">
@@ -348,7 +348,7 @@
     FORM.switchStateInput(FORM.rekening_sumber, state[0] || state[2])
     if (!state[1] || state[2]) FORM.rekening_masuk.SlimSelect.setSelected()
     FORM.switchStateInput(FORM.rekening_masuk, state[1] || state[2])
-    FORM.switchStateInput(FORM.rutin, state[0] || state[1])
+    // FORM.switchStateInput(FORM.rutin, state[0] || state[1])
     rekening_sumber_akhir.innerHTML = ''
     rekening_masuk_akhir.innerHTML = ''
   }
@@ -390,13 +390,13 @@
   FORM.rutin.State = FORM.rutin.checked;
   FORM.rutin.switchState = (state = !FORM.rutin.State) => {
     if (state === FORM.rutin.State) return;
-    FORM.kelompol.required = state
+    FORM.kelompok.required = state
     FORM.rutin.State = !FORM.rutin.State
   }
   FORM.rutin.addEventListener('change', e => {
     e.target.switchState(e.target.checked)
   });
-  FORM.kuantitas.addEventListener('change', function(e) {
+  FORM.kuantitas.addEventListener('keyup', function(e) {
     hitung()
   })
   // Helper to format as Indonesian Currency/Number
@@ -408,8 +408,9 @@
     return parts.length > 1 ? parts[0] + ',' + parts[1].substring(0, 4) : parts[0];
   };
   [FORM.nominal, FORM.nominal_asing].forEach(el => {
-    el.addEventListener('change', () => hitung());
+    // el.addEventListener('change', () => hitung());
     el.addEventListener('keyup', function(e) {
+      hitung()
       // Allow digits and a single comma
       let v = e.target.value.replace(/[^0-9,]/g, '');
 

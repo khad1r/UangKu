@@ -15,7 +15,7 @@
   "editor.smoothScrolling": true,
   "editor.multiCursorModifier": "ctrlCmd",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "intelephense.diagnostics.undefinedProperties": false,
+  "intelephense.diagnostics.undefinedProperties": true,
   "[php]": {
     "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
   },
