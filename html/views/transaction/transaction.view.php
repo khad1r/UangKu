@@ -254,10 +254,16 @@
     CompsChart.series[0].setData(data.comps, false)
     CashFlowChart.redraw()
     CompsChart.redraw()
-    document.querySelector('#text-pemasukan').innerHTML = 'Rp.&nbsp;' + (+data.cashIn).toLocaleString('id')
-    document.querySelector('#text-pengeluaran').innerHTML = 'Rp.&nbsp;' + (+data.cashOut).toLocaleString('id')
-    document.querySelector('#text-net').innerHTML = 'Rp.&nbsp;' + ((+data.cashIn) - (+data.cashOut)).toLocaleString('id')
-    document.querySelector('#text-saldo').innerHTML = 'Rp.&nbsp;' + (+data.saldo).toLocaleString('id')
+    const updateIDR = (id, value) => {
+        const el = document.querySelector(id);
+        if (el) {
+            el.innerHTML = `Rp.&nbsp;${(+value).toLocaleString('id')}`;
+        }
+    };
+    updateIDR('#text-pemasukan', data.cashIn);
+    updateIDR('#text-pengeluaran', data.cashOut);
+    updateIDR('#text-net', (+data.cashIn) - (+data.cashOut));
+    updateIDR('#text-saldo', data.saldo);
   }
 
   // const findData = (id) => {
@@ -349,7 +355,7 @@
         } else if (xhr.status >= 500) {
           errorMessage = 'Terjadi kesalahan pada server.<br><small>Silakan coba lagi nanti.</small>';
         }
-        if (this.api().rows().data().toArray().length === 0) {}
+        // if (this.api().rows().data().toArray().length === 0) {}
         showAlert(errorMessage, 'danger');
         loadingPage.style.display = "none";
       }
