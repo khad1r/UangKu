@@ -218,9 +218,9 @@ class Transaksi extends Database
         'dt' => 'rekening',
         'formatter' => function ($d, $row) {
           $html = '';
-          $rs_aset = $row['rs_aset'] == 1 ? ' <small class="text-warning fas fa-coins"></small>' : '';
+          $rs_aset = (!empty($row['rs_aset']) && $row['rs_aset'] == 1) ? ' <small class="text-warning fas fa-coins"></small>' : '';
           if (!empty($row['rs_nama'])) $html .= "<div class=\"fw-bold text-danger\"><i class=\"fas fa-sign-out-alt\"></i>&nbsp;{$row['rs_nama']}$rs_aset</div>";
-          $rm_aset = $row['rm_aset'] == 1 ? ' <small class="text-warning fas fa-coins"></small>' : '';
+          $rm_aset = (!empty($row['rm_aset']) && $row['rm_aset'] == 1) ? ' <small class="text-warning fas fa-coins"></small>' : '';
           if (!empty($row['rm_nama'])) $html .= "<div class=\"fw-bold text-success\"><i class=\"fas fa-sign-in-alt\"></i>&nbsp;{$row['rm_nama']}$rm_aset</div>";
           return $html;
         }
@@ -231,9 +231,9 @@ class Transaksi extends Database
         'dt' => 'rekening2',
         'formatter' => function ($d, $row) {
           $html = '';
-          $rs_aset = $row['rs_aset'] == 1 ? ' <small class="text-warning fas fa-coins"></small>' : '';
+          $rs_aset = (!empty($row['rs_aset']) && $row['rs_aset'] == 1) ? ' <small class="text-warning fas fa-coins"></small>' : '';
           if (!empty($row['rs_nama'])) $html .= "<div class=\"fw-bold text-danger\"><i class=\"fas fa-sign-out-alt\"></i>&nbsp;{$row['rs_nama']}$rs_aset</div>";
-          $rm_aset = $row['rm_aset'] == 1 ? ' <small class="text-warning fas fa-coins"></small>' : '';
+          $rm_aset = (!empty($row['rm_aset']) && $row['rm_aset'] == 1) ? ' <small class="text-warning fas fa-coins"></small>' : '';
           if (!empty($row['rm_nama'])) $html .= "<div class=\"fw-bold text-success\"><i class=\"fas fa-sign-in-alt\"></i>&nbsp;{$row['rm_nama']}$rm_aset</div>";
           return $html;
         }
