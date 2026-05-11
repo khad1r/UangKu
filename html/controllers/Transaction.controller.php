@@ -101,8 +101,9 @@ class Transaction extends Controller
             new \DateTime($row['tanggal'], new \DateTimeZone('UTC'))->getTimestamp() * 1000,
             $row['trans']
           ];
-          if ($row['jenis_transaksi'] == 'Pemasukan') $resp['cashIn'] += $row['trans'];
-          elseif ($row['jenis_transaksi'] == 'Pengeluaran') $resp['cashOut'] += $row['trans'];
+          if ($row['jenis_transaksi'] == 'Pemasukan') $resp['cashIn'] = ($resp['cashIn'] ?? 0) + $row['trans']; // this trhow error undefine key <br/><b>Warning</b>:  Undefined array key "cashIn" in <b>/var/www/html/controllers/Transaction.controller.php</b> on line <b>104</b><br/><br/><b>Warning</b>:  Undefined array key "cashOut" in <b>/var/www/html/controllers/Transaction.controller.php</b> on line <b>105</b><br/><br/><b>Warning</b>:  Cannot modify header information - headers already sent by (output started at /var/www/html/controllers/Transaction.controller.php: 104)in<b>/var/www/html/controllers/Transaction.controller.php</b> on line <b>134</b><br/>{
+
+          elseif ($row['jenis_transaksi'] == 'Pengeluaran') $resp['cashOut'] = ($resp['cashOut'] ?? 0) + $row['trans'];
         }
         $resp['comps'] = (isset($_POST['id_rekening']))
           ? $model->rekeningCompsGraph($_POST['startDate'], $_POST['endDate'], $_POST['id_rekening'])
