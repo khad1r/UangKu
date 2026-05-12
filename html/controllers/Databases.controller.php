@@ -152,31 +152,35 @@ class Databases extends Controller
     $successCount = 0;
     $required_keys = array_flip($required_columns); // Flip for high-speed key checking
     try {
+      // START TRANSACTION HERE
+      // This stops SQLite from writing to disk for every single row
+      $model->beginTransaction();
+
       while ($row = fgetcsv($file, 0, $delimiter)) {
         if (count($header) === count($row)) {
           $rowData = array_combine($header, $row);
-          // UNSET/FILTER: Keep only what is in $required_columns
           $sanitizedData = array_intersect_key($rowData, $required_keys);
 
-          // B. DATE FORMATTING (yyyy-mm-dd)
-          // B. DATE FORMATTING (yyyy-mm-dd)
+          // Date Formatting
           if (!empty($sanitizedData['tanggal'])) {
             $date = new \DateTime(str_replace('/', '-', $sanitizedData['tanggal']));
             $sanitizedData['tanggal'] = $date->format('Y-m-d');
           }
+
           $targetId = $sanitizedData['id'] ?? null;
 
           if ($targetId) {
-            // Remove ID from the update data so you aren't trying to UPDATE the ID column
             $updateData = $sanitizedData;
             unset($updateData['id']);
 
-            if ($model->updateTransaksi($updateData, ['id' => $targetId]) > 0) {
-              $successCount++;
-            }
+            // This now happens in memory, making it lightning fast
+            $model->updateTransaksi($updateData, ['id' => $targetId]);
+            $successCount++;
           }
         }
       }
+      // COMMIT EVERYTHING AT ONCE
+      $model->commit();
 
       if ($successCount > 0) {
         showAlert("Berhasil memperbarui {$successCount} data transaksi.", 'success');
@@ -184,6 +188,8 @@ class Databases extends Controller
         showAlert("Tidak ada data yang diperbarui. Pastikan ID cocok.", 'warning');
       }
     } catch (\Exception $e) {
+      // ROLLBACK IF SOMETHING FAILS
+      $model->rollback();
       showAlert("Gagal: " . $e->getMessage(), 'danger');
     }
     fclose($file);
