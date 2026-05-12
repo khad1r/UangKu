@@ -54,15 +54,15 @@ class Database
     }
     return $this;
   }
-  protected function beginTransaction()
+  public function beginTransaction()
   {
     $this->conn->beginTransaction();
   }
-  protected function rollback()
+  public function rollback()
   {
     $this->conn->rollback();
   }
-  protected function commit()
+  public function commit()
   {
     $this->conn->commit();
   }
@@ -130,24 +130,138 @@ class Database
 
       // 1. Hitung saldo akhir (IDR & Asing) untuk setiap rekening sebagai Saldo Awal
       $this->query(<<<SQL
-        SELECT
-            r.id,
-            -- Total Saldo dalam IDR[cite: 1, 2]
-            (IFNULL(SUM(CASE WHEN t.jenis_transaksi IN ('Pemasukan', 'Pindah Buku') AND t.rekening_masuk = r.id THEN (t.nominal * t.kuantitas) ELSE 0 END), 0) -
-            IFNULL(SUM(CASE WHEN t.jenis_transaksi IN ('Pengeluaran', 'Pindah Buku') AND t.rekening_sumber = r.id THEN (t.nominal * t.kuantitas) ELSE 0 END), 0)) as total,
+      SELECT
+        r.id,
+        t.kelompok,
+        r.nama,
+        1 as rutin,
+        -- Total Saldo dalam IDR[cite: 1, 2]
+        (
+          IFNULL(
+            SUM(
+              CASE
+                WHEN t.jenis_transaksi IN ('Pemasukan', 'Pindah Buku')
+                AND t.rekening_masuk = r.id THEN (t.nominal * t.kuantitas)
+                ELSE 0
+              END
+            ),
+            0
+          ) - IFNULL(
+            SUM(
+              CASE
+                WHEN t.jenis_transaksi IN ('Pengeluaran', 'Pindah Buku')
+                AND t.rekening_sumber = r.id THEN (t.nominal * t.kuantitas)
+                ELSE 0
+              END
+            ),
+            0
+          )
+        ) AS total,
+        -- Total Saldo Asing: Hanya dihitung jika rekening memang memiliki label nominal_asing[cite: 1, 2]
+        CASE
+          WHEN r.nominal_asing IS NULL
+          OR r.nominal_asing = '' THEN 0
+          ELSE (
+            IFNULL(
+              SUM(
+                CASE
+                  WHEN t.jenis_transaksi IN ('Pemasukan', 'Pindah Buku')
+                  AND t.rekening_masuk = r.id THEN (t.nominal_asing * t.kuantitas)
+                  ELSE 0
+                END
+              ),
+              0
+            ) - IFNULL(
+              SUM(
+                CASE
+                  WHEN t.jenis_transaksi IN ('Pengeluaran', 'Pindah Buku')
+                  AND t.rekening_sumber = r.id THEN (t.nominal_asing * t.kuantitas)
+                  ELSE 0
+                END
+              ),
+              0
+            )
+          )
+        END AS total_asing
+      FROM
+        REKENING r
+        LEFT JOIN TRANSAKSI t ON r.id = t.rekening_masuk
+        OR r.id = t.rekening_sumber
+      WHERE
+        r.harta = 0
+        and t.rutin = 1
+      GROUP BY
+        r.id,
+        t.kelompok,
+        r.nominal_asing
 
-            -- Total Saldo Asing: Hanya dihitung jika rekening memang memiliki label nominal_asing[cite: 1, 2]
-            CASE
-                WHEN r.nominal_asing IS NULL OR r.nominal_asing = '' THEN 0
-                ELSE (
-                    IFNULL(SUM(CASE WHEN t.jenis_transaksi IN ('Pemasukan', 'Pindah Buku') AND t.rekening_masuk = r.id THEN (t.nominal_asing * t.kuantitas) ELSE 0 END), 0) -
-                    IFNULL(SUM(CASE WHEN t.jenis_transaksi IN ('Pengeluaran', 'Pindah Buku') AND t.rekening_sumber = r.id THEN (t.nominal_asing * t.kuantitas) ELSE 0 END), 0)
-                )
-            END as total_asing
-        FROM REKENING r
-        LEFT JOIN TRANSAKSI t ON r.id = t.rekening_masuk OR r.id = t.rekening_sumber
-        WHERE r.harta = 0
-        GROUP BY r.id, r.nominal_asing; -- Tambahkan r.nominal_asing di sini untuk keamanan standar SQL
+
+      -- Tambahkan r.nominal_asing di sini untuk keamanan standar SQL
+      union all
+      SELECT
+        r.id,
+        null as kelompok,
+        r.nama,
+        0 as rutin,
+        -- Total Saldo dalam IDR[cite: 1, 2]
+        (
+          IFNULL(
+            SUM(
+              CASE
+                WHEN t.jenis_transaksi IN ('Pemasukan', 'Pindah Buku')
+                AND t.rekening_masuk = r.id THEN (t.nominal * t.kuantitas)
+                ELSE 0
+              END
+            ),
+            0
+          ) - IFNULL(
+            SUM(
+              CASE
+                WHEN t.jenis_transaksi IN ('Pengeluaran', 'Pindah Buku')
+                AND t.rekening_sumber = r.id THEN (t.nominal * t.kuantitas)
+                ELSE 0
+              END
+            ),
+            0
+          )
+        ) AS total,
+        -- Total Saldo Asing: Hanya dihitung jika rekening memang memiliki label nominal_asing[cite: 1, 2]
+        CASE
+          WHEN r.nominal_asing IS NULL
+          OR r.nominal_asing = '' THEN 0
+          ELSE (
+            IFNULL(
+              SUM(
+                CASE
+                  WHEN t.jenis_transaksi IN ('Pemasukan', 'Pindah Buku')
+                  AND t.rekening_masuk = r.id THEN (t.nominal_asing * t.kuantitas)
+                  ELSE 0
+                END
+              ),
+              0
+            ) - IFNULL(
+              SUM(
+                CASE
+                  WHEN t.jenis_transaksi IN ('Pengeluaran', 'Pindah Buku')
+                  AND t.rekening_sumber = r.id THEN (t.nominal_asing * t.kuantitas)
+                  ELSE 0
+                END
+              ),
+              0
+            )
+          )
+        END AS total_asing
+      FROM
+        REKENING r
+        LEFT JOIN TRANSAKSI t ON r.id = t.rekening_masuk
+        OR r.id = t.rekening_sumber
+      WHERE
+        r.harta = 0
+        and t.rutin = 0
+      GROUP BY
+        r.id,
+        -- t.kelompok,
+        r.nominal_asing
       SQL);
       $balances = $this->resultSet();
 
@@ -177,6 +291,8 @@ class Database
             'jenis_transaksi' => 'Pemasukan',
             'barang'          => 'Saldo Awal',
             'rekening_masuk'  => $b['id'],
+            'kelompok'        => $b['kelompok'],
+            'rutin'           => $b['rutin'],
             'nominal'         => $b['total'],
             'nominal_asing'   => $b['total_asing'], // Tetap tercatat untuk akun valas
             'kuantitas'       => 1,
