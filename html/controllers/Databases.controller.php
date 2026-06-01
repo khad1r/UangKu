@@ -65,7 +65,8 @@ class Databases extends Controller
     setCacheControl(0);
 
     $model = new Transaksi();
-    $data = $model->getAll();
+    $data = $model->getInRange($_GET['startDate'] ?? date('Y-m-01'), $_GET['endDate'] ?? date('Y-m-d'));
+
     $filename = "uangku_export_" . date('YmdHis') . ".csv";
 
     // Standard CSV headers
@@ -80,10 +81,10 @@ class Databases extends Controller
 
     if (!empty($data)) {
       // Output Headers
-      fputcsv($output, array_keys($data[0]));
+      fputcsv($output, array_keys($data[0]), escape: "");
       // Output Rows
       foreach ($data as $row) {
-        fputcsv($output, $row);
+        fputcsv($output, $row, escape: "");
       }
     }
     fclose($output);
@@ -157,6 +158,7 @@ class Databases extends Controller
       $model->beginTransaction();
 
       while ($row = fgetcsv($file, 0, $delimiter)) {
+        if ($successCount >= 15) break; // limit to 15 updates per import to prevent server overload
         if (count($header) === count($row)) {
           $rowData = array_combine($header, $row);
           $sanitizedData = array_intersect_key($rowData, $required_keys);
@@ -183,9 +185,11 @@ class Databases extends Controller
       $model->commit();
 
       if ($successCount > 0) {
+        if ($successCount >= 15)
+          showAlert("Hanya Mendukung Maksimal 15 Data Per Import", 'Warning');
         showAlert("Berhasil memperbarui {$successCount} data transaksi.", 'success');
       } else {
-        showAlert("Tidak ada data yang diperbarui. Pastikan ID cocok.", 'warning');
+        showAlert("Tidak ada data yang diperbarui. Pastikan ID cocok dengan transaksi yang telah ada.", 'warning');
       }
     } catch (\Exception $e) {
       // ROLLBACK IF SOMETHING FAILS

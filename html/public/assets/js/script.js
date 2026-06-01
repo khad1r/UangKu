@@ -83,6 +83,14 @@ const formattedNumber = new Intl.NumberFormat('id-ID')
 let formatDate = ($date, options) => {
   return (new Intl.DateTimeFormat("id", options)).format($date)
 }
+let formatDBDate = ($date) => {
+  return (new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })).format($date)
+}
+
 let toMonthShort = ($date) => {
   return (new Intl.DateTimeFormat("id", {
     month: "short",

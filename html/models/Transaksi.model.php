@@ -48,6 +48,24 @@ class Transaksi extends Database
     // );
     return $rows;
   }
+  public function getInRange($startDate, $endDate)
+  {
+    $rows = $this
+      ->query("SELECT
+                    t.*,
+                    rs.nama AS nama_rekening_sumber,
+                    rm.nama AS nama_rekening_masuk,
+                    rs.jenis_uang AS jenis_budget_sumber,
+                    rm.jenis_uang AS jenis_budget_masuk
+                FROM TRANSAKSI t
+                LEFT JOIN REKENING rs ON t.rekening_sumber = rs.id
+                LEFT JOIN REKENING rm ON t.rekening_masuk = rm.id
+                WHERE t.tanggal BETWEEN :startDate AND :endDate")
+      ->bind('startDate', $startDate)
+      ->bind('endDate', $endDate)
+      ->resultSet();
+    return $rows;
+  }
   public function searchKelompok(string $search)
   {
     $search = '%' . strtolower($search) . '%';
