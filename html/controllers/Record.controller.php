@@ -201,6 +201,7 @@ class Record extends Controller
       ->addTool([\App\libs\MCP::class, 'getKelompok'], 'get_kelompok')
       ->addTool([\App\libs\MCP::class, 'catatTransaksi'], 'catat_transaksi')
       ->addTool([\App\libs\MCP::class, 'getHarta'], 'get_harta')
+      ->addTool([\App\libs\MCP::class, 'getTransaction'], 'get_transaction')
       ->addTool([\App\libs\MCP::class, 'updateTransaksi'], 'update_transaksi')
       ->addTool([\App\libs\MCP::class, 'catatTransaksiMasal'], 'catat_transaksi_masal')
       ->setSession(new FileSessionStore('/tmp/mcp_sessions')) // HTTP needs persistent sessions
