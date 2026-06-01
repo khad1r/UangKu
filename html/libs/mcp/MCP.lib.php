@@ -331,7 +331,7 @@ class MCP
     ?string $startDate = null,
     ?string $endDate = null,
   ): array {
-    $startDate = $startDate ?? date('Y-m-01); // Default ke tanggal 1
+    $startDate = $startDate ?? date('Y-m-01'); // Default ke tanggal 1
     $endDate = $endDate ?? date('Y-m-d'); // Default ke hari ini
     try {
       return [
