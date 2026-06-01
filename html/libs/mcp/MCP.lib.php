@@ -310,13 +310,29 @@ class MCP
    */
   #[McpTool(name: 'get_transaction', description: 'Mendapatkan daftar transaksi dalam rentang tanggal tertentu
     Dengan format data [id,jenis_transaksi,harta,barang,rekening_sumber,rekening_masuk,nominal,nominal_asing,kuantitas,penyusutan_bunga,rutin,kelompok,tanggal,relasi_transaksi,attachment,keterangan,review,created_at,nama_rekening_sumber,nama_rekening_masuk,jenis_budget_sumber,jenis_budget_masuk]
-  ')]
+  '
+
+)]
+#[Schema(
+    properties: [
+'startDate'           => [
+        'type' => ['string', 'null'],
+        'format' => 'date',
+        'description' => 'Format: YYYY-MM-DD'
+      ],
+'endDate'           => [
+        'type' => ['string', 'null'],
+        'format' => 'date',
+        'description' => 'Format: YYYY-MM-DD'
+      ],
+]
+)]
   public function getTransaction(
-    ?int $startDate = null,
-    ?int $endDate = null,
+    ?string $startDate = null,
+    ?string $endDate = null,
   ): array {
-    $startDate = $startDate ?? strtotime('-30 days'); // Default ke 30 hari terakhir
-    $endDate = $endDate ?? time(); // Default ke hari ini
+    $startDate = $startDate ?? date('Y-m-01); // Default ke tanggal 1
+    $endDate = $endDate ?? date('Y-m-d'); // Default ke hari ini
     try {
       return [
         'data' => (new Transaksi())->getInRange($startDate, $endDate)
