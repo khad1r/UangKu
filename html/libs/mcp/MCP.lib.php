@@ -27,7 +27,11 @@ class MCP
     5. DISKON:
       - Jika diskon per item: Catat harga NETTO (setelah diskon).
       - Jika diskon total di akhir struk: Gunakan metode PRORATA (bagi diskon ke setiap item secara proporsional) agar total pengeluaran sesuai dengan nominal yang dibayarkan di kasir.
-    6. ASSET LOGIC: Dilarang Pindah Buku untuk Harta. Pembelian = Pengeluaran (Bank) + Pemasukan (Harta ID 16) dengan penyusutan_bunga. Penjualan = Pengeluaran (Harta) + Pemasukan (Bank).
+    6. ASSET LOGIC:
+      - Pembelian = Pengeluaran (rekening uang) + Pemasukan (Harta, harta=true, isi penyusutan_bunga), relasikan keduanya.
+      - Penjualan/Pembuangan = Pengeluaran (Harta, harta=true) + Pemasukan (rekening uang, bila ada hasil jual), relasikan keduanya.
+      - DILARANG: harta=true pada Pengeluaran dari rekening uang biasa.
+      - DILARANG: Pindah Buku untuk Harta.
     7. KURS LOGIC: Perubahan nilai tukar dicatat sebagai Pemasukan/Pengeluaran pada kolom nominal (selisihnya), dengan nominal_asing = 0.'
   )]
   #[Schema(
@@ -37,7 +41,10 @@ class MCP
         'enum' => ['Pengeluaran', 'Pemasukan', 'Pindah Buku'],
         'description' => 'Tipe transaksi'
       ],
-      'harta'             => ['type' => 'boolean', 'description' => 'Set TRUE untuk aset permanen (HP, Motor, Emas, Furnitur). Set FALSE untuk barang habis pakai.'],
+      'harta'             => ['type' => 'boolean', 'description' => '
+        Set TRUE jika rekening yang digunakan adalah rekening Harta (baik Pemasukan maupun Pengeluaran).
+        DILARANG set TRUE pada Pengeluaran dari rekening uang biasa.
+      '],
       'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat, Harus di generalkan jangan terlalu spesifik (contoh: "Makan siang" bukan "Nasi Padang Sari Ratu"), Gunakan Keterangan untuk lainnya.'],
       'rekening_sumber'   => [
         'type' => ['integer', 'null'],
@@ -308,25 +315,27 @@ class MCP
    * Mendapatkan daftar transaksi dalam rentang tanggal tertentu
    * Gunakan tool ini untuk mendapatkan data transaksi dalam format yang mudah dipahami untuk analisis
    */
-  #[McpTool(name: 'get_transaction', description: 'Mendapatkan daftar transaksi dalam rentang tanggal tertentu
+  #[McpTool(
+    name: 'get_transaction',
+    description: 'Mendapatkan daftar transaksi dalam rentang tanggal tertentu
     Dengan format data [id,jenis_transaksi,harta,barang,rekening_sumber,rekening_masuk,nominal,nominal_asing,kuantitas,penyusutan_bunga,rutin,kelompok,tanggal,relasi_transaksi,attachment,keterangan,review,created_at,nama_rekening_sumber,nama_rekening_masuk,jenis_budget_sumber,jenis_budget_masuk]
   '
 
-)]
-#[Schema(
+  )]
+  #[Schema(
     properties: [
-'startDate'           => [
+      'startDate'           => [
         'type' => ['string', 'null'],
         'format' => 'date',
         'description' => 'Format: YYYY-MM-DD'
       ],
-'endDate'           => [
+      'endDate'           => [
         'type' => ['string', 'null'],
         'format' => 'date',
         'description' => 'Format: YYYY-MM-DD'
       ],
-]
-)]
+    ]
+  )]
   public function getTransaction(
     ?string $startDate = null,
     ?string $endDate = null,
