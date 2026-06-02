@@ -4,6 +4,7 @@ namespace App\libs;
 
 use Mcp\Capability\Attribute\{McpTool, Schema, McpResource};
 use Mcp\Exception\ToolCallException;
+use Mcp\Schema\ToolAnnotations;
 use App\models\Transaksi;
 use App\models\Rekening;
 
@@ -19,7 +20,6 @@ class MCP
     ATURAN PENTING:
     1. STRUK BELANJA: Jika input berupa struk dengan banyak item, JANGAN dicatat sebagai satu total. Pecah menjadi item individu. Catat item pertama, ambil ID-nya dari response, lalu gunakan ID tersebut sebagai "relasi_transaksi" untuk item-item berikutnya dalam struk yang sama.
     2. TRANSAKSI HARTA:
-      - Set "harta" = true jika transaksi melibatkan aset permanen/barang berharga (HP, Motor, Emas, Furnitur). Gunakan "harta" = false untuk barang habis pakai (Makanan, Bensin, Listrik).
       - Pastikan terlebih dahulu terdapat transaksi pengeluaran dari rekening untuk membeli lalu buatkan transaksi pemasukan ke rekening harta dengan nilai barang yang telah dibeli. Relasikan transaksi Harta ke Transaksi Pembelian
       - Bila penjualan maka Pengeluaran di Rekening Harta Terkait, lalu pemasukan
     3. NOMINAL ASING: Gunakan "nominal_asing" jika transaksi melibatkan Emas (dalam Gram) atau mata uang asing seperti USD (Paypal).
@@ -32,7 +32,19 @@ class MCP
       - Penjualan/Pembuangan = Pengeluaran (Harta, harta=true) + Pemasukan (rekening uang, bila ada hasil jual), relasikan keduanya.
       - DILARANG: harta=true pada Pengeluaran dari rekening uang biasa.
       - DILARANG: Pindah Buku untuk Harta.
-    7. KURS LOGIC: Perubahan nilai tukar dicatat sebagai Pemasukan/Pengeluaran pada kolom nominal (selisihnya), dengan nominal_asing = 0.'
+    7. KURS LOGIC: Perubahan nilai tukar dicatat sebagai Pemasukan/Pengeluaran pada kolom nominal (selisihnya), dengan nominal_asing = 0.',
+    annotations: new ToolAnnotations(
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false
+    ),
+    outputSchema: [
+      'type' => 'object',
+      'properties' => [
+        'status' => ['type' => 'string']
+      ]
+    ]
   )]
   #[Schema(
     properties: [
@@ -169,7 +181,19 @@ class MCP
    */
   #[McpTool(
     name: 'catat_transaksi_masal',
-    description: 'Mencatat transaksi keuangan baru secara massal dengan batas maksimal 15 transaksi per panggilan. Input berupa array of objects dengan format yang sama seperti catat_transaksi'
+    description: 'Mencatat transaksi keuangan baru secara massal dengan batas maksimal 15 transaksi per panggilan. Input berupa array of objects dengan format yang sama seperti catat_transaksi',
+    annotations: new ToolAnnotations(
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false
+    ),
+    outputSchema: [
+      'type' => 'object',
+      'properties' => [
+        'status' => ['type' => 'string']
+      ]
+    ]
   )]
   #[Schema(
     properties: [
@@ -280,9 +304,36 @@ class MCP
    * Mendapatkan daftar rekening dan ID untuk input transaksi
    * Gunakan tool ini untuk mendapatkan ID rekening yang valid saat mencatat transaksi baru.
    */
-  #[McpTool(name: 'get_rekening', description: 'Mendapatkan daftar rekening dan ID untuk input transaksi
+  #[McpTool(
+    name: 'get_rekening',
+    description: 'Mendapatkan daftar rekening dan ID untuk input transaksi
     Dengan format data [rekening_id,saldo,saldo_asing,aktif,harta,isAsing]
-  ')]
+  ',
+    annotations: new ToolAnnotations(
+      readOnlyHint: true,
+      openWorldHint: false
+    ),
+    outputSchema: [
+      'type' => 'object',
+      'properties' => [
+        'data' => [
+          'type' => 'array',
+          'items' => [
+            'type' => 'object',
+            'properties' => [
+              'rekening_id'   => ['type' => 'integer'],
+              'nama_rekening' => ['type' => 'string'],
+              'saldo'         => ['type' => 'number'],
+              'saldo_asing'   => ['type' => 'number'],
+              'aktif'         => ['type' => 'boolean'],
+              'harta'         => ['type' => 'boolean'],
+              'isAsing'       => ['type' => 'boolean']
+            ]
+          ]
+        ]
+      ]
+    ]
+  )]
   public function getRekening(): array
   {
     try {
@@ -298,9 +349,29 @@ class MCP
    * Mendapatkan daftar kategori/kelompok transaksi yang sudah ada
    * Gunakan tool ini untuk referensi saat mengisi field "kelompok" di catat_transaksi.
    */
-  #[McpTool(name: 'get_kelompok', description: 'Mendapatkan daftar kategori/kelompok transaksi yang sudah ada
-    Dengan format data [kelompok,count]
-  ')]
+  #[McpTool(
+    name: 'get_kelompok',
+    description: 'Mendapatkan daftar kategori/kelompok transaksi yang sudah ada Dengan format data [kelompok,count]',
+    annotations: new ToolAnnotations(
+      readOnlyHint: true,
+      openWorldHint: false
+    ),
+    outputSchema: [
+      'type' => 'object',
+      'properties' => [
+        'data' => [
+          'type' => 'array',
+          'items' => [
+            'type' => 'object',
+            'properties' => [
+              'kelompok' => ['type' => 'string'],
+              'count'    => ['type' => 'integer']
+            ]
+          ]
+        ]
+      ]
+    ]
+  )]
   public function getKelompok(): array
   {
     try {
@@ -317,10 +388,46 @@ class MCP
    */
   #[McpTool(
     name: 'get_transaction',
-    description: 'Mendapatkan daftar transaksi dalam rentang tanggal tertentu
-    Dengan format data [id,jenis_transaksi,harta,barang,rekening_sumber,rekening_masuk,nominal,nominal_asing,kuantitas,penyusutan_bunga,rutin,kelompok,tanggal,relasi_transaksi,attachment,keterangan,review,created_at,nama_rekening_sumber,nama_rekening_masuk,jenis_budget_sumber,jenis_budget_masuk]
-  '
-
+    description: 'Mendapatkan daftar transaksi dalam rentang tanggal tertentu Dengan format data [id,jenis_transaksi,harta,barang,rekening_sumber,rekening_masuk,nominal,nominal_asing,kuantitas,penyusutan_bunga,rutin,kelompok,tanggal,relasi_transaksi,attachment,keterangan,review,created_at,nama_rekening_sumber,nama_rekening_masuk,jenis_budget_sumber,jenis_budget_masuk]',
+    annotations: new ToolAnnotations(
+      readOnlyHint: true,
+      openWorldHint: false
+    ),
+    outputSchema: [
+      'type' => 'object',
+      'properties' => [
+        'data' => [
+          'type' => 'array',
+          'items' => [
+            'type' => 'object',
+            'properties' => [
+              'id'                   => ['type' => 'integer'],
+              'jenis_transaksi'      => ['type' => 'string'],
+              'harta'                => ['type' => 'boolean'],
+              'barang'               => ['type' => 'string'],
+              'rekening_sumber'      => ['type' => ['integer', 'null']],
+              'rekening_masuk'       => ['type' => ['integer', 'null']],
+              'nominal'              => ['type' => 'number'],
+              'nominal_asing'        => ['type' => 'number'],
+              'kuantitas'            => ['type' => 'number'],
+              'penyusutan_bunga'     => ['type' => 'number'],
+              'rutin'                => ['type' => 'boolean'],
+              'kelompok'             => ['type' => ['string', 'null']],
+              'tanggal'              => ['type' => 'string', 'format' => 'date'],
+              'relasi_transaksi'     => ['type' => ['integer', 'null']],
+              'attachment'           => ['type' => ['string', 'null']],
+              'keterangan'           => ['type' => ['string', 'null']],
+              'review'               => ['type' => ['string', 'null']],
+              'created_at'           => ['type' => 'string', 'format' => 'date-time'],
+              'nama_rekening_sumber' => ['type' => ['string', 'null']],
+              'nama_rekening_masuk'  => ['type' => ['string', 'null']],
+              'jenis_budget_sumber'  => ['type' => ['string', 'null']],
+              'jenis_budget_masuk'   => ['type' => ['string', 'null']]
+            ]
+          ]
+        ]
+      ]
+    ]
   )]
   #[Schema(
     properties: [
@@ -380,7 +487,19 @@ class MCP
       1. Batas Maksimal: Hanya mendukung update massal hingga 15 transaksi sekaligus untuk mencegah beban server yang berlebihan. Jika input melebihi batas ini, hanya 15 transaksi pertama yang akan diproses.
       2. Identifikasi Transaksi: Setiap objek dalam array input harus menyertakan field "id" yang valid untuk mengidentifikasi transaksi yang akan diupdate. Transaksi tanpa "id" atau dengan "id" yang tidak ditemukan di database akan diabaikan.
       3. Format Input: Format data untuk setiap transaksi yang akan diupdate sama seperti format yang digunakan dalam catat_transaksi, namun dengan tambahan field "id" yang wajib disertakan. Pastikan semua field yang diperlukan untuk update sudah benar dan sesuai dengan format yang ditentukan.
-      '
+      ',
+    annotations: new ToolAnnotations(
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: false
+    ),
+    outputSchema: [
+      'type' => 'object',
+      'properties' => [
+        'status' => ['type' => 'string']
+      ]
+    ]
   )]
   #[Schema(
     properties: [
@@ -456,9 +575,45 @@ class MCP
    * Mendapatkan daftar harta/aset yang sudah ada dan saldo pembukuannya
    * Gunakan tool ini untuk referensi saat mencatat transaksi yang melibatkan aset permanen seperti HP, Motor, Emas, Furnitur. Tool ini akan menampilkan semua rekening dengan tipe harta
    */
-  #[McpTool(name: 'get_Harta', description: 'Mendapatkan daftar harta/aset yang sudah ada dan saldo pembukuannya
-    Dengan format data [kelompok,count]
-  ')]
+  #[McpTool(
+    name: 'get_Harta',
+    description: 'Mendapatkan daftar harta/aset yang sudah ada dan saldo pembukuannya Dengan format data [kelompok,count]',
+    annotations: new ToolAnnotations(
+      readOnlyHint: true,
+      openWorldHint: false
+    ),
+    outputSchema: [
+      'type' => 'object',
+      'properties' => [
+        'data' => [
+          'type' => 'array',
+          'items' => [
+            'type' => 'object',
+            'properties' => [
+              'id'                   => ['type' => 'integer'],
+              'jenis_transaksi'      => ['type' => 'string'],
+              'harta'                => ['type' => 'boolean'],
+              'barang'               => ['type' => 'string'],
+              'rekening_sumber'      => ['type' => ['integer', 'null']],
+              'rekening_masuk'       => ['type' => ['integer', 'null']],
+              'nominal'              => ['type' => 'number'],
+              'nominal_asing'        => ['type' => 'number'],
+              'kuantitas'            => ['type' => 'number'],
+              'penyusutan_bunga'     => ['type' => 'number'],
+              'rutin'                => ['type' => 'boolean'],
+              'kelompok'             => ['type' => ['string', 'null']],
+              'tanggal'              => ['type' => 'string', 'format' => 'date'],
+              'relasi_transaksi'     => ['type' => ['integer', 'null']],
+              'attachment'           => ['type' => ['string', 'null']],
+              'keterangan'           => ['type' => ['string', 'null']],
+              'review'               => ['type' => ['string', 'null']],
+              'created_at'           => ['type' => 'string', 'format' => 'date-time']
+            ]
+          ]
+        ]
+      ]
+    ]
+  )]
   public function getHarta(): array
   {
     try {
