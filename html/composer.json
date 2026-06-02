@@ -1,4 +1,13 @@
 {
+  "autoload": {
+    "classmap": [
+      "app/",
+      "controllers/",
+      "libs/",
+      "models/",
+      "views/"
+    ]
+  },
   "require": {
     "php": ">=7.2",
     "lbuchs/webauthn": "*",

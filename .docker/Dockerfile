@@ -58,4 +58,4 @@ RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # CMD ["frankenphp", "php-server"]
-CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+CMD ["/bin/sh", "-c", "composer install && composer dump-autoload --optimize && exec frankenphp run --config /etc/caddy/Caddyfile --adapter caddyfile"]
