@@ -20,7 +20,6 @@ class MCP
     ATURAN PENTING:
     1. STRUK BELANJA: Jika input berupa struk dengan banyak item, JANGAN dicatat sebagai satu total. Pecah menjadi item individu. Catat item pertama, ambil ID-nya dari response, lalu gunakan ID tersebut sebagai "relasi_transaksi" untuk item-item berikutnya dalam struk yang sama.
     2. TRANSAKSI HARTA:
-      - Set "harta" = true jika transaksi melibatkan aset permanen/barang berharga (HP, Motor, Emas, Furnitur). Gunakan "harta" = false untuk barang habis pakai (Makanan, Bensin, Listrik).
       - Pastikan terlebih dahulu terdapat transaksi pengeluaran dari rekening untuk membeli lalu buatkan transaksi pemasukan ke rekening harta dengan nilai barang yang telah dibeli. Relasikan transaksi Harta ke Transaksi Pembelian
       - Bila penjualan maka Pengeluaran di Rekening Harta Terkait, lalu pemasukan
     3. NOMINAL ASING: Gunakan "nominal_asing" jika transaksi melibatkan Emas (dalam Gram) atau mata uang asing seperti USD (Paypal).
