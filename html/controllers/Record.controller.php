@@ -11,6 +11,8 @@ use Mcp\Server;
 use Mcp\Server\Transport\StreamableHttpTransport;
 use Mcp\Server\Session\FileSessionStore;
 use Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Cache\Psr16Cache;
 
 
 class Record extends Controller
@@ -194,16 +196,14 @@ class Record extends Controller
 
     $psr17Factory = new Psr17Factory();
     $request = $psr17Factory->createServerRequestFromGlobals();
-
+    $cache = IS_PROD ? new Psr16Cache(new FilesystemAdapter('mcp-discovery')) : null;
     $server = Server::builder()
       ->setServerInfo('MCP UangKu', '1.0.20')
-      ->addTool([\App\libs\MCP::class, 'getRekening'], 'get_rekening')
-      ->addTool([\App\libs\MCP::class, 'getKelompok'], 'get_kelompok')
-      ->addTool([\App\libs\MCP::class, 'catatTransaksi'], 'catat_transaksi')
-      ->addTool([\App\libs\MCP::class, 'getHarta'], 'get_harta')
-      ->addTool([\App\libs\MCP::class, 'getTransaction'], 'get_transaction')
-      ->addTool([\App\libs\MCP::class, 'updateTransaksi'], 'update_transaksi')
-      ->addTool([\App\libs\MCP::class, 'catatTransaksiMasal'], 'catat_transaksi_masal')
+      ->setDiscovery(
+        basePath: dirname(__DIR__) . '/libs/mcp',
+        scanDirs: ['.'],
+        cache: $cache,
+      )  // Auto-discover attributes
       ->setSession(new FileSessionStore('/tmp/mcp_sessions')) // HTTP needs persistent sessions
 
       ->build();
