@@ -225,11 +225,12 @@ class MCP
           ],
           'required' => ['jenis_transaksi', 'barang', 'nominal', 'kuantitas', 'tanggal']
         ]
-      ]
+      ],
+      'autoRelate' => ['type' => 'boolean', 'default' => false]
     ],
     required: ['data']
   )]
-  public function catatTransaksiMasal(array $data): string
+  public function catatTransaksiMasal(array $data, bool $autoRelate = false): string
   {
     $transaksi = new Transaksi();
     $results = [];
@@ -255,7 +256,7 @@ class MCP
         // 3. Auto-relate items in a batch
         // If this is item > 0 in the array, and no relation is set, link it to the first item automatically
         $relasiTransaksi = $item['relasi_transaksi'] ?? null;
-        if ($index > 0 && $relasiTransaksi === null && $firstInsertId !== null) {
+        if ($autoRelate && $index > 0 && $relasiTransaksi === null && $firstInsertId !== null) {
           $relasiTransaksi = $firstInsertId;
         }
 
@@ -387,7 +388,7 @@ class MCP
    * Gunakan tool ini untuk mendapatkan data transaksi dalam format yang mudah dipahami untuk analisis
    */
   #[McpTool(
-    name: 'get_transaction',
+    name: 'get_transaksi',
     description: 'Mendapatkan daftar transaksi dalam rentang tanggal tertentu Dengan format data [id,jenis_transaksi,harta,barang,rekening_sumber,rekening_masuk,nominal,nominal_asing,kuantitas,penyusutan_bunga,rutin,kelompok,tanggal,relasi_transaksi,attachment,keterangan,review,created_at,nama_rekening_sumber,nama_rekening_masuk,jenis_budget_sumber,jenis_budget_masuk]',
     annotations: new ToolAnnotations(
       readOnlyHint: true,
@@ -443,7 +444,7 @@ class MCP
       ],
     ]
   )]
-  public function getTransaction(
+  public function getTransaksi(
     ?string $startDate = null,
     ?string $endDate = null,
   ): array {
