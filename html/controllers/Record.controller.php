@@ -13,6 +13,8 @@ use Mcp\Server\Session\FileSessionStore;
 use Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Psr16Cache;
+use Mcp\Schema\Icon;
+
 
 
 class Record extends Controller
@@ -198,7 +200,17 @@ class Record extends Controller
     $request = $psr17Factory->createServerRequestFromGlobals();
     $cache = IS_PROD ? new Psr16Cache(new FilesystemAdapter('mcp-discovery')) : null;
     $server = Server::builder()
-      ->setServerInfo('MCP UangKu', '1.0.20')
+      ->setServerInfo(
+        name: 'MCP UangKu',
+        version: '1.1.5',
+        description: 'MCP Server untuk integrasi AI dalam pencatatan transaksi keuangan pribadi di Uangku. Dengan MCP, AI dapat berinteraksi langsung dengan data keuangan pengguna, memahami konteks transaksi, dan memberikan rekomendasi atau pencatatan yang lebih akurat sesuai dengan aturan bisnis Uangku.',
+        icons: [new Icon(
+          src: 'https://raw.githubusercontent.com/abdka/UangKu/main/html/assets/logo.png',
+          mimeType: 'image/png',
+          sizes: ['64x64', '128x128']
+        )]
+      )
+      ->setInstructions('Use uangku://system_prompt to get the system prompt for recording transactions in Uangku.')
       ->setDiscovery(
         basePath: dirname(__DIR__) . '/libs/mcp',
         scanDirs: ['.'],
