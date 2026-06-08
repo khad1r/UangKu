@@ -8,7 +8,7 @@ use Mcp\Schema\ToolAnnotations;
 use App\models\Transaksi;
 use App\models\Rekening;
 
-class MCP
+class tools
 {
   /**
    * Mencatat transaksi keuangan baru (Pemasukan, Pengeluaran, atau Pindah Buku)
@@ -76,7 +76,7 @@ class MCP
       ],
       'nominal'           => [
         'type' => 'number',
-        'description' => 'Jumlah dalam Rupiah. Untuk selisih kurs: isi selisih nilainya di sini, set nominal_asing = 0.'
+        'description' => 'Jumlah Per Kuantitas dalam Rupiah. Untuk selisih kurs: isi selisih nilainya di sini, set nominal_asing = 0.'
       ],
       'nominal_asing'     => [
         'type' => ['number', 'null'],
@@ -92,13 +92,13 @@ class MCP
         'type' => 'boolean',
         'default' => false,
         'description' => 'KLASIFIKASI RUTINITAS:
-          - TRUE: Pengeluaran operasional harian yang mendukung kerja/hidup dasar (Senin-Sabtu).
-          - FALSE: Pengeluaran yang tidak terjadi setiap minggu/bulan, atau bagian dari event khusus.'
+          - TRUE: (Pengeluaran Rutin) Pengeluaran harian yang mendukung kerja/hidup dasar.
+          - FALSE: (Pengeluaran Non/Tidak Rutin) Pengeluaran yang tidak terjadi setiap minggu/bulan, atau bagian dari event khusus.'
       ],
       'kelompok'          => [
         'type' => ['string', 'null'],
         'default' => null,
-        'description' => 'Kategori transaksi. Gunakan get_kelompok untuk referensi saja tidak wajib diikuti, boleh buat baru sesuai kebutuhan. Aturan penentuan kelompok:
+        'description' => 'Kategori transaksi. Gunakan get_kelompok untuk referensi, boleh buat baru sesuai kebutuhan. Aturan penentuan kelompok:
           1. OPERASIONAL (Rutin): Gunakan kategori umum (contoh: "Konsumsi", "Transportasi", "Listrik") jika dilakukan untuk kebutuhan dasar harian.
           2. LIFESTYLE (Non-Rutin Umum): Gunakan kategori umum jika terjadi di hari Minggu atau bersifat insidentil (bukan kebutuhan kerja harian).
           3. PROYEK/EVENT: Wajib buat/gunakan satu nama kelompok unik (contoh: "Liburan Bali 2026", "Perjadin 7 April") untuk SEMUA item (makan, tiket, dll) jika transaksi adalah bagian dari agenda khusus tersebut.
@@ -302,163 +302,6 @@ class MCP
     }
   }
   /**
-   * Mendapatkan daftar rekening dan ID untuk input transaksi
-   * Gunakan tool ini untuk mendapatkan ID rekening yang valid saat mencatat transaksi baru.
-   */
-  #[McpTool(
-    name: 'get_rekening',
-    description: 'Mendapatkan daftar rekening dan ID untuk input transaksi
-    Dengan format data [rekening_id,saldo,saldo_asing,aktif,harta,isAsing]
-  ',
-    annotations: new ToolAnnotations(
-      readOnlyHint: true,
-      openWorldHint: false
-    ),
-    outputSchema: [
-      'type' => 'object',
-      'properties' => [
-        'data' => [
-          'type' => 'array',
-          'items' => [
-            'type' => 'object',
-            'properties' => [
-              'rekening_id'   => ['type' => 'integer'],
-              'nama_rekening' => ['type' => 'string'],
-              'saldo'         => ['type' => 'number'],
-              'saldo_asing'   => ['type' => 'number'],
-              'aktif'         => ['type' => 'boolean'],
-              'harta'         => ['type' => 'boolean'],
-              'isAsing'       => ['type' => 'boolean']
-            ]
-          ]
-        ]
-      ]
-    ]
-  )]
-  public function getRekening(): array
-  {
-    try {
-      // FIX: Wrap the list in a key so the result is a 'record' (JSON Object)
-      return [
-        'data' => new Rekening()->getAll()
-      ];
-    } catch (\Exception $e) {
-      throw new ToolCallException("Error: " . $e->getMessage());
-    }
-  }
-  /**
-   * Mendapatkan daftar kategori/kelompok transaksi yang sudah ada
-   * Gunakan tool ini untuk referensi saat mengisi field "kelompok" di catat_transaksi.
-   */
-  #[McpTool(
-    name: 'get_kelompok',
-    description: 'Mendapatkan daftar kategori/kelompok transaksi yang sudah ada Dengan format data [kelompok,count]',
-    annotations: new ToolAnnotations(
-      readOnlyHint: true,
-      openWorldHint: false
-    ),
-    outputSchema: [
-      'type' => 'object',
-      'properties' => [
-        'data' => [
-          'type' => 'array',
-          'items' => [
-            'type' => 'object',
-            'properties' => [
-              'kelompok' => ['type' => 'string'],
-              'count'    => ['type' => 'integer']
-            ]
-          ]
-        ]
-      ]
-    ]
-  )]
-  public function getKelompok(): array
-  {
-    try {
-      return [
-        'data' => new Transaksi()->getKelompok()
-      ];
-    } catch (\Exception $e) {
-      throw new ToolCallException("Error: " . $e->getMessage());
-    }
-  }
-  /**
-   * Mendapatkan daftar transaksi dalam rentang tanggal tertentu
-   * Gunakan tool ini untuk mendapatkan data transaksi dalam format yang mudah dipahami untuk analisis
-   */
-  #[McpTool(
-    name: 'get_transaksi',
-    description: 'Mendapatkan daftar transaksi dalam rentang tanggal tertentu Dengan format data [id,jenis_transaksi,harta,barang,rekening_sumber,rekening_masuk,nominal,nominal_asing,kuantitas,penyusutan_bunga,rutin,kelompok,tanggal,relasi_transaksi,attachment,keterangan,review,created_at,nama_rekening_sumber,nama_rekening_masuk,jenis_budget_sumber,jenis_budget_masuk]',
-    annotations: new ToolAnnotations(
-      readOnlyHint: true,
-      openWorldHint: false
-    ),
-    outputSchema: [
-      'type' => 'object',
-      'properties' => [
-        'data' => [
-          'type' => 'array',
-          'items' => [
-            'type' => 'object',
-            'properties' => [
-              'id'                   => ['type' => 'integer'],
-              'jenis_transaksi'      => ['type' => 'string'],
-              'harta'                => ['type' => 'boolean'],
-              'barang'               => ['type' => 'string'],
-              'rekening_sumber'      => ['type' => ['integer', 'null']],
-              'rekening_masuk'       => ['type' => ['integer', 'null']],
-              'nominal'              => ['type' => 'number'],
-              'nominal_asing'        => ['type' => 'number'],
-              'kuantitas'            => ['type' => 'number'],
-              'penyusutan_bunga'     => ['type' => 'number'],
-              'rutin'                => ['type' => 'boolean'],
-              'kelompok'             => ['type' => ['string', 'null']],
-              'tanggal'              => ['type' => 'string', 'format' => 'date'],
-              'relasi_transaksi'     => ['type' => ['integer', 'null']],
-              'attachment'           => ['type' => ['string', 'null']],
-              'keterangan'           => ['type' => ['string', 'null']],
-              'review'               => ['type' => ['string', 'null']],
-              'created_at'           => ['type' => 'string', 'format' => 'date-time'],
-              'nama_rekening_sumber' => ['type' => ['string', 'null']],
-              'nama_rekening_masuk'  => ['type' => ['string', 'null']],
-              'jenis_budget_sumber'  => ['type' => ['string', 'null']],
-              'jenis_budget_masuk'   => ['type' => ['string', 'null']]
-            ]
-          ]
-        ]
-      ]
-    ]
-  )]
-  #[Schema(
-    properties: [
-      'startDate'           => [
-        'type' => ['string', 'null'],
-        'format' => 'date',
-        'description' => 'Format: YYYY-MM-DD'
-      ],
-      'endDate'           => [
-        'type' => ['string', 'null'],
-        'format' => 'date',
-        'description' => 'Format: YYYY-MM-DD'
-      ],
-    ]
-  )]
-  public function getTransaksi(
-    ?string $startDate = null,
-    ?string $endDate = null,
-  ): array {
-    $startDate = $startDate ?? date('Y-m-01'); // Default ke tanggal 1
-    $endDate = $endDate ?? date('Y-m-d'); // Default ke hari ini
-    try {
-      return [
-        'data' => (new Transaksi())->getInRange($startDate, $endDate)
-      ];
-    } catch (\Exception $e) {
-      throw new ToolCallException("Error: " . $e->getMessage());
-    }
-  }
-  /**
    * Update transaksi Masal
    */
   #[McpTool(
@@ -572,61 +415,6 @@ class MCP
       throw new ToolCallException("⚠️ Error: " . $e->getMessage());
     }
   }
-  /**
-   * Mendapatkan daftar harta/aset yang sudah ada dan saldo pembukuannya
-   * Gunakan tool ini untuk referensi saat mencatat transaksi yang melibatkan aset permanen seperti HP, Motor, Emas, Furnitur. Tool ini akan menampilkan semua rekening dengan tipe harta
-   */
-  #[McpTool(
-    name: 'get_Harta',
-    description: 'Mendapatkan daftar harta/aset yang sudah ada dan saldo pembukuannya Dengan format data [kelompok,count]',
-    annotations: new ToolAnnotations(
-      readOnlyHint: true,
-      openWorldHint: false
-    ),
-    outputSchema: [
-      'type' => 'object',
-      'properties' => [
-        'data' => [
-          'type' => 'array',
-          'items' => [
-            'type' => 'object',
-            'properties' => [
-              'id'                   => ['type' => 'integer'],
-              'jenis_transaksi'      => ['type' => 'string'],
-              'harta'                => ['type' => 'boolean'],
-              'barang'               => ['type' => 'string'],
-              'rekening_sumber'      => ['type' => ['integer', 'null']],
-              'rekening_masuk'       => ['type' => ['integer', 'null']],
-              'nominal'              => ['type' => 'number'],
-              'nominal_asing'        => ['type' => 'number'],
-              'kuantitas'            => ['type' => 'number'],
-              'penyusutan_bunga'     => ['type' => 'number'],
-              'rutin'                => ['type' => 'boolean'],
-              'kelompok'             => ['type' => ['string', 'null']],
-              'tanggal'              => ['type' => 'string', 'format' => 'date'],
-              'relasi_transaksi'     => ['type' => ['integer', 'null']],
-              'attachment'           => ['type' => ['string', 'null']],
-              'keterangan'           => ['type' => ['string', 'null']],
-              'review'               => ['type' => ['string', 'null']],
-              'created_at'           => ['type' => 'string', 'format' => 'date-time']
-            ]
-          ]
-        ]
-      ]
-    ]
-  )]
-  public function getHarta(): array
-  {
-    try {
-      return [
-        'data' => new Transaksi()->getDaftarHarta()
-      ];
-    } catch (\Exception $e) {
-      throw new ToolCallException("Error: " . $e->getMessage());
-    }
-  }
-
-
   /*  */
   private function processFile($fileSource, $fileName, $delete_old = null)
   {
