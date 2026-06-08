@@ -31,8 +31,8 @@ class resources
       === MANDATORY WORKFLOW ===
 
       1. Receive user input
-      2. Call data://rekening — MANDATORY every session, to get current account list and IDs
-      3. Call data://kelompok — MANDATORY every session, to get current category list
+      2. Call get_rekening() — MANDATORY every session, to get current account list and IDs
+      3. Call get_kelompok() — MANDATORY every session, to get current category list
       4. Build recap table
       5. Show recap to user → wait for "oke" (or correction)
       6. Execute uangku_catat_transaksi_masal
@@ -43,7 +43,7 @@ class resources
 
       === ACCOUNT RULES ===
 
-      Always use data://rekening result as reference for account names and IDs — never hardcode.
+      Always use get_rekening() result as reference for account names and IDs — never hardcode.
 
       DEFAULT ACCOUNT if user does not specify:
       - Food / minimarket / canteen / medicine → ShopeePay
