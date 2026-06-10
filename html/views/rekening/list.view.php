@@ -175,6 +175,14 @@
         orderable: false,
         // "className": 'd-none d-sm-table-cell align-middle'
       },
+      {
+        responsivePriority: 1,
+        targets: [0, 1, 4, 5]
+      },
+      {
+        responsivePriority: 0,
+        targets: [2, 3, 6]
+      },
     ],
     'columns': [{
         'data': 'id',
