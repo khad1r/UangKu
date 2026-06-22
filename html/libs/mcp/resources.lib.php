@@ -381,4 +381,23 @@ class resources
       throw new ToolCallException("Error: " . $e->getMessage());
     }
   }
+  #[Schema(
+    properties: [
+      'search'           => [
+        'type' => ['string'],
+        'description' => 'Search By Id, Name, Kelompok'
+      ],
+    ]
+  )]
+  public function searchTransaksi(
+    string $search,
+  ): array {
+    try {
+      return [
+        'data' => new Transaksi()->find($search)
+      ];
+    } catch (\Exception $e) {
+      throw new ToolCallException("Error: " . $e->getMessage());
+    }
+  }
 }
