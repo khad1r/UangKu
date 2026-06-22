@@ -3,8 +3,8 @@
     document.querySelector('.card.card-saldo')?.remove();
     document.querySelector('div.container.mb-3')?.remove();
     <?php if (isset($transaksi['id'])) : ?>
-      DT_TABLE.column(0).search('<?= $transaksi['id'] ?>', true, false).draw();
-      // DT_TABLE.column(0).search(<?= $transaksi['id'] ?>).draw();
+      // Just trigger the draw. The extraQuery below handles sending the ID to the server.
+      DT_TABLE.draw();
     <?php endif; ?>
   });
 
@@ -18,6 +18,9 @@
   }) => ({
     ...rest,
     refreshGraph: false
+    <?php if (isset($transaksi['id'])) : ?>,
+      search_relasi_id: '<?= $transaksi['id'] ?>' // Inject the custom parameter here
+    <?php endif; ?>
   });
 </script>
 <?php $Controller->view('transaction/transaction', $data); ?>

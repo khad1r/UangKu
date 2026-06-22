@@ -73,6 +73,10 @@ class Transaksi extends Database
       ->query(<<<SQL
         SELECT kelompok FROM {$this->table}
         WHERE LOWER(kelompok) LIKE :search
+          AND (
+            rutin = 1
+            OR (rutin = 0 AND tanggal >= date('now', '-30 days'))
+          )
         GROUP BY kelompok
         LIMIT 5;
       SQL)
@@ -83,8 +87,10 @@ class Transaksi extends Database
   {
     return $this
       ->query(<<<SQL
-        SELECT kelompok, COUNT(1) as count FROM {$this->table}
-        GROUP BY kelompok
+        SELECT kelompok, COUNT(1) as count, rutin FROM {$this->table}
+        WHERE rutin = 1
+            OR (rutin = 0 AND tanggal >= date('now', '-30 days'))
+        GROUP BY kelompok,rutin
         order BY count DESC;
       SQL)
       ->resultSet();
@@ -203,6 +209,12 @@ class Transaksi extends Database
     if ($data["columns"][7]["search"]["value"] === "Lainnya") {
       $where .= " AND (kelompok IS NULL OR kelompok = '') ";
       $data["columns"][7]["search"]["value"] = '';
+    }
+    // ADD THIS BLOCK: Custom OR search for ID and Relasi Transaksi
+    if (!empty($data['search_relasi_id'])) {
+      $searchId = intval($data['search_relasi_id']);
+      $prefix = empty($where) ? "" : " AND ";
+      $where .= "{$prefix} (id = {$searchId} OR relasi_transaksi = {$searchId}) ";
     }
     $columns = [
       [
