@@ -165,7 +165,6 @@
     FORM.jenis_transaksi.SlimSelect = new SlimSelect({
       select: FORM.jenis_transaksi,
       settings: {
-        modal: 'off',
         contentLocation: document.querySelector('#ss-dropdown'),
         allowDeselect: false
       }
@@ -174,7 +173,6 @@
       select: FORM.rekening_sumber,
       data: ARGS.Rekening.map(rekeningSelectFormater),
       settings: {
-        modal: 'off',
         contentLocation: document.querySelector('#ss-dropdown'),
         placeholderText: 'Rekening Sumber',
         allowDeselect: true
@@ -184,7 +182,6 @@
       select: FORM.rekening_masuk,
       data: ARGS.Rekening.map(rekeningSelectFormater),
       settings: {
-        modal: 'off',
         contentLocation: document.querySelector('#ss-dropdown'),
         placeholderText: 'Rekening Masuk',
         allowDeselect: true
@@ -197,7 +194,6 @@
     FORM.kelompok.SlimSelect = new SlimSelect({
       select: FORM.kelompok,
       settings: {
-        modal: 'off',
         contentLocation: document.querySelector('#ss-dropdown'),
         allowDeselect: true,
       },
@@ -209,7 +205,6 @@
     FORM.relasi_transaksi.SlimSelect = new SlimSelect({
       select: FORM.relasi_transaksi,
       settings: {
-        modal: 'off',
         contentLocation: document.querySelector('#ss-dropdown'),
         allowDeselect: true
       },
