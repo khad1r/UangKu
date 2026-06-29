@@ -30,8 +30,8 @@
     </form>
   </div>
 </div>
-<script src="https://unpkg.com/slim-select@latest/dist/slimselect.js" crossorigin="anonymous"></script>
-<link href="https://unpkg.com/slim-select@latest/dist/slimselect.css" rel="stylesheet" crossorigin="anonymous">
+<script src="https://unpkg.com/slim-select@4.0.0/dist/slimselect.js" crossorigin="anonymous"></script>
+<link href="https://unpkg.com/slim-select@4.0.0/dist/slimselect.css" rel="stylesheet" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/rangePlugin.js" crossorigin="anonymous"></script>
