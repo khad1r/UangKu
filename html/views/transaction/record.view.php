@@ -129,8 +129,8 @@
     <div id="ss-dropdown"></div>
   </form>
 </div>
-<script src="https://unpkg.com/slim-select@4.0.0/dist/slimselect.js" crossorigin="anonymous"></script>
-<link href="https://unpkg.com/slim-select@4.0.0/dist/slimselect.css" rel="stylesheet" crossorigin="anonymous">
+<script src="https://unpkg.com/slim-select@3.0.0/dist/slimselect.js" crossorigin="anonymous"></script>
+<link href="https://unpkg.com/slim-select@3.0.0/dist/slimselect.css" rel="stylesheet" crossorigin="anonymous">
 </link>
 <script>
   const FORM = document.querySelector('form#form');
