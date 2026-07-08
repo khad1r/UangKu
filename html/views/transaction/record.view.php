@@ -284,13 +284,14 @@
     } = FORM;
 
     const qty = +kuantitas.value || 0;
-    const nominalIDR = nominal.value ? +nominal.value.replace(/\./g, "") : null;
-    const nominalAsing = nominal_asing.value ? +nominal_asing.value.replace(/\./g, "") : null;
+    const nominalIDR = nominal.value ? parseFloat(nominal.value.replace(/\./g, "").replace(",", ".")) : null;
+    const nominalAsing = nominal_asing.value ? parseFloat(nominal_asing.value.replace(/\./g, "").replace(",", ".")) : null;
 
     const sumber = rekening_sumber.rekening;
     const masuk = rekening_masuk.rekening;
 
     const formatSaldo = (val) => val.toLocaleString('id');
+    const formatDisplaySaldo = (val) => Number.isInteger(val) ? `${formatSaldo(val)},-` : formatSaldo(val);
 
     const totalIDR = nominalIDR * qty;
     const totalAsing = nominalAsing * qty;
@@ -308,12 +309,12 @@
 
       if (sumber) {
         rekening_sumber_akhir.innerHTML = /* HTML */ `
-        <p class="d-flex justify-content-between">Saldo Akhir : <b>Rp.${formatSaldo(saldoAkhirSumber)},-</b></p>
+        <p class="d-flex justify-content-between">Saldo Akhir : <b>Rp.${formatDisplaySaldo(saldoAkhirSumber)}</b></p>
       `;
       }
       if (masuk) {
         rekening_masuk_akhir.innerHTML = /* HTML */ `
-        <p class="d-flex justify-content-between">Saldo Akhir : <b>Rp.${formatSaldo(saldoAkhirMasuk)},-</b></p>
+        <p class="d-flex justify-content-between">Saldo Akhir : <b>Rp.${formatDisplaySaldo(saldoAkhirMasuk)}</b></p>
       `;
       }
     }
@@ -323,15 +324,15 @@
 
       if (sumber && sumber.isAsing) {
         rekening_sumber_akhir.innerHTML = /* HTML */ `
-        <p class="d-flex justify-content-between">Saldo Akhir : <b>${formatSaldo(saldoAkhirSumberAsing)},-&nbsp;${sumber.nominal_asing}</b></p>
-        <small class="d-flex justify-content-end">Rp.&nbsp;${formatSaldo(saldoAkhirSumber)}</small>
+        <p class="d-flex justify-content-between">Saldo Akhir : <b>${formatDisplaySaldo(saldoAkhirSumberAsing)}&nbsp;${sumber.nominal_asing}</b></p>
+        <small class="d-flex justify-content-end">Rp.&nbsp;${formatDisplaySaldo(saldoAkhirSumber)}</small>
       `;
       }
 
       if (masuk && masuk.isAsing) {
         rekening_masuk_akhir.innerHTML = /* HTML */ `
-        <p class="d-flex justify-content-between">Saldo Akhir : <b>${formatSaldo(saldoAkhirMasukAsing)},-&nbsp;${masuk.nominal_asing}</b></p>
-        <small class="d-flex justify-content-end">Rp.&nbsp;${formatSaldo(saldoAkhirMasuk)}</small>
+        <p class="d-flex justify-content-between">Saldo Akhir : <b>${formatDisplaySaldo(saldoAkhirMasukAsing)}&nbsp;${masuk.nominal_asing}</b></p>
+        <small class="d-flex justify-content-end">Rp.&nbsp;${formatDisplaySaldo(saldoAkhirMasuk)}</small>
       `;
       }
     }
