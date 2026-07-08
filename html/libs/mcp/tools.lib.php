@@ -16,7 +16,6 @@ class tools
   #[McpTool(
     name: 'catat_transaksi',
     description: 'Mencatat transaksi keuangan baru (Pemasukan, Pengeluaran, atau Pindah Buku)
-
     ATURAN PENTING:
     1. STRUK BELANJA: Jika input berupa struk dengan banyak item, JANGAN dicatat sebagai satu total. Pecah menjadi item individu. Catat item pertama, ambil ID-nya dari response, lalu gunakan ID tersebut sebagai "relasi_transaksi" untuk item-item berikutnya dalam struk yang sama.
     2. TRANSAKSI HARTA:
@@ -48,155 +47,6 @@ class tools
   )]
   #[Schema(
     properties: [
-      'jenis_transaksi'   => [
-        'type' => 'string',
-        'enum' => ['Pengeluaran', 'Pemasukan', 'Pindah Buku'],
-        'description' => 'Tipe transaksi'
-      ],
-      'harta'             => ['type' => 'boolean', 'description' => '
-        Set TRUE jika rekening yang digunakan adalah rekening Harta (baik Pemasukan maupun Pengeluaran).
-        DILARANG set TRUE pada Pengeluaran dari rekening uang biasa.
-      '],
-      'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat, Harus di generalkan jangan terlalu spesifik (contoh: "Makan siang" bukan "Nasi Padang Sari Ratu"), Gunakan Keterangan untuk lainnya.'],
-      'rekening_sumber'   => [
-        'type' => ['integer', 'null'],
-        'description' => 'ID Rekening asal. Gunakan tool get_rekening untuk mencari ID yang tepat. (Wajib jika Pengeluaran/Pindah Buku)
-          ATURAN PINDAH BUKU:
-          1. Tidak boleh sama dengan rekening_masuk.
-          2. Dilarang menggunakan rekening tipe HARTA (Aset).
-          3. Jika rekening asal adalah mata uang ASING (Emas/USD), maka rekening tujuan HARUS memiliki jenis mata uang asing yang sama.'
-      ],
-      'rekening_masuk'    => [
-        'type' => ['integer', 'null'],
-        'description' => 'ID Rekening tujuan. Gunakan tool get_rekening untuk mencari ID yang tepat. (Wajib jika Pemasukan/Pindah Buku)
-          ATURAN PINDAH BUKU:
-          1. Tidak boleh sama dengan rekening_sumber.
-          2. Dilarang menggunakan rekening tipe HARTA (Aset).
-          3. Jika rekening tujuan adalah mata uang ASING (Emas/USD), maka rekening sumber HARUS memiliki jenis mata uang asing yang sama.'
-      ],
-      'nominal'           => [
-        'type' => 'number',
-        'description' => 'Jumlah Per Kuantitas dalam Rupiah. Untuk selisih kurs: isi selisih nilainya di sini, set nominal_asing = 0.'
-      ],
-      'nominal_asing'     => [
-        'type' => ['number', 'null'],
-        'description' => 'Wajib diisi jika rekening menggunakan mata uang asing (Emas/USD). Masukkan nilai dalam satuan aslinya (misal: 0.1 untuk emas gram, bukan nilai rupiahnya).'
-      ],
-      'kuantitas'         => ['type' => 'number', 'default' => 1],
-      'penyusutan_bunga'  => [
-        'type' => 'number',
-        'default' => 0,
-        'description' => 'Nominal Penyusutan / Bunga buku per bulan dalam Rupiah. Hanya diisi jika jenis_transaksi adalah Pemasukan dan harta = true dan Jenis Rekening adalah Harta, untuk mencatat penyusutan atau bunga aset (misal: bunga deposito).'
-      ],
-      'rutin'             => [
-        'type' => 'boolean',
-        'default' => false,
-        'description' => 'KLASIFIKASI RUTINITAS:
-          - TRUE: (Pengeluaran Rutin) Pengeluaran harian yang mendukung kerja/hidup dasar.
-          - FALSE: (Pengeluaran Non/Tidak Rutin) Pengeluaran yang tidak terjadi setiap minggu/bulan, atau bagian dari event khusus.'
-      ],
-      'kelompok'          => [
-        'type' => ['string', 'null'],
-        'default' => null,
-        'description' => 'Kategori transaksi. Gunakan get_kelompok untuk referensi, boleh buat baru sesuai kebutuhan. Aturan penentuan kelompok:
-          1. OPERASIONAL (Rutin): Gunakan kategori umum (contoh: "Konsumsi", "Transportasi", "Listrik") jika dilakukan untuk kebutuhan dasar harian.
-          2. LIFESTYLE (Non-Rutin Umum): Gunakan kategori umum jika terjadi di hari Minggu atau bersifat insidentil (bukan kebutuhan kerja harian).
-          3. PROYEK/EVENT: Wajib buat/gunakan satu nama kelompok unik (contoh: "Liburan Bali 2026", "Perjadin 7 April") untuk SEMUA item (makan, tiket, dll) jika transaksi adalah bagian dari agenda khusus tersebut.
-          DILARANG ASAL PILIH: Analisis konteks waktu dan tujuan transaksi sebelum menentukan kelompok.'
-      ],
-      'tanggal'           => [
-        'type' => ['string', 'null'],
-        'format' => 'date',
-        'description' => 'Format: YYYY-MM-DD'
-      ],
-      'relasi_transaksi'  => [
-        'type' => ['integer', 'null'],
-        'description' =>
-        'ID transaksi utama untuk menghubungkan beberapa item dalam satu struk/kejadian.,
-          - ID ini bisa didapatkan dari response setelah mencatat transaksi melalui tool ini dengan format "✅ Berhasil! Transaksi Id #{id} telah dicatat.".
-          - Jika menginput struk belanja, catat item pertama, dapatkan ID-nya, lalu gunakan ID tersebut di field ini untuk item-item selanjutnya.
-        '
-      ],
-      'keterangan'        => ['type' => ['string', 'null'], 'default' => '', 'description' => 'Informasi tambahan tentang transaksi. Gunakan untuk detail spesifik yang tidak tercakup di field lain (contoh: nama toko, metode pembayaran, alasan pembelian).'],
-      'attachment_base64' => [
-        'type' => ['string', 'null'],
-        'description' => 'Optional: Base64 string of receipt image. Untuk Struk masukan saja ke transaksi utama (item pertama), tidak perlu untuk item berikutnya yang menggunakan relasi_transaksi.'
-      ]
-    ],
-    required: ['jenis_transaksi', 'barang', 'nominal', 'kuantitas', 'tanggal']
-  )]
-  public function catatTransaksi(
-    string $jenis_transaksi,
-    string $barang,
-    float $nominal,
-    float $kuantitas,
-    string $tanggal,
-    ?int $rekening_sumber = null,
-    ?int $rekening_masuk = null,
-    ?bool $harta = false,
-    ?float $nominal_asing = 0,
-    ?float $penyusutan_bunga = 0,
-    ?bool $rutin = false,
-    ?string $kelompok = null,
-    ?int $relasi_transaksi = null,
-    ?string $keterangan = null,
-    ?string $attachment_base64 = null
-  ): string {
-    try {
-      // 1. Handle File via your logic if AI provided it
-      $finalFileName = null;
-      if (!empty($attachment_base64)) {
-        $binaryData = base64_decode($attachment_base64);
-        $finalFileName = $this->processFile($binaryData, 'ai_upload.jpg');
-      }
-      $data = [
-        'jenis_transaksi'   => $jenis_transaksi,
-        'harta'             => $harta,
-        'barang'            => $barang,
-        'rekening_sumber'   => $rekening_sumber,
-        'rekening_masuk'    => $rekening_masuk,
-        'nominal'           => $nominal,
-        'nominal_asing'     => $nominal_asing,
-        'kuantitas'         => $kuantitas,
-        'penyusutan_bunga'  => $penyusutan_bunga,
-        'rutin'             => $rutin,
-        'kelompok'          => $kelompok,
-        'tanggal'           => $tanggal,
-        'relasi_transaksi'  => $relasi_transaksi,
-        'attachment'        => $finalFileName,
-        'keterangan'        => $keterangan,
-      ];
-      $trasaksi = new Transaksi();
-      $result = $trasaksi->insertTransaksi($data);
-
-      return ($result > 0)
-        ? "✅ Berhasil! Transaksi Id #{$trasaksi->lastInsertId()} telah dicatat."
-        : throw new ToolCallException("❌ Gagal menyimpan ke database.");
-    } catch (\Exception $e) {
-      throw new ToolCallException("⚠️ Error: " . $e->getMessage());
-    }
-  }
-  /**
-   * Mencatat transaksi keuangan baru (Pemasukan, Pengeluaran, atau Pindah Buku)
-   */
-  #[McpTool(
-    name: 'catat_transaksi_masal',
-    description: 'Mencatat transaksi keuangan baru secara massal dengan batas maksimal 15 transaksi per panggilan. Input berupa array of objects dengan format yang sama seperti catat_transaksi',
-    annotations: new ToolAnnotations(
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: false
-    ),
-    outputSchema: [
-      'type' => 'object',
-      'properties' => [
-        'status' => ['type' => 'string']
-      ]
-    ]
-  )]
-  #[Schema(
-    properties: [
       'data' => [
         'type' => 'array',
         'description' => 'Daftar transaksi yang akan dicatat. Berupa array of objects berisi detail transaksi.',
@@ -208,20 +58,75 @@ class tools
               'enum' => ['Pengeluaran', 'Pemasukan', 'Pindah Buku'],
               'description' => 'Tipe transaksi'
             ],
-            'harta'             => ['type' => 'boolean', 'description' => 'Set TRUE untuk aset permanen (HP, Motor, Emas). Set FALSE untuk habis pakai.'],
-            'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat.'],
-            'rekening_sumber'   => ['type' => ['integer', 'null'], 'description' => 'ID Rekening asal.'],
-            'rekening_masuk'    => ['type' => ['integer', 'null'], 'description' => 'ID Rekening tujuan.'],
-            'nominal'           => ['type' => 'number', 'description' => 'Jumlah dalam Rupiah.'],
-            'nominal_asing'     => ['type' => ['number', 'null'], 'description' => 'Wajib diisi jika mata uang asing (Emas/USD).'],
+            'harta'             => ['type' => 'boolean', 'description' => '
+        Set TRUE jika rekening yang digunakan adalah rekening Harta (baik Pemasukan maupun Pengeluaran).
+        DILARANG set TRUE pada Pengeluaran dari rekening uang biasa.
+      '],
+            'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat, Harus di generalkan jangan terlalu spesifik (contoh: "Makan siang" bukan "Nasi Padang Sari Ratu"), Gunakan Keterangan untuk lainnya.'],
+            'rekening_sumber'   => [
+              'type' => ['integer', 'null'],
+              'description' => 'ID Rekening asal. Gunakan tool get_rekening untuk mencari ID yang tepat. (Wajib jika Pengeluaran/Pindah Buku)
+          ATURAN PINDAH BUKU:
+          1. Tidak boleh sama dengan rekening_masuk.
+          2. Dilarang menggunakan rekening tipe HARTA (Aset).
+          3. Jika rekening asal adalah mata uang ASING (Emas/USD), maka rekening tujuan HARUS memiliki jenis mata uang asing yang sama.'
+            ],
+            'rekening_masuk'    => [
+              'type' => ['integer', 'null'],
+              'description' => 'ID Rekening tujuan. Gunakan tool get_rekening untuk mencari ID yang tepat. (Wajib jika Pemasukan/Pindah Buku)
+          ATURAN PINDAH BUKU:
+          1. Tidak boleh sama dengan rekening_sumber.
+          2. Dilarang menggunakan rekening tipe HARTA (Aset).
+          3. Jika rekening tujuan adalah mata uang ASING (Emas/USD), maka rekening sumber HARUS memiliki jenis mata uang asing yang sama.'
+            ],
+            'nominal'           => [
+              'type' => 'number',
+              'description' => 'Jumlah Per Kuantitas dalam Rupiah. Untuk selisih kurs: isi selisih nilainya di sini, set nominal_asing = 0.'
+            ],
+            'nominal_asing'     => [
+              'type' => ['number', 'null'],
+              'description' => 'Wajib diisi jika rekening menggunakan mata uang asing (Emas/USD). Masukkan nilai dalam satuan aslinya (misal: 0.1 untuk emas gram, bukan nilai rupiahnya).'
+            ],
             'kuantitas'         => ['type' => 'number', 'default' => 1],
-            'penyusutan_bunga'  => ['type' => 'number', 'default' => 0],
-            'rutin'             => ['type' => 'boolean', 'default' => false],
-            'kelompok'          => ['type' => ['string', 'null'], 'default' => null],
-            'tanggal'           => ['type' => ['string', 'null'], 'format' => 'date'],
-            'relasi_transaksi'  => ['type' => ['integer', 'null']],
-            'keterangan'        => ['type' => ['string', 'null'], 'default' => ''],
-            'attachment_base64' => ['type' => ['string', 'null']]
+            'penyusutan_bunga'  => [
+              'type' => 'number',
+              'default' => 0,
+              'description' => 'Nominal Penyusutan / Bunga buku per bulan dalam Rupiah. Hanya diisi jika jenis_transaksi adalah Pemasukan dan harta = true dan Jenis Rekening adalah Harta, untuk mencatat penyusutan atau bunga aset (misal: bunga deposito).'
+            ],
+            'rutin'             => [
+              'type' => 'boolean',
+              'default' => false,
+              'description' => 'KLASIFIKASI RUTINITAS:
+          - TRUE: (Pengeluaran Rutin) Pengeluaran harian yang mendukung kerja/hidup dasar.
+          - FALSE: (Pengeluaran Non/Tidak Rutin) Pengeluaran yang tidak terjadi setiap minggu/bulan, atau bagian dari event khusus.'
+            ],
+            'kelompok'          => [
+              'type' => ['string', 'null'],
+              'default' => null,
+              'description' => 'Kategori transaksi. Gunakan get_kelompok untuk referensi, boleh buat baru sesuai kebutuhan. Aturan penentuan kelompok:
+          1. OPERASIONAL (Rutin): Gunakan kategori umum (contoh: "Konsumsi", "Transportasi", "Listrik") jika dilakukan untuk kebutuhan dasar harian.
+          2. LIFESTYLE (Non-Rutin Umum): Gunakan kategori umum jika terjadi di hari Minggu atau bersifat insidentil (bukan kebutuhan kerja harian).
+          3. PROYEK/EVENT: Wajib buat/gunakan satu nama kelompok unik (contoh: "Liburan Bali 2026", "Perjadin 7 April") untuk SEMUA item (makan, tiket, dll) jika transaksi adalah bagian dari agenda khusus tersebut.
+          DILARANG ASAL PILIH: Analisis konteks waktu dan tujuan transaksi sebelum menentukan kelompok.'
+            ],
+            'tanggal'           => [
+              'type' => ['string', 'null'],
+              'format' => 'date',
+              'description' => 'Format: YYYY-MM-DD'
+            ],
+            'relasi_transaksi'  => [
+              'type' => ['integer', 'null'],
+              'description' =>
+              'ID transaksi utama untuk menghubungkan beberapa item dalam satu struk/kejadian.,
+          - ID ini bisa didapatkan dari response setelah mencatat transaksi melalui tool ini dengan format "✅ Berhasil! Transaksi Id #{id} telah dicatat.".
+          - Jika menginput struk belanja, catat item pertama, dapatkan ID-nya, lalu gunakan ID tersebut di field ini untuk item-item selanjutnya.
+        '
+            ],
+            'keterangan'        => ['type' => ['string', 'null'], 'default' => '', 'description' => 'Informasi tambahan tentang transaksi. Gunakan untuk detail spesifik yang tidak tercakup di field lain (contoh: nama toko, metode pembayaran, alasan pembelian).'],
+            'attachment_base64' => [
+              'type' => ['string', 'null'],
+              'description' => 'Optional: Base64 string of receipt image. Untuk Struk masukan saja ke transaksi utama (item pertama), tidak perlu untuk item berikutnya yang menggunakan relasi_transaksi.'
+            ]
           ],
           'required' => ['jenis_transaksi', 'barang', 'nominal', 'kuantitas', 'tanggal']
         ]
@@ -230,7 +135,7 @@ class tools
     ],
     required: ['data']
   )]
-  public function catatTransaksiMasal(array $data, bool $autoRelate = false): string
+  public function catatTransaksi(array $data, bool $autoRelate = false): string
   {
     $transaksi = new Transaksi();
     $results = [];
@@ -296,7 +201,7 @@ class tools
         }
       }
 
-      return "✅ Berhasil! " . count($results) . " Transaksi dicatat: " . implode(', ', $results);
+      return "✅ Berhasil! " . count($results) . " Transaksi dicatat: " . implode(';\n ', $results);
     } catch (\Exception $e) {
       throw new ToolCallException("⚠️ Error: " . $e->getMessage());
     }

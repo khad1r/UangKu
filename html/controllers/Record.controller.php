@@ -202,7 +202,7 @@ class Record extends Controller
     $server = Server::builder()
       ->setServerInfo(
         name: 'MCP UangKu',
-        version: '1.1.5',
+        version: '1.1.9',
         description: 'MCP Server untuk integrasi AI dalam pencatatan transaksi keuangan pribadi di Uangku. Dengan MCP, AI dapat berinteraksi langsung dengan data keuangan pengguna, memahami konteks transaksi, dan memberikan rekomendasi atau pencatatan yang lebih akurat sesuai dengan aturan bisnis Uangku.',
         icons: [new Icon(
           src: 'https://raw.githubusercontent.com/abdka/UangKu/main/html/assets/logo.png',
