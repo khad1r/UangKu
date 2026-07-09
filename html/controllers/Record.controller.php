@@ -115,6 +115,59 @@ class Record extends Controller
     Route::Referer('/Transaction');
     return;
   }
+
+  public function attachment($id = null)
+  {
+    header("Access-Control-Allow-Methods: POST,GET");
+    header("Access-Control-Allow-Headers: Content-Type");
+    setCacheControl(0);
+
+    $error = null;
+    $trans = null;
+    $formattedId = '';
+
+    if (empty($id)) {
+      $error = "ID Transaksi tidak valid.";
+    } else {
+      $formattedId = sprintf('%04d', $id);
+      $trans = (new Transaksi())->getById($formattedId);
+
+      if (!$trans) {
+        $error = "Transaksi #{$formattedId} tidak ditemukan.";
+      } else if (($trans['attachment'] ?? '') !== 'uploading') {
+        $error = "Lampiran untuk Transaksi #{$formattedId} sudah diunggah atau tidak memerlukan upload.";
+      }
+    }
+
+    $success = false;
+    if (empty($error) && !empty($_POST)) {
+      try {
+        if (!isset($_FILES['attachment']) || $_FILES['attachment']['error'] !== UPLOAD_ERR_OK) {
+          throw new \Exception('File wajib diunggah atau file bermasalah.');
+        }
+
+        $fileName = $this->handleFileUpload('attachment');
+        if ((new Transaksi())->updateTransaksi(['attachment' => $fileName], ['id' => intval($id)]) > 0) {
+          showAlert("Upload Lampiran Berhasil", 'success');
+          $success = true;
+        } else {
+          throw new \Exception("Gagal update data transaksi di database.");
+        }
+      } catch (\Exception $e) {
+        showAlert($e->getMessage(), 'danger');
+        $error = $e->getMessage();
+      }
+    }
+
+    $this->view('templates/template', [
+      'title' => $success ? 'Upload Berhasil' : 'Unggah Lampiran',
+      'formattedId' => $formattedId,
+      'trans' => $trans,
+      'success' => $success,
+      'error' => $error,
+      'view' => 'transaction/attachment'
+    ]);
+  }
   private function validateData($data)
   {
     $data['harta'] = isset($data['harta']);

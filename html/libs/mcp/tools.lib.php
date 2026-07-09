@@ -2,11 +2,10 @@
 
 namespace App\libs;
 
-use Mcp\Capability\Attribute\{McpTool, Schema, McpResource};
+use Mcp\Capability\Attribute\{McpTool, Schema};
 use Mcp\Exception\ToolCallException;
 use Mcp\Schema\ToolAnnotations;
 use App\models\Transaksi;
-use App\models\Rekening;
 
 class tools
 {
@@ -41,7 +40,7 @@ class tools
     outputSchema: [
       'type' => 'object',
       'properties' => [
-        'status' => ['type' => 'string']
+        'status' => ['type' => 'string', 'description' => 'Status pencatatan transaksi & link upload attachment buat user']
       ]
     ]
   )]
@@ -59,25 +58,25 @@ class tools
               'description' => 'Tipe transaksi'
             ],
             'harta'             => ['type' => 'boolean', 'description' => '
-        Set TRUE jika rekening yang digunakan adalah rekening Harta (baik Pemasukan maupun Pengeluaran).
-        DILARANG set TRUE pada Pengeluaran dari rekening uang biasa.
-      '],
+                Set TRUE jika rekening yang digunakan adalah rekening Harta (baik Pemasukan maupun Pengeluaran).
+                DILARANG set TRUE pada Pengeluaran dari rekening uang biasa.
+              '],
             'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat, Harus di generalkan jangan terlalu spesifik (contoh: "Makan siang" bukan "Nasi Padang Sari Ratu"), Gunakan Keterangan untuk lainnya.'],
             'rekening_sumber'   => [
               'type' => ['integer', 'null'],
               'description' => 'ID Rekening asal. Gunakan tool get_rekening untuk mencari ID yang tepat. (Wajib jika Pengeluaran/Pindah Buku)
-          ATURAN PINDAH BUKU:
-          1. Tidak boleh sama dengan rekening_masuk.
-          2. Dilarang menggunakan rekening tipe HARTA (Aset).
-          3. Jika rekening asal adalah mata uang ASING (Emas/USD), maka rekening tujuan HARUS memiliki jenis mata uang asing yang sama.'
+                  ATURAN PINDAH BUKU:
+                  1. Tidak boleh sama dengan rekening_masuk.
+                  2. Dilarang menggunakan rekening tipe HARTA (Aset).
+                  3. Jika rekening asal adalah mata uang ASING (Emas/USD), maka rekening tujuan HARUS memiliki jenis mata uang asing yang sama.'
             ],
             'rekening_masuk'    => [
               'type' => ['integer', 'null'],
               'description' => 'ID Rekening tujuan. Gunakan tool get_rekening untuk mencari ID yang tepat. (Wajib jika Pemasukan/Pindah Buku)
-          ATURAN PINDAH BUKU:
-          1. Tidak boleh sama dengan rekening_sumber.
-          2. Dilarang menggunakan rekening tipe HARTA (Aset).
-          3. Jika rekening tujuan adalah mata uang ASING (Emas/USD), maka rekening sumber HARUS memiliki jenis mata uang asing yang sama.'
+                ATURAN PINDAH BUKU:
+                1. Tidak boleh sama dengan rekening_sumber.
+                2. Dilarang menggunakan rekening tipe HARTA (Aset).
+                3. Jika rekening tujuan adalah mata uang ASING (Emas/USD), maka rekening sumber HARUS memiliki jenis mata uang asing yang sama.'
             ],
             'nominal'           => [
               'type' => 'number',
@@ -97,17 +96,17 @@ class tools
               'type' => 'boolean',
               'default' => false,
               'description' => 'KLASIFIKASI RUTINITAS:
-          - TRUE: (Pengeluaran Rutin) Pengeluaran harian yang mendukung kerja/hidup dasar.
-          - FALSE: (Pengeluaran Non/Tidak Rutin) Pengeluaran yang tidak terjadi setiap minggu/bulan, atau bagian dari event khusus.'
+                - TRUE: (Pengeluaran Rutin) Pengeluaran harian yang mendukung kerja/hidup dasar.
+                - FALSE: (Pengeluaran Non/Tidak Rutin) Pengeluaran yang tidak terjadi setiap minggu/bulan, atau bagian dari event khusus.'
             ],
             'kelompok'          => [
               'type' => ['string', 'null'],
               'default' => null,
               'description' => 'Kategori transaksi. Gunakan get_kelompok untuk referensi, boleh buat baru sesuai kebutuhan. Aturan penentuan kelompok:
-          1. OPERASIONAL (Rutin): Gunakan kategori umum (contoh: "Konsumsi", "Transportasi", "Listrik") jika dilakukan untuk kebutuhan dasar harian.
-          2. LIFESTYLE (Non-Rutin Umum): Gunakan kategori umum jika terjadi di hari Minggu atau bersifat insidentil (bukan kebutuhan kerja harian).
-          3. PROYEK/EVENT: Wajib buat/gunakan satu nama kelompok unik (contoh: "Liburan Bali 2026", "Perjadin 7 April") untuk SEMUA item (makan, tiket, dll) jika transaksi adalah bagian dari agenda khusus tersebut.
-          DILARANG ASAL PILIH: Analisis konteks waktu dan tujuan transaksi sebelum menentukan kelompok.'
+                1. OPERASIONAL (Rutin): Gunakan kategori umum (contoh: "Konsumsi", "Transportasi", "Listrik") jika dilakukan untuk kebutuhan dasar harian.
+                2. LIFESTYLE (Non-Rutin Umum): Gunakan kategori umum jika terjadi di hari Minggu atau bersifat insidentil (bukan kebutuhan kerja harian).
+                3. PROYEK/EVENT: Wajib buat/gunakan satu nama kelompok unik (contoh: "Liburan Bali 2026", "Perjadin 7 April") untuk SEMUA item (makan, tiket, dll) jika transaksi adalah bagian dari agenda khusus tersebut.
+                DILARANG ASAL PILIH: Analisis konteks waktu dan tujuan transaksi sebelum menentukan kelompok.'
             ],
             'tanggal'           => [
               'type' => ['string', 'null'],
@@ -118,14 +117,14 @@ class tools
               'type' => ['integer', 'null'],
               'description' =>
               'ID transaksi utama untuk menghubungkan beberapa item dalam satu struk/kejadian.,
-          - ID ini bisa didapatkan dari response setelah mencatat transaksi melalui tool ini dengan format "✅ Berhasil! Transaksi Id #{id} telah dicatat.".
-          - Jika menginput struk belanja, catat item pertama, dapatkan ID-nya, lalu gunakan ID tersebut di field ini untuk item-item selanjutnya.
+                - ID ini bisa didapatkan dari response setelah mencatat transaksi melalui tool ini dengan format "✅ Berhasil! Transaksi Id #{id} telah dicatat.".
+                - Jika menginput struk belanja, catat item pertama, dapatkan ID-nya, lalu gunakan ID tersebut di field ini untuk item-item selanjutnya.
         '
             ],
             'keterangan'        => ['type' => ['string', 'null'], 'default' => '', 'description' => 'Informasi tambahan tentang transaksi. Gunakan untuk detail spesifik yang tidak tercakup di field lain (contoh: nama toko, metode pembayaran, alasan pembelian).'],
-            'attachment_base64' => [
-              'type' => ['string', 'null'],
-              'description' => 'Optional: Base64 string of receipt image. Untuk Struk masukan saja ke transaksi utama (item pertama), tidak perlu untuk item berikutnya yang menggunakan relasi_transaksi.'
+            'attachment' => [
+              'type' => 'boolean',
+              'description' => 'Set TRUE jika transaksi memerlukan/mempunyai struk/nota/bukti transaksi (attachment) yang ingin diunggah oleh user.'
             ]
           ],
           'required' => ['jenis_transaksi', 'barang', 'nominal', 'kuantitas', 'tanggal']
@@ -151,12 +150,8 @@ class tools
           }
         }
 
-        // 2. Handle File Attachment
-        $finalFileName = null;
-        if (!empty($item['attachment_base64'])) {
-          $binaryData = base64_decode($item['attachment_base64']);
-          $finalFileName = $this->processFile($binaryData, 'ai_upload_' . uniqid() . '.jpg');
-        }
+        // 2. Handle File Attachment (Will be uploaded via link later if requested)
+        $finalFileName = !empty($item['attachment']) ? 'uploading' : null;
 
         // 3. Auto-relate items in a batch
         // If this is item > 0 in the array, and no relation is set, link it to the first item automatically
@@ -196,12 +191,18 @@ class tools
           }
 
           $results[] = "#{$lastId} ({$item['barang']})";
+
+          // If the user requested an attachment for this transaction, generate a link
+          if (!empty($item['attachment'])) {
+            $attachmentLink = "\n\n🔗 Harap unggah lampiran (attachment) untuk transaksi #{$lastId} di sini: " . BASEURL . "/Record/attachment/" . $lastId;
+          }
         } else {
           throw new ToolCallException("❌ Gagal menyimpan item '{$item['barang']}' ke database.");
         }
       }
 
-      return "✅ Berhasil! " . count($results) . " Transaksi dicatat: " . implode(';\n ', $results);
+      $linkSuffix = isset($attachmentLink) ? $attachmentLink : "";
+      return "✅ Berhasil! " . count($results) . " Transaksi dicatat: " . implode(';\n ', $results) . $linkSuffix;
     } catch (\Exception $e) {
       throw new ToolCallException("⚠️ Error: " . $e->getMessage());
     }
@@ -246,7 +247,7 @@ class tools
     outputSchema: [
       'type' => 'object',
       'properties' => [
-        'status' => ['type' => 'string']
+        'status' => ['type' => 'string', 'description' => 'Status pencatatan transaksi & link upload attachment buat user']
       ]
     ]
   )]
@@ -280,6 +281,10 @@ class tools
             'tanggal'           => ['type' => ['string', 'null'], 'format' => 'date'],
             'relasi_transaksi'  => ['type' => ['integer', 'null']],
             'keterangan'        => ['type' => ['string', 'null'], 'default' => ''],
+            'attachment'        => [
+              'type' => 'boolean',
+              'description' => 'Set TRUE jika ingin mengunggah/mengganti struk/nota/bukti transaksi (attachment) baru.'
+            ]
           ],
           'required' => ['id', 'jenis_transaksi', 'harta', 'barang', 'rekening_sumber', 'rekening_masuk', 'nominal', 'nominal_asing', 'kuantitas', 'penyusutan_bunga', 'rutin', 'kelompok', 'tanggal', 'relasi_transaksi', 'keterangan']
         ]
@@ -307,48 +312,30 @@ class tools
         if ($targetId) {
           $updateData = $item;
           unset($updateData['id']);
+
+          // Check if user wants to upload an attachment for this updated transaction
+          $wantsAttachment = !empty($updateData['attachment']);
+          unset($updateData['attachment']);
+          if ($wantsAttachment) {
+            $updateData['attachment'] = 'uploading';
+          }
+
           // This now happens in memory, making it lightning fast
           $transaksi->updateTransaksi($updateData, ['id' => $targetId]);
           $results[] = "#{$targetId} ({$item['barang']})";
+
+          if ($wantsAttachment) {
+            $attachmentLink = "\n\n🔗 Harap unggah lampiran (attachment) untuk transaksi #{$targetId} di sini: " . BASEURL . "/Record/attachment/" . $targetId;
+          }
         } else {
           throw new ToolCallException("❌ Gagal Update item '{$item['barang']}' ke database.");
         }
       }
 
-      return "✅ Berhasil! " . count($results) . " Transaksi diperbarui: " . implode(', ', $results);
+      $linkSuffix = isset($attachmentLink) ? $attachmentLink : "";
+      return "✅ Berhasil! " . count($results) . " Transaksi diperbarui: " . implode(', ', $results) . $linkSuffix;
     } catch (\Exception $e) {
       throw new ToolCallException("⚠️ Error: " . $e->getMessage());
     }
-  }
-  /*  */
-  private function processFile($fileSource, $fileName, $delete_old = null)
-  {
-    $allowed = ['pdf', 'jpg', 'jpeg', 'png'];
-    $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-
-    if (!in_array($ext, $allowed)) {
-      throw new \Exception('Tipe file invalid.');
-    }
-
-    $name = uniqid('file_') . '.' . $ext;
-    $uploadDir = dirname(__DIR__) . '/uploads/';
-    $path = $uploadDir . $name;
-
-    if (!is_dir($uploadDir)) {
-      mkdir($uploadDir, 0755, true);
-    }
-
-    // Check if it's an uploaded file (from $_FILES) or a string (from AI/Base64)
-    $success = is_uploaded_file($fileSource)
-      ? move_uploaded_file($fileSource, $path)
-      : file_put_contents($path, $fileSource);
-
-    if ($success) {
-      if (!empty($delete_old) && file_exists($uploadDir . $delete_old)) {
-        unlink($uploadDir . $delete_old);
-      }
-      return $name;
-    }
-    throw new \Exception('Upload error.');
   }
 }
