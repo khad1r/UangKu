@@ -128,6 +128,31 @@
     </div>
     <div id="ss-dropdown"></div>
   </form>
+
+  <!-- Voice Input FAB & Overlay -->
+  <button type="button" id="voice-fab" class="btn btn-primary" title="Input Suara">
+    <i class="fas fa-microphone"></i>
+  </button>
+
+  <div id="voice-overlay" class="voice-overlay hide">
+    <div class="voice-card">
+      <div class="voice-header mb-3">
+        <h5 class="mb-0">Mendengarkan...</h5>
+        <button type="button" id="voice-close" class="btn-close btn-close-white" style="filter: invert(1); opacity: 0.8;"></button>
+      </div>
+      <div class="voice-wave-container mb-4">
+        <div class="voice-wave-bar"></div>
+        <div class="voice-wave-bar"></div>
+        <div class="voice-wave-bar"></div>
+        <div class="voice-wave-bar"></div>
+        <div class="voice-wave-bar"></div>
+      </div>
+      <div class="voice-transcript-container p-3">
+        <p id="voice-transcript" class="mb-0 text-muted font-italic">Mulai berbicara...</p>
+      </div>
+      <div class="voice-status-feedback hide" id="voice-feedback"></div>
+    </div>
+  </div>
 </div>
 <script src="https://unpkg.com/slim-select@latest/dist/slimselect.js" crossorigin="anonymous"></script>
 <link href="https://unpkg.com/slim-select@latest/dist/slimselect.css" rel="stylesheet" crossorigin="anonymous">
@@ -591,6 +616,428 @@
         })
     })
   }, 1200)
+  /* ========================================================
+     VOICE INPUT FUNCTIONALITY (Speech Recognition for IDR)
+     ======================================================== */
+
+  // Indonesian number parsing helper
+  function parseIndonesianWordsToNumber(text) {
+    const words = text.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/);
+
+    function parseSubThousand(subWords) {
+      const units = {
+        'nol': 0,
+        'satu': 1,
+        'dua': 2,
+        'tiga': 3,
+        'empat': 4,
+        'lima': 5,
+        'enam': 6,
+        'tujuh': 7,
+        'delapan': 8,
+        'sembilan': 9,
+        'sepuluh': 10,
+        'sebelas': 11,
+        'seratus': 100,
+        'seribu': 1000
+      };
+
+      let val = 0;
+      for (let i = 0; i < subWords.length; i++) {
+        const w = subWords[i];
+        if (units[w] !== undefined) {
+          val += units[w];
+        } else if (w === 'puluh') {
+          let lastToken = subWords[i - 1];
+          if (lastToken && units[lastToken] !== undefined && units[lastToken] < 10) {
+            val -= units[lastToken];
+            val += units[lastToken] * 10;
+          } else {
+            val += 10;
+          }
+        } else if (w === 'belas') {
+          let lastToken = subWords[i - 1];
+          if (lastToken && units[lastToken] !== undefined && units[lastToken] < 10) {
+            val -= units[lastToken];
+            val += units[lastToken] + 10;
+          } else {
+            val += 11;
+          }
+        } else if (w === 'ratus') {
+          let lastToken = subWords[i - 1];
+          if (lastToken && units[lastToken] !== undefined && units[lastToken] < 10) {
+            val -= units[lastToken];
+            val += units[lastToken] * 100;
+          } else {
+            val += 100;
+          }
+        }
+      }
+      return val;
+    }
+
+    let total = 0;
+    let tempWords = [];
+
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i];
+      if (w === 'miliar' || w === 'milyar') {
+        total += (parseSubThousand(tempWords) || 1) * 1000000000;
+        tempWords = [];
+      } else if (w === 'juta') {
+        total += (parseSubThousand(tempWords) || 1) * 1000000;
+        tempWords = [];
+      } else if (w === 'ribu') {
+        total += (parseSubThousand(tempWords) || 1) * 1000;
+        tempWords = [];
+      } else {
+        tempWords.push(w);
+      }
+    }
+    total += parseSubThousand(tempWords);
+    return total;
+  }
+
+  // Master Voice Parser
+  function parseVoiceInput(text) {
+    const originalText = text;
+    text = text.toLowerCase().trim();
+
+    // 1. Transaction Type Detection
+    let jenis = null;
+
+    const keywordsPengeluaran = ['pengeluaran', 'beli', 'bayar', 'belanja', 'jajan', 'ongkos', 'keluar', 'pulsa', 'makan'];
+    const keywordsPemasukan = ['pemasukan', 'gaji', 'terima', 'dapat', 'bunga', 'masuk', 'refund', 'kembalian'];
+    const keywordsPindahBuku = ['pindah buku', 'transfer', 'kirim', 'pindah', 'mutasi'];
+
+    if (keywordsPindahBuku.some(k => text.includes(k))) {
+      jenis = J_TRANS[2]; // Pindah Buku
+    } else if (keywordsPemasukan.some(k => text.includes(k))) {
+      jenis = J_TRANS[1]; // Pemasukan
+    } else {
+      jenis = J_TRANS[0]; // Pengeluaran (default)
+    }
+
+    // 2. Account Matching
+    let rekSumber = null;
+    let rekMasuk = null;
+
+    if (ARGS && ARGS.Rekening) {
+      // Match longer names first to prevent false partial matches (e.g., "Bank Central" before "Bank")
+      const sortedRek = [...ARGS.Rekening].sort((a, b) => b.nama.length - a.nama.length);
+
+      if (jenis === J_TRANS[2]) { // Pindah Buku
+        // Check prepositions like "dari [rek]" and "ke [rek]"
+        const regexDari = /dari\s+([a-z0-9\s]+)/i;
+        const regexKe = /(?:ke|masuk(?:\s+ke)?)\s+([a-z0-9\s]+)/i;
+
+        const matchDari = text.match(regexDari);
+        const matchKe = text.match(regexKe);
+
+        if (matchDari) {
+          const phraseDari = matchDari[1];
+          const found = sortedRek.find(r => phraseDari.includes(r.nama.toLowerCase()));
+          if (found) rekSumber = found;
+        }
+        if (matchKe) {
+          const phraseKe = matchKe[1];
+          const found = sortedRek.find(r => phraseKe.includes(r.nama.toLowerCase()));
+          if (found) rekMasuk = found;
+        }
+
+        // Fallback: If not found, match any mention in text
+        if (!rekSumber || !rekMasuk) {
+          const foundAccounts = [];
+          for (let r of sortedRek) {
+            if (text.includes(r.nama.toLowerCase())) {
+              foundAccounts.push(r);
+            }
+          }
+          if (foundAccounts.length >= 1 && !rekSumber) rekSumber = foundAccounts[0];
+          if (foundAccounts.length >= 2 && !rekMasuk) rekMasuk = foundAccounts[1];
+        }
+      } else {
+        // Find single matched account
+        let matchedRek = null;
+        for (let r of sortedRek) {
+          if (text.includes(r.nama.toLowerCase())) {
+            matchedRek = r;
+            break;
+          }
+        }
+
+        if (matchedRek) {
+          if (jenis === J_TRANS[1]) { // Pemasukan
+            rekMasuk = matchedRek;
+          } else { // Pengeluaran
+            rekSumber = matchedRek;
+          }
+        }
+      }
+    }
+
+    // 3. Amount / Nominal Extraction
+    let nominalVal = 0;
+    const digitMatch = text.match(/\b\d+(?:[\d.]*(?:\d+))?\b/g);
+    let extractedDigitNumber = null;
+
+    if (digitMatch) {
+      const parsedDigits = digitMatch.map(dStr => {
+        const val = parseFloat(dStr.replace(/\./g, '').replace(',', '.'));
+        return {
+          str: dStr,
+          val: val
+        };
+      }).filter(item => !isNaN(item.val));
+
+      if (parsedDigits.length > 0) {
+        // Take the last or largest numeric match
+        const lastNum = parsedDigits[parsedDigits.length - 1];
+        if (lastNum.val >= 100 || parsedDigits.length === 1) {
+          extractedDigitNumber = lastNum.val;
+        }
+      }
+    }
+
+    let extractedWordNumber = parseIndonesianWordsToNumber(text);
+    nominalVal = extractedDigitNumber || extractedWordNumber || 0;
+
+    // 4. Description (Barang) Extraction
+    let barang = originalText;
+
+    // Remove transaction keywords
+    const allKeywords = [...keywordsPengeluaran, ...keywordsPemasukan, ...keywordsPindahBuku];
+    allKeywords.forEach(k => {
+      const reg = new RegExp('\\b' + k + '\\b', 'gi');
+      barang = barang.replace(reg, '');
+    });
+
+    // Remove Account names
+    if (ARGS && ARGS.Rekening) {
+      ARGS.Rekening.forEach(r => {
+        const reg = new RegExp('\\b' + r.nama + '\\b', 'gi');
+        barang = barang.replace(reg, '');
+      });
+    }
+
+    // Remove standard words and numbers
+    const numberWords = [
+      'nol', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan',
+      'sepuluh', 'sebelas', 'seratus', 'seribu', 'puluh', 'belas', 'ratus', 'ribu', 'juta', 'miliar', 'milyar',
+      'rupiah', 'sebesar', 'nominal', 'harga', 'jumlah', 'senilai'
+    ];
+    numberWords.forEach(w => {
+      const reg = new RegExp('\\b' + w + '\\b', 'gi');
+      barang = barang.replace(reg, '');
+    });
+
+    if (digitMatch) {
+      digitMatch.forEach(d => {
+        barang = barang.replace(d, '');
+      });
+    }
+
+    // Remove trailing/leading helper words
+    const preps = ['dari', 'ke', 'di', 'pakai', 'untuk', 'dengan', 'menggunakan', 'masuk'];
+    preps.forEach(p => {
+      const reg = new RegExp('\\b' + p + '\\b', 'gi');
+      barang = barang.replace(reg, '');
+    });
+
+    // Final clean
+    barang = barang.replace(/\s+/g, ' ').trim();
+    barang = barang.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '');
+
+    if (barang.length > 0) {
+      barang = barang.charAt(0).toUpperCase() + barang.slice(1);
+    } else {
+      barang = jenis === J_TRANS[2] ? "Pindah Buku" : jenis;
+    }
+
+    return {
+      jenis,
+      barang,
+      nominal: nominalVal,
+      rekSumber,
+      rekMasuk
+    };
+  }
+
+  // Update Form
+  function updateFormFromParsedData(parsed) {
+    if (!parsed) return;
+
+    let changes = [];
+
+    // Update Jenis Transaksi
+    if (parsed.jenis) {
+      FORM.jenis_transaksi.SlimSelect.setSelected(parsed.jenis);
+      formState({
+        target: FORM.jenis_transaksi
+      });
+      changes.push(`Jenis: <b>${parsed.jenis}</b>`);
+    }
+
+    // Update Description (Barang)
+    if (parsed.barang) {
+      FORM.barang.value = parsed.barang;
+      changes.push(`Barang: <b>"${parsed.barang}"</b>`);
+    }
+
+    // Update Nominal
+    if (parsed.nominal > 0) {
+      FORM.nominal.value = formatID(parsed.nominal.toString());
+      changes.push(`Nominal: <b>Rp. ${formatID(parsed.nominal.toString())}</b>`);
+    }
+
+    // Update Accounts
+    if (parsed.jenis === J_TRANS[2]) { // Pindah Buku
+      if (parsed.rekSumber) {
+        FORM.rekening_sumber.SlimSelect.setSelected(parsed.rekSumber.id);
+        FORM.rekening_sumber.rekening = parsed.rekSumber;
+        changes.push(`Sumber: <b>${parsed.rekSumber.nama.toUpperCase()}</b>`);
+      }
+      if (parsed.rekMasuk) {
+        FORM.rekening_masuk.SlimSelect.setSelected(parsed.rekMasuk.id);
+        FORM.rekening_masuk.rekening = parsed.rekMasuk;
+        changes.push(`Masuk: <b>${parsed.rekMasuk.nama.toUpperCase()}</b>`);
+      }
+    } else if (parsed.jenis === J_TRANS[1]) { // Pemasukan
+      if (parsed.rekMasuk) {
+        FORM.rekening_masuk.SlimSelect.setSelected(parsed.rekMasuk.id);
+        FORM.rekening_masuk.rekening = parsed.rekMasuk;
+        changes.push(`Masuk Ke: <b>${parsed.rekMasuk.nama.toUpperCase()}</b>`);
+      }
+    } else { // Pengeluaran
+      if (parsed.rekSumber) {
+        FORM.rekening_sumber.SlimSelect.setSelected(parsed.rekSumber.id);
+        FORM.rekening_sumber.rekening = parsed.rekSumber;
+        changes.push(`Sumber Dari: <b>${parsed.rekSumber.nama.toUpperCase()}</b>`);
+      }
+    }
+
+    hitung();
+
+    const voiceFeedback = document.querySelector('#voice-feedback');
+    if (changes.length > 0) {
+      voiceFeedback.innerHTML = `Terdeteksi:<br>${changes.join(', ')}`;
+      voiceFeedback.classList.remove('hide');
+    }
+  }
+
+  // Voice recognition initiation
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const voiceFab = document.querySelector('#voice-fab');
+  const voiceOverlay = document.querySelector('#voice-overlay');
+  const voiceClose = document.querySelector('#voice-close');
+  const voiceTranscript = document.querySelector('#voice-transcript');
+  const voiceFeedback = document.querySelector('#voice-feedback');
+
+  if (!SpeechRecognition) {
+    voiceFab.style.display = 'none';
+  } else {
+    // Initialize Bootstrap Popover for voice suggestions
+    let voicePopover = null;
+    if (typeof bootstrap !== 'undefined' && bootstrap.Popover) {
+      voicePopover = new bootstrap.Popover(voiceFab, {
+        trigger: 'hover',
+        placement: 'left',
+        html: true,
+        title: 'Format Input Suara',
+        content: `
+          <div style="font-size: 0.85rem; line-height: 1.4; max-width: 250px;">
+            Coba ucapkan:<br>
+            • <strong>Pengeluaran:</strong> <em>"beli kopi lima belas ribu pakai gopay"</em><br>
+            • <strong>Pemasukan:</strong> <em>"gaji bulanan lima juta masuk mandiri"</em><br>
+            • <strong>Pindah Buku:</strong> <em>"transfer dari gopay ke dompet seratus ribu"</em>
+          </div>
+        `
+      });
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'id-ID';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    let recognizing = false;
+
+    recognition.onstart = () => {
+      recognizing = true;
+      if (voicePopover) voicePopover.hide();
+      voiceFab.classList.add('listening');
+      voiceOverlay.classList.remove('hide');
+      voiceTranscript.textContent = 'Mendengarkan...';
+      voiceTranscript.classList.remove('text-muted');
+      voiceFeedback.classList.add('hide');
+      voiceFeedback.textContent = '';
+    };
+
+    recognition.onerror = (event) => {
+      console.error(event.error);
+      if (event.error === 'not-allowed') {
+        voiceTranscript.textContent = 'Izin mikrofon ditolak.';
+      } else if (event.error === 'no-speech') {
+        voiceTranscript.textContent = 'Tidak terdengar suara.';
+      } else {
+        voiceTranscript.textContent = `Kesalahan: ${event.error}`;
+      }
+      setTimeout(() => {
+        voiceOverlay.classList.add('hide');
+        voiceFab.classList.remove('listening');
+      }, 2000);
+    };
+
+    recognition.onend = () => {
+      recognizing = false;
+      voiceFab.classList.remove('listening');
+    };
+
+    recognition.onresult = (event) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+
+      voiceTranscript.textContent = finalTranscript || interimTranscript || 'Mendengarkan...';
+
+      if (finalTranscript) {
+        const parsed = parseVoiceInput(finalTranscript);
+        updateFormFromParsedData(parsed);
+        setTimeout(() => {
+          voiceOverlay.classList.add('hide');
+        }, 2200);
+      }
+    };
+
+    voiceFab.addEventListener('click', () => {
+      if (voicePopover) voicePopover.hide();
+      if (recognizing) {
+        recognition.stop();
+      } else {
+        recognition.start();
+      }
+    });
+
+    voiceClose.addEventListener('click', () => {
+      recognition.stop();
+      voiceOverlay.classList.add('hide');
+    });
+
+    voiceOverlay.addEventListener('click', (e) => {
+      if (e.target === voiceOverlay) {
+        recognition.stop();
+        voiceOverlay.classList.add('hide');
+      }
+    });
+  }
+
   moveSummary();
 
   /* PWA Share handle */
