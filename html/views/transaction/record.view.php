@@ -154,8 +154,8 @@
     </div>
   </div>
 </div>
-<script src="https://unpkg.com/slim-select@latest/dist/slimselect.js" crossorigin="anonymous"></script>
-<link href="https://unpkg.com/slim-select@latest/dist/slimselect.css" rel="stylesheet" crossorigin="anonymous">
+<script src="https://unpkg.com/slim-select@3/dist/slimselect.js" crossorigin="anonymous"></script>
+<link href="https://unpkg.com/slim-select@3/dist/slimselect.css" rel="stylesheet" crossorigin="anonymous">
 </link>
 <script>
   const FORM = document.querySelector('form#form');
@@ -198,7 +198,6 @@
       select: FORM.rekening_sumber,
       data: ARGS.Rekening.map(rekeningSelectFormater),
       settings: {
-
         contentLocation: document.querySelector('#ss-dropdown'),
         placeholderText: 'Rekening Sumber',
         allowDeselect: true
@@ -208,7 +207,6 @@
       select: FORM.rekening_masuk,
       data: ARGS.Rekening.map(rekeningSelectFormater),
       settings: {
-
         contentLocation: document.querySelector('#ss-dropdown'),
         placeholderText: 'Rekening Masuk',
         allowDeselect: true
@@ -221,7 +219,6 @@
     FORM.kelompok.SlimSelect = new SlimSelect({
       select: FORM.kelompok,
       settings: {
-
         contentLocation: document.querySelector('#ss-dropdown'),
         allowDeselect: true,
       },
@@ -233,7 +230,6 @@
     FORM.relasi_transaksi.SlimSelect = new SlimSelect({
       select: FORM.relasi_transaksi,
       settings: {
-
         contentLocation: document.querySelector('#ss-dropdown'),
         allowDeselect: true
       },
@@ -802,8 +798,28 @@
     let extractedWordNumber = parseIndonesianWordsToNumber(text);
     nominalVal = extractedDigitNumber || extractedWordNumber || 0;
 
-    // 4. Description (Barang) Extraction
-    let barang = originalText;
+    // 4. Rutin and Kelompok Extraction
+    let isRutin = false;
+    let kelompok = null;
+
+    // Check for "rutin" / "non rutin"
+    if (text.includes('non rutin')) {
+      isRutin = false;
+      text = text.replace('non rutin', '');
+    } else if (text.includes('rutin')) {
+      isRutin = true;
+      text = text.replace('rutin', '');
+    }
+
+    // Check for "kelompok"
+    const kelompokMatch = text.match(/\bkelompok\s+([a-z0-9\s]+)/i);
+    if (kelompokMatch) {
+      kelompok = kelompokMatch[1].trim();
+      text = text.replace(kelompokMatch[0], '');
+    }
+
+    // 5. Description (Barang) Extraction
+    let barang = text;
 
     // Remove transaction keywords
     const allKeywords = [...keywordsPengeluaran, ...keywordsPemasukan, ...keywordsPindahBuku];
@@ -859,12 +875,14 @@
       barang,
       nominal: nominalVal,
       rekSumber,
-      rekMasuk
+      rekMasuk,
+      isRutin,
+      kelompok
     };
   }
 
   // Update Form
-  function updateFormFromParsedData(parsed) {
+  async function updateFormFromParsedData(parsed) {
     if (!parsed) return;
 
     let changes = [];
@@ -914,6 +932,51 @@
         FORM.rekening_sumber.rekening = parsed.rekSumber;
         changes.push(`Sumber Dari: <b>${parsed.rekSumber.nama.toUpperCase()}</b>`);
       }
+    }
+
+    // Update Rutin Checkbox
+    if (parsed.isRutin) {
+      FORM.rutin.checked = true;
+      FORM.rutin.switchState(true);
+      changes.push(`Rutin: <b>Ya</b>`);
+    }
+
+    // Update Kelompok
+    if (parsed.kelompok) {
+      // Because `rutin` triggers required `kelompok`, it's good that we set it.
+      // Make sure rutin state is handled
+      if (!FORM.rutin.checked) {
+        FORM.kelompok.required = false;
+      }
+
+      // Create option object
+      const kelOption = { text: parsed.kelompok, value: parsed.kelompok };
+      let existingData = FORM.kelompok.SlimSelect.getData();
+
+      try {
+        // Try to fetch existing kelompok to see if it exists
+        const response = await fetch(`<?= BASEURL ?>/Record/args?kelompok=${parsed.kelompok}`);
+        if (response.ok) {
+           const data = await response.json();
+           if (data.kelompok && data.kelompok.length > 0) {
+              // For simplicity, just pick the first match from the backend if it exists
+              // The backend match could be exact or partial
+              kelOption.text = data.kelompok[0];
+              kelOption.value = data.kelompok[0];
+           }
+        }
+      } catch(e) {
+        // ignore errors and fallback to user's word
+      }
+
+      // Check if it's already in the SlimSelect options
+      if (!existingData.some(opt => opt.value === kelOption.value)) {
+         existingData.push(kelOption);
+         FORM.kelompok.SlimSelect.setData(existingData);
+      }
+
+      FORM.kelompok.SlimSelect.setSelected(kelOption.value);
+      changes.push(`Kelompok: <b>${kelOption.text}</b>`);
     }
 
     hitung();
@@ -1009,10 +1072,11 @@
 
       if (finalTranscript) {
         const parsed = parseVoiceInput(finalTranscript);
-        updateFormFromParsedData(parsed);
-        setTimeout(() => {
-          voiceOverlay.classList.add('hide');
-        }, 2200);
+        updateFormFromParsedData(parsed).then(() => {
+          setTimeout(() => {
+            voiceOverlay.classList.add('hide');
+          }, 2200);
+        });
       }
     };
 

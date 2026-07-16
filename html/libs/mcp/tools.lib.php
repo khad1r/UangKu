@@ -202,7 +202,7 @@ class tools
       }
 
       $linkSuffix = isset($attachmentLink) ? $attachmentLink : "";
-      return "✅ Berhasil! " . count($results) . " Transaksi dicatat: " . implode(';\n ', $results) . $linkSuffix;
+      return "✅ Berhasil! " . count($results) . " Transaksi dicatat: " . implode(";\n ", $results) . $linkSuffix;
     } catch (\Exception $e) {
       throw new ToolCallException("⚠️ Error: " . $e->getMessage());
     }
@@ -333,7 +333,7 @@ class tools
       }
 
       $linkSuffix = isset($attachmentLink) ? $attachmentLink : "";
-      return "✅ Berhasil! " . count($results) . " Transaksi diperbarui: " . implode(', ', $results) . $linkSuffix;
+      return "✅ Berhasil! " . count($results) . " Transaksi diperbarui: " . implode(";\n", $results) . $linkSuffix;
     } catch (\Exception $e) {
       throw new ToolCallException("⚠️ Error: " . $e->getMessage());
     }
