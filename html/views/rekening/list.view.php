@@ -173,15 +173,22 @@
         targets: [0],
         render: DataTable.render.select(),
         orderable: false,
-        // "className": 'd-none d-sm-table-cell align-middle'
+      },
+      {
+        // NEW: Explicitly assign the mobile expand/collapse arrow to the "Nama" column
+        // so it doesn't overlap with the newly visible checkbox.
+        targets: [2],
+        className: 'dtr-control'
       },
       {
         responsivePriority: 1,
-        targets: [0, 1, 4, 5]
+        // REMOVED 0: ID, Jenis Uang, Keterangan will still collapse
+        targets: [1, 4, 5]
       },
       {
         responsivePriority: 0,
-        targets: [2, 3, 6]
+        // ADDED 0: Checkbox, Nama, Saldo, Action will always stay visible
+        targets: [0, 2, 3, 6]
       },
     ],
     'columns': [{

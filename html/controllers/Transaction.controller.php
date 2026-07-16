@@ -22,6 +22,7 @@ class Transaction extends Controller
   {
     $data['title'] = 'Daftar Transaksi';
     $data['subTitle'] = '<i class="fas fa-book"></i> Buku Transaksi <i class="fas fa-hand-holding-usd"></i>';
+    $data['jenis_transaksi'] = JENIS_TRANSAKSI;
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'transaction/transaction';
     $data['top-left-view'] = 'components/header';
