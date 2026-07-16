@@ -1,4 +1,5 @@
 <style>
+  /* Base FAB Styles */
   #voice-fab {
     position: fixed;
     bottom: 24px;
@@ -33,36 +34,38 @@
       animation: pulse-red 1.5s infinite;
     }
 
-    @keyframes pulse-red {
-      0% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(var(--red-rgb), 0.7);
-      }
-
-      70% {
-        transform: scale(1);
-        box-shadow: 0 0 0 15px rgba(var(--red-rgb), 0);
-      }
-
-      100% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(var(--red-rgb), 0);
-      }
-    }
-
     @media (orientation: portrait) {
       bottom: 112px;
     }
   }
 
+  @keyframes pulse-red {
+    0% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(var(--red-rgb), 0.7);
+    }
+
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 15px rgba(var(--red-rgb), 0);
+    }
+
+    100% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(var(--red-rgb), 0);
+    }
+  }
+
+  /* 🌟 Stylized Voice Overlay */
   .voice-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
+    background: rgba(15, 15, 18, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     z-index: 1060;
     display: flex;
     align-items: center;
@@ -75,36 +78,64 @@
     }
 
     .voice-card {
-      background: rgba(30, 30, 30, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 16px;
-      padding: 24px;
-      width: 90%;
-      max-width: 450px;
-      color: var(--white-color);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      background: linear-gradient(145deg, rgba(40, 42, 50, 0.9), rgba(25, 26, 30, 0.95));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 24px;
+      padding: 28px;
+      width: 92%;
+      max-width: 420px;
+      color: #fff;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
     .voice-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 20px;
     }
 
+    #voice-title {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      background: -webkit-linear-gradient(0deg, #fff, #aaa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* 🌟 Stylized Wave Animation */
     .voice-wave-container {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 6px;
-      height: 60px;
+      gap: 8px;
+      height: 70px;
+      cursor: pointer;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.2s ease;
+      padding: 10px;
+      margin-bottom: 20px;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: scale(1.02);
+      }
+
+      &.listening .voice-wave-bar {
+        animation: voiceWave 1.2s infinite ease-in-out;
+        box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.6);
+      }
     }
 
     .voice-wave-bar {
       width: 6px;
-      height: 15px;
+      height: 12px;
       background-color: var(--primary-color);
-      border-radius: 3px;
-      animation: voiceWave 1.2s infinite ease-in-out;
+      border-radius: 6px;
+      transition: height 0.3s ease, background-color 0.3s ease;
 
       &:nth-child(2) {
         animation-delay: 0.15s;
@@ -121,59 +152,89 @@
       &:nth-child(5) {
         animation-delay: 0.6s;
       }
+    }
 
-      @keyframes voiceWave {
+    /* 🌟 Stylized Transcript Box */
+    .voice-transcript-container {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 16px;
+      min-height: 70px;
+      max-height: 130px;
+      overflow-y: auto;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
 
-        0%,
-        100% {
-          height: 15px;
-        }
+    #voice-transcript {
+      font-weight: 300;
+      letter-spacing: 0.3px;
+    }
 
-        50% {
-          height: 50px;
-          background-color: var(--primary-color-alt);
-        }
+    /* 🌟 Stylized Parsed Data Container */
+    .voice-status-feedback {
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    /* 🌟 Stylized Action Buttons */
+    #voice-actions {
+      margin-top: 24px;
+
+      button {
+        border-radius: 50rem;
+        padding: 10px 20px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
       }
     }
 
-    .voice-transcript-container {
-      background: rgba(255, 255, 255, 0.07);
-      border-radius: 8px;
-      min-height: 80px;
-      max-height: 150px;
-      overflow-y: auto;
-      font-size: 1.1rem;
-      line-height: 1.5;
-      text-align: left;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+    #voice-btn-cancel {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ddd;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
     }
 
-    .voice-status-feedback {
-      font-size: 0.95rem;
-      padding: 12px 16px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.05);
-      color: #e0e0e0;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      margin-top: 16px;
-      text-align: left;
-      max-height: 250px;
-      overflow-y: auto;
+    #voice-btn-ok {
+      background: linear-gradient(135deg, var(--green-color), #20c997);
+      border: none;
+      box-shadow: 0 6px 15px rgba(var(--green-rgb), 0.3);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(var(--green-rgb), 0.4);
+      }
+    }
+  }
+
+  @keyframes voiceWave {
+
+    0%,
+    100% {
+      height: 12px;
     }
 
-    #voice-actions button {
-      border-radius: 8px;
-      padding: 6px 16px;
-      font-size: 0.85rem;
-      transition: all 0.2s ease;
-    }
-
-    #voice-actions button:hover {
-      transform: translateY(-1px);
-    }
-
-    #voice-actions button:active {
-      transform: translateY(1px);
+    50% {
+      height: 45px;
+      background-color: var(--primary-color-alt);
     }
   }
 </style>
@@ -182,29 +243,36 @@
 <button type="button" id="voice-fab" class="btn btn-primary" title="Input Suara">
   <i class="fas fa-microphone"></i>
 </button>
-
 <div id="voice-overlay" class="voice-overlay hide">
   <div class="voice-card">
-    <div class="voice-header mb-3">
+    <div class="voice-header">
       <h5 class="mb-0" id="voice-title">Mendengarkan...</h5>
-      <button type="button" id="voice-close" class="btn-close btn-close-white" style="filter: invert(1); opacity: 0.8;"></button>
+      <button type="button" id="voice-close" class="btn-close btn-close-white" style="filter: invert(1); opacity: 0.6;"></button>
     </div>
-    <div class="voice-wave-container mb-4" id="voice-wave-container">
-      <div class="voice-wave-bar"></div>
-      <div class="voice-wave-bar"></div>
-      <div class="voice-wave-bar"></div>
-      <div class="voice-wave-bar"></div>
-      <div class="voice-wave-bar"></div>
-    </div>
+
     <div class="voice-transcript-container p-3">
       <p id="voice-transcript" class="mb-0 text-muted font-italic">Mulai berbicara...</p>
     </div>
-    <div class="voice-status-feedback hide" id="voice-feedback"></div>
+
+    <!-- Parsed results will be injected here -->
+    <div class="voice-status-feedback hide p-3" id="voice-feedback"></div>
+
+    <div class="voice-wave-container" id="voice-wave-container">
+      <div class="voice-wave-bar"></div>
+      <div class="voice-wave-bar"></div>
+      <div class="voice-wave-bar"></div>
+      <div class="voice-wave-bar"></div>
+      <div class="voice-wave-bar"></div>
+    </div>
+
     <!-- Voice confirmation actions -->
-    <div id="voice-actions" class="d-flex justify-content-end gap-2 mt-3 hide">
-      <button type="button" id="voice-btn-reset" class="btn btn-warning btn-sm px-3 font-weight-bold text-white">Ulangi</button>
-      <button type="button" id="voice-btn-cancel" class="btn btn-secondary btn-sm px-3 font-weight-bold">Batal</button>
-      <button type="button" id="voice-btn-ok" class="btn btn-success btn-sm px-4 font-weight-bold text-white">Terapkan</button>
+    <div id="voice-actions" class="d-flex justify-content-between gap-3 hide">
+      <button type="button" id="voice-btn-cancel" class="btn w-50">
+        <i class="fas fa-times"></i> Batal
+      </button>
+      <button type="button" id="voice-btn-ok" class="btn w-50 text-white">
+        <i class="fas fa-check"></i> Terapkan
+      </button>
     </div>
   </div>
 </div>
@@ -413,18 +481,32 @@
     if (!nominalVal) {
       nominalVal = parseIndonesianWordsToNumber(text) || 0;
     }
-
     // 4. Rutin and Kelompok Extraction
     const isRutin = text.includes('rutin') && !text.includes('non rutin');
 
     let kelompok = null;
-    // Alternative: Treats either "kelompok [X]" OR "rutin [X]" as the group name
-    const kelompokMatch = text.match(/\b(?:kelompok|rutin)\s+([a-z0-9\s]+)/i);
+
+    // 1. Try to find explicit "kelompok [nama]" (takes everything after it)
+    const kelompokMatch = text.match(/\bkelompok\s+([a-z0-9\s]+)/i);
+
     if (kelompokMatch) {
       kelompok = kelompokMatch[1].trim();
-      text = text.replace(kelompokMatch[0], '');
+      text = text.replace(kelompokMatch[0], ''); // Remove the matched phrase
+    }
+    // 2. Fallback: Find 1 or 2 words before OR after "rutin" (e.g., "makan rutin", "rutin bulanan")
+    else if (isRutin) {
+      // This Regex looks for 1-2 words before "rutin" OR 1-2 words after "rutin"
+      const rutinMatch = text.match(/\b([a-z0-9]+\s+[a-z0-9]+|[a-z0-9]+)\s+rutin\b|\brutin\s+([a-z0-9]+\s+[a-z0-9]+|[a-z0-9]+)\b/i);
+
+      if (rutinMatch) {
+        kelompok = (rutinMatch[1] || rutinMatch[2]).trim();
+        // Remove ONLY the extracted group word from the text so it doesn't leak into the 'barang' string.
+        // We leave the word "rutin" to be cleaned up globally below.
+        text = text.replace(kelompok, '');
+      }
     }
 
+    // Globally clean up the trigger words
     text = text.replace(/non rutin|rutin/gi, '');
 
     // 5. Description (Barang) Extraction
@@ -470,7 +552,6 @@
     const voiceTitle = document.querySelector('#voice-title');
     const voiceWaveContainer = document.querySelector('#voice-wave-container');
     const voiceActions = document.querySelector('#voice-actions');
-    const voiceBtnReset = document.querySelector('#voice-btn-reset');
     const voiceBtnCancel = document.querySelector('#voice-btn-cancel');
     const voiceBtnOk = document.querySelector('#voice-btn-ok');
 
@@ -482,44 +563,105 @@
     }
 
     let recognizing = false;
+    let isStarting = false;
     let lastParsedData = null;
+    let accumulatedTranscript = '';
+    let sessionFinalTranscript = '';
+
+    function startRecognition() {
+      if (recognizing || isStarting) return;
+      try {
+        isStarting = true;
+        recognition.start();
+      } catch (e) {
+        console.error(e);
+        isStarting = false;
+      }
+    }
+
+    function stopRecognition() {
+      try {
+        recognition.stop();
+      } catch (e) {
+        console.error(e);
+      }
+      recognizing = false;
+      isStarting = false;
+    }
 
     function showParsedFeedback(parsed) {
       if (!parsed) return;
 
-      let html = '<div style="font-weight: 700; margin-bottom: 10px; color: var(--primary-color); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; font-size: 1rem;">Deteksi Transaksi:</div>';
-      html += `<div style="display: grid; grid-template-columns: 110px 1fr; gap: 8px 4px; font-size: 0.9rem; line-height: 1.4;">`;
+      // Header for the parsed data
+      let html = `
+        <div class="d-flex align-items-center mb-3 pb-2" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+          <i class="fas fa-bolt text-warning me-2 fs-5"></i>
+          <h6 class="mb-0 fw-bold text-white" style="letter-spacing: 0.5px;">Hasil Deteksi</h6>
+        </div>
+        <div class="d-flex flex-column gap-2">
+      `;
 
-      const formatRow = (label, val) => {
+      // Helper function to build beautiful rows
+      const formatRow = (icon, iconColor, label, val, isHighlight = false) => {
         if (!val) return '';
-        return `<div class="text-white-50"><strong>${label}</strong></div><div class="text-white">${val}</div>`;
+        const valStyle = isHighlight ?
+          'color: var(--primary-color); font-weight: 800; font-size: 1.15rem; text-shadow: 0 0 10px rgba(var(--primary-rgb),0.3);' :
+          'color: #f8f9fa; font-weight: 500; font-size: 0.95rem;';
+
+        return `
+          <div class="d-flex justify-content-between align-items-center bg-dark p-2 px-3 rounded-3" style="background: rgba(0,0,0,0.3) !important;">
+            <div class="text-white-50 small d-flex align-items-center gap-2" style="font-size: 0.85rem;">
+              <i class="fas ${icon} fa-fw text-${iconColor}"></i> ${label}
+            </div>
+            <div class="text-end text-wrap text-break" style="${valStyle} max-width: 60%; line-height: 1.2;">
+              ${val}
+            </div>
+          </div>
+        `;
       };
 
-      html += formatRow('Tipe', parsed.jenis);
-      html += formatRow('Barang', parsed.barang);
+      // 1. Transaction Type
+      let typeColor = parsed.jenis === J_TRANS[1] ? 'success' : (parsed.jenis === J_TRANS[2] ? 'warning' : 'danger');
+      let typeIcon = parsed.jenis === J_TRANS[1] ? 'fa-arrow-circle-down' : (parsed.jenis === J_TRANS[2] ? 'fa-exchange-alt' : 'fa-arrow-circle-up');
+      html += formatRow(typeIcon, typeColor, 'Tipe', parsed.jenis);
 
+      // 2. Item / Description
+      html += formatRow('fa-tag', 'info', 'Barang', parsed.barang);
+
+      // 3. Nominal (Highlighted)
       if (parsed.nominal > 0) {
         const formattedNominal = new Intl.NumberFormat('id-ID').format(parsed.nominal);
-        html += formatRow('Nominal', `Rp. ${formattedNominal}`);
+        html += formatRow('fa-money-bill-wave', 'success', 'Nominal', `Rp. ${formattedNominal}`, true);
       }
 
+      // 4. Accounts
+      const formatAccountRow = (icon, label, rek) => {
+        if (rek) {
+          return formatRow(icon, 'secondary', label, rek.nama.toUpperCase());
+        } else {
+          // If no account is detected, show a warning text
+          const warningEl = `<span class="text-danger fst-italic" style="font-size: 0.85rem;"><i class="fas fa-exclamation-triangle"></i> Belum disebutkan</span>`;
+          return formatRow(icon, 'danger', label, warningEl);
+        }
+      };
       if (parsed.jenis === J_TRANS[2]) { // Pindah Buku
-        if (parsed.rekSumber) html += formatRow('Sumber', parsed.rekSumber.nama.toUpperCase());
-        if (parsed.rekMasuk) html += formatRow('Masuk', parsed.rekMasuk.nama.toUpperCase());
+        html += formatAccountRow('fa-wallet', 'Sumber', parsed.rekSumber);
+        html += formatAccountRow('fa-piggy-bank', 'Masuk', parsed.rekMasuk);
       } else if (parsed.jenis === J_TRANS[1]) { // Pemasukan
-        if (parsed.rekMasuk) html += formatRow('Masuk Ke', parsed.rekMasuk.nama.toUpperCase());
+        html += formatAccountRow('fa-piggy-bank', 'Masuk Ke', parsed.rekMasuk);
       } else { // Pengeluaran
-        if (parsed.rekSumber) html += formatRow('Sumber Dari', parsed.rekSumber.nama.toUpperCase());
+        html += formatAccountRow('fa-wallet', 'Sumber', parsed.rekSumber);
       }
 
+      // 5. Rutin / Kelompok
       if (parsed.isRutin) {
-        html += formatRow('Rutin', 'Ya');
+        html += formatRow('fa-sync-alt', 'primary', 'Rutin', 'Ya');
       }
       if (parsed.kelompok) {
-        html += formatRow('Kelompok', parsed.kelompok);
+        html += formatRow('fa-folder-open', 'primary', 'Kelompok', parsed.kelompok);
       }
 
-      html += `</div>`;
+      html += `</div>`; // Close column wrapper
 
       voiceFeedback.innerHTML = html;
       voiceFeedback.classList.remove('hide');
@@ -534,6 +676,8 @@
       voiceActions.classList.add('hide');
       voiceWaveContainer.classList.remove('hide');
       lastParsedData = null;
+      accumulatedTranscript = '';
+      sessionFinalTranscript = '';
     }
 
     // Initialize Bootstrap Popover for voice suggestions
@@ -557,19 +701,22 @@
 
     const recognition = new SpeechRecognition();
     recognition.lang = 'id-ID';
-    recognition.continuous = true; // KEEP ACTIVE: allow user to continue speaking
+    recognition.continuous = false; // Disable continuous to allow automatic pauses, click wave to continue
     recognition.interimResults = true;
 
     recognition.onstart = () => {
       recognizing = true;
+      isStarting = false;
       if (voicePopover) voicePopover.hide();
       voiceFab.classList.add('listening');
       voiceOverlay.classList.remove('hide');
-      resetVoiceUI();
+      voiceWaveContainer.classList.add('listening');
+      voiceTitle.textContent = 'Mendengarkan...';
     };
 
     recognition.onerror = (event) => {
       console.error(event.error);
+      isStarting = false;
       if (event.error === 'not-allowed') {
         voiceTranscript.textContent = 'Izin mikrofon ditolak.';
       } else if (event.error === 'no-speech') {
@@ -578,7 +725,7 @@
         voiceTranscript.textContent = `Kesalahan: ${event.error}`;
       }
       setTimeout(() => {
-        if (!lastParsedData) {
+        if (!lastParsedData && !recognizing) {
           voiceOverlay.classList.add('hide');
           voiceFab.classList.remove('listening');
         }
@@ -587,12 +734,19 @@
 
     recognition.onend = () => {
       recognizing = false;
+      isStarting = false;
       voiceFab.classList.remove('listening');
-      // When recognition ends due to silence/browser timeout:
-      // Hide wave animation and change title to indicate listening has finished
-      voiceWaveContainer.classList.add('hide');
+      // Stop wave animation
+      voiceWaveContainer.classList.remove('listening');
+
+      // Save session's final transcript to accumulated
+      accumulatedTranscript = (accumulatedTranscript + ' ' + sessionFinalTranscript).replace(/\s+/g, ' ').trim();
+      sessionFinalTranscript = '';
+
       if (lastParsedData) {
         voiceTitle.textContent = 'Hasil Analisis';
+      } else {
+        voiceTitle.textContent = 'Bicara Terhenti (Klik wave untuk lanjut)';
       }
     };
 
@@ -608,13 +762,14 @@
         }
       }
 
-      const displayTranscript = finalTranscript + interimTranscript;
-      voiceTranscript.textContent = displayTranscript || 'Mendengarkan...';
+      sessionFinalTranscript = finalTranscript;
+
+      const currentText = (accumulatedTranscript + ' ' + finalTranscript + ' ' + interimTranscript).replace(/\s+/g, ' ').trim();
+      voiceTranscript.textContent = currentText || 'Mendengarkan...';
       voiceTranscript.classList.remove('text-muted');
 
-      const textToParse = finalTranscript + interimTranscript;
-      if (textToParse.trim()) {
-        lastParsedData = parseVoiceInput(textToParse);
+      if (currentText) {
+        lastParsedData = parseVoiceInput(currentText);
 
         // Show parsed data in overlay live in real-time
         showParsedFeedback(lastParsedData);
@@ -622,23 +777,41 @@
       }
     };
 
+    // Click the wave to continue listening, double click to reset
+    voiceWaveContainer.addEventListener('click', () => {
+      startRecognition();
+    });
+
+    voiceWaveContainer.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      stopRecognition();
+      resetVoiceUI();
+      // Restart after a small timeout to let the previous instance stop completely
+      setTimeout(() => {
+        startRecognition();
+      }, 300);
+    });
+
     voiceFab.addEventListener('click', () => {
       if (voicePopover) voicePopover.hide();
-      if (recognizing) {
-        recognition.stop();
+      if (recognizing || isStarting) {
+        stopRecognition();
       } else {
-        recognition.start();
+        if (voiceOverlay.classList.contains('hide')) {
+          resetVoiceUI();
+        }
+        startRecognition();
       }
     });
 
     voiceClose.addEventListener('click', () => {
-      recognition.stop();
+      stopRecognition();
       voiceOverlay.classList.add('hide');
     });
 
     voiceOverlay.addEventListener('click', (e) => {
       if (e.target === voiceOverlay) {
-        recognition.stop();
+        stopRecognition();
         voiceOverlay.classList.add('hide');
       }
     });
@@ -647,26 +820,14 @@
     voiceBtnOk.addEventListener('click', async () => {
       if (lastParsedData) {
         await VoiceParseCallback(lastParsedData);
-        recognition.stop();
+        stopRecognition();
         voiceOverlay.classList.add('hide');
       }
     });
 
-    // Ulangi / Reset Button click - stop current, reset UI and restart Speech Recognition
-    voiceBtnReset.addEventListener('click', () => {
-      recognition.stop();
-      resetVoiceUI();
-      // Restart after a small timeout to let the previous instance stop completely
-      setTimeout(() => {
-        if (!recognizing) {
-          recognition.start();
-        }
-      }, 300);
-    });
-
     // Batal / Close Button click - just close overlay
     voiceBtnCancel.addEventListener('click', () => {
-      recognition.stop();
+      stopRecognition();
       voiceOverlay.classList.add('hide');
     });
   });
