@@ -42,7 +42,7 @@
     </div>
   </div>
   <div class="table-wrapper">
-    <table data-label="List Rekening" class="table table-responsive myTable border-bottom display nowrap" id="FormatTable">
+    <table data-label="List Rekening" class="table table-responsive myTable border-bottom display" id="FormatTable">
       <thead class="sticky-top">
         <tr>
           <th scope="col" class="">ID</th>
@@ -255,10 +255,10 @@
     CashFlowChart.redraw()
     CompsChart.redraw()
     const updateIDR = (id, value) => {
-        const el = document.querySelector(id);
-        if (el) {
-            el.innerHTML = `Rp.&nbsp;${(+value).toLocaleString('id')}`;
-        }
+      const el = document.querySelector(id);
+      if (el) {
+        el.innerHTML = `Rp.&nbsp;${(+value).toLocaleString('id')}`;
+      }
     };
     updateIDR('#text-pemasukan', data.cashIn);
     updateIDR('#text-pengeluaran', data.cashOut);
@@ -375,7 +375,11 @@
       {
         responsivePriority: 0,
         targets: [2, 5]
-      },
+      }, {
+        // Force the "Barang / Judul" column to wrap its text onto multiple lines
+        targets: 2,
+        className: 'text-wrap'
+      }
     ],
     'columns': [{
         'data': 'id',
@@ -386,6 +390,39 @@
         'data': 'jenis_transaksi',
         'title': '',
         'orderable': false,
+        'render': (data, type, row, meta) => {
+          if (type !== 'display') return data;
+
+          const styles = {
+            'PENGELUARAN': {
+              icon: 'fa-arrow-circle-down',
+              color: 'danger'
+            },
+            'PEMASUKAN': {
+              icon: 'fa-arrow-circle-up',
+              color: 'success'
+            },
+            'PINDAH BUKU': {
+              icon: 'fa-exchange-alt',
+              color: 'warning'
+            }
+          };
+
+          const style = styles[data] || {
+            icon: 'fa-circle',
+            color: 'secondary'
+          };
+
+          return /* HTML */ `
+            <!-- Desktop: Show full text as a badge -->
+            <span class="badge bg-${style.color} d-none d-md-inline-block ms-1">${data}</span>
+
+            <!-- Mobile: Show compact colored icon only (Inline to sit next to the arrow) -->
+            <span class="text-${style.color} d-inline-block d-md-none ms-1 align-middle" title="${data}">
+              <i class="fas ${style.icon} fs-5"></i>
+            </span>
+          `;
+        }
       },
       {
         // 'width': '30%',
@@ -479,12 +516,16 @@
       // add filter ("Pengeluaran', 'Pemasukan', 'Pinbuk') to column #1
       const column = this.api().column(1);
       const select = document.createElement('select');
-      select.className = 'form-select bg-transparent font-weight-bold w-auto ms-2';;
+      // FIX: Use form-select-sm, remove w-auto, and apply a max-width to keep it compact on mobile
+      select.className = 'form-select form-select-sm bg-transparent font-weight-bold mx-auto border-0 shadow-none';
+      select.style.maxWidth = '130px';
+      select.style.cursor = 'pointer';
+
       select.innerHTML = /* HTML */ `
-        <option value="" class="text-white font-weight-bold bg-dark">Jenis Transaksi</option>
-        <option value="Pengeluaran" class="text-white font-weight-bold bg-dark">Pengeluaran</option>
-        <option value="Pemasukan" class="text-white font-weight-bold bg-dark">Pemasukan</option>
-        <option value="Pindah Buku" class="text-white font-weight-bold bg-dark">Pindah Buku</option>
+        <option value="" class="text-white font-weight-bold bg-dark">Semua Tipe</option>
+        <?php foreach ($data['jenis_transaksi'] as $x) { ?>
+        <option value="<?= $x ?>" class="text-white font-weight-bold bg-dark"><?= $x ?></option>
+        <?php } ?>
       `;
       select.addEventListener('change', function() {
         column.search(this.value).draw();

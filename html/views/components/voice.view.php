@@ -149,16 +149,31 @@
     }
 
     .voice-status-feedback {
-      font-size: 0.9rem;
-      padding: 8px 12px;
-      border-radius: 6px;
-      background: rgba(var(--green-rgb), 0.15);
-      color: var(--green-color);
-      border: 1px solid rgba(var(--green-rgb), 0.3);
-      margin-top: 12px;
+      font-size: 0.95rem;
+      padding: 12px 16px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #e0e0e0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 16px;
       text-align: left;
-      max-height: 100px;
+      max-height: 250px;
       overflow-y: auto;
+    }
+
+    #voice-actions button {
+      border-radius: 8px;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+    }
+
+    #voice-actions button:hover {
+      transform: translateY(-1px);
+    }
+
+    #voice-actions button:active {
+      transform: translateY(1px);
     }
   }
 </style>
@@ -171,10 +186,10 @@
 <div id="voice-overlay" class="voice-overlay hide">
   <div class="voice-card">
     <div class="voice-header mb-3">
-      <h5 class="mb-0">Mendengarkan...</h5>
+      <h5 class="mb-0" id="voice-title">Mendengarkan...</h5>
       <button type="button" id="voice-close" class="btn-close btn-close-white" style="filter: invert(1); opacity: 0.8;"></button>
     </div>
-    <div class="voice-wave-container mb-4">
+    <div class="voice-wave-container mb-4" id="voice-wave-container">
       <div class="voice-wave-bar"></div>
       <div class="voice-wave-bar"></div>
       <div class="voice-wave-bar"></div>
@@ -185,6 +200,12 @@
       <p id="voice-transcript" class="mb-0 text-muted font-italic">Mulai berbicara...</p>
     </div>
     <div class="voice-status-feedback hide" id="voice-feedback"></div>
+    <!-- Voice confirmation actions -->
+    <div id="voice-actions" class="d-flex justify-content-end gap-2 mt-3 hide">
+      <button type="button" id="voice-btn-reset" class="btn btn-warning btn-sm px-3 font-weight-bold text-white">Ulangi</button>
+      <button type="button" id="voice-btn-cancel" class="btn btn-secondary btn-sm px-3 font-weight-bold">Batal</button>
+      <button type="button" id="voice-btn-ok" class="btn btn-success btn-sm px-4 font-weight-bold text-white">Terapkan</button>
+    </div>
   </div>
 </div>
 
@@ -437,17 +458,84 @@
       kelompok
     };
   }
-  // Voice recognition initiation
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const voiceFab = document.querySelector('#voice-fab');
-  const voiceOverlay = document.querySelector('#voice-overlay');
-  const voiceClose = document.querySelector('#voice-close');
-  const voiceTranscript = document.querySelector('#voice-transcript');
-  const voiceFeedback = document.querySelector('#voice-feedback');
 
-  if (!SpeechRecognition) {
-    voiceFab.style.display = 'none';
-  } else {
+  // Wrap DOM bindings and listeners in DOMContentLoaded to ensure bootstrap is loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const voiceFab = document.querySelector('#voice-fab');
+    const voiceOverlay = document.querySelector('#voice-overlay');
+    const voiceClose = document.querySelector('#voice-close');
+    const voiceTranscript = document.querySelector('#voice-transcript');
+    const voiceFeedback = document.querySelector('#voice-feedback');
+    const voiceTitle = document.querySelector('#voice-title');
+    const voiceWaveContainer = document.querySelector('#voice-wave-container');
+    const voiceActions = document.querySelector('#voice-actions');
+    const voiceBtnReset = document.querySelector('#voice-btn-reset');
+    const voiceBtnCancel = document.querySelector('#voice-btn-cancel');
+    const voiceBtnOk = document.querySelector('#voice-btn-ok');
+
+    if (!voiceFab) return; // Guard for pages without the FAB
+
+    if (!SpeechRecognition) {
+      voiceFab.style.display = 'none';
+      return;
+    }
+
+    let recognizing = false;
+    let lastParsedData = null;
+
+    function showParsedFeedback(parsed) {
+      if (!parsed) return;
+
+      let html = '<div style="font-weight: 700; margin-bottom: 10px; color: var(--primary-color); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; font-size: 1rem;">Deteksi Transaksi:</div>';
+      html += `<div style="display: grid; grid-template-columns: 110px 1fr; gap: 8px 4px; font-size: 0.9rem; line-height: 1.4;">`;
+
+      const formatRow = (label, val) => {
+        if (!val) return '';
+        return `<div class="text-white-50"><strong>${label}</strong></div><div class="text-white">${val}</div>`;
+      };
+
+      html += formatRow('Tipe', parsed.jenis);
+      html += formatRow('Barang', parsed.barang);
+
+      if (parsed.nominal > 0) {
+        const formattedNominal = new Intl.NumberFormat('id-ID').format(parsed.nominal);
+        html += formatRow('Nominal', `Rp. ${formattedNominal}`);
+      }
+
+      if (parsed.jenis === J_TRANS[2]) { // Pindah Buku
+        if (parsed.rekSumber) html += formatRow('Sumber', parsed.rekSumber.nama.toUpperCase());
+        if (parsed.rekMasuk) html += formatRow('Masuk', parsed.rekMasuk.nama.toUpperCase());
+      } else if (parsed.jenis === J_TRANS[1]) { // Pemasukan
+        if (parsed.rekMasuk) html += formatRow('Masuk Ke', parsed.rekMasuk.nama.toUpperCase());
+      } else { // Pengeluaran
+        if (parsed.rekSumber) html += formatRow('Sumber Dari', parsed.rekSumber.nama.toUpperCase());
+      }
+
+      if (parsed.isRutin) {
+        html += formatRow('Rutin', 'Ya');
+      }
+      if (parsed.kelompok) {
+        html += formatRow('Kelompok', parsed.kelompok);
+      }
+
+      html += `</div>`;
+
+      voiceFeedback.innerHTML = html;
+      voiceFeedback.classList.remove('hide');
+    }
+
+    function resetVoiceUI() {
+      voiceTitle.textContent = 'Mendengarkan...';
+      voiceTranscript.textContent = 'Mulai berbicara...';
+      voiceTranscript.classList.add('text-muted');
+      voiceFeedback.innerHTML = '';
+      voiceFeedback.classList.add('hide');
+      voiceActions.classList.add('hide');
+      voiceWaveContainer.classList.remove('hide');
+      lastParsedData = null;
+    }
+
     // Initialize Bootstrap Popover for voice suggestions
     let voicePopover = null;
     if (typeof bootstrap !== 'undefined' && bootstrap.Popover) {
@@ -456,7 +544,7 @@
         placement: 'left',
         html: true,
         title: 'Format Input Suara',
-        content: `
+        content: /* HTML */ `
           <div style="font-size: 0.85rem; line-height: 1.4; max-width: 250px;">
             Coba ucapkan:<br>
             • <strong>Pengeluaran:</strong> <em>"beli kopi lima belas ribu pakai gopay"</em><br>
@@ -469,20 +557,15 @@
 
     const recognition = new SpeechRecognition();
     recognition.lang = 'id-ID';
-    recognition.continuous = false;
+    recognition.continuous = true; // KEEP ACTIVE: allow user to continue speaking
     recognition.interimResults = true;
-
-    let recognizing = false;
 
     recognition.onstart = () => {
       recognizing = true;
       if (voicePopover) voicePopover.hide();
       voiceFab.classList.add('listening');
       voiceOverlay.classList.remove('hide');
-      voiceTranscript.textContent = 'Mendengarkan...';
-      voiceTranscript.classList.remove('text-muted');
-      voiceFeedback.classList.add('hide');
-      voiceFeedback.textContent = '';
+      resetVoiceUI();
     };
 
     recognition.onerror = (event) => {
@@ -495,21 +578,29 @@
         voiceTranscript.textContent = `Kesalahan: ${event.error}`;
       }
       setTimeout(() => {
-        voiceOverlay.classList.add('hide');
-        voiceFab.classList.remove('listening');
+        if (!lastParsedData) {
+          voiceOverlay.classList.add('hide');
+          voiceFab.classList.remove('listening');
+        }
       }, 2000);
     };
 
     recognition.onend = () => {
       recognizing = false;
       voiceFab.classList.remove('listening');
+      // When recognition ends due to silence/browser timeout:
+      // Hide wave animation and change title to indicate listening has finished
+      voiceWaveContainer.classList.add('hide');
+      if (lastParsedData) {
+        voiceTitle.textContent = 'Hasil Analisis';
+      }
     };
 
     recognition.onresult = (event) => {
       let interimTranscript = '';
       let finalTranscript = '';
 
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
+      for (let i = 0; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           finalTranscript += event.results[i][0].transcript;
         } else {
@@ -517,15 +608,17 @@
         }
       }
 
-      voiceTranscript.textContent = finalTranscript || interimTranscript || 'Mendengarkan...';
+      const displayTranscript = finalTranscript + interimTranscript;
+      voiceTranscript.textContent = displayTranscript || 'Mendengarkan...';
+      voiceTranscript.classList.remove('text-muted');
 
-      if (finalTranscript) {
-        const parsed = parseVoiceInput(finalTranscript);
-        VoiceParseCallback(parsed).then(() => {
-          setTimeout(() => {
-            voiceOverlay.classList.add('hide');
-          }, 2200);
-        });
+      const textToParse = finalTranscript + interimTranscript;
+      if (textToParse.trim()) {
+        lastParsedData = parseVoiceInput(textToParse);
+
+        // Show parsed data in overlay live in real-time
+        showParsedFeedback(lastParsedData);
+        voiceActions.classList.remove('hide');
       }
     };
 
@@ -549,5 +642,32 @@
         voiceOverlay.classList.add('hide');
       }
     });
-  }
+
+    // OK / Terapkan Button click - actually update the form
+    voiceBtnOk.addEventListener('click', async () => {
+      if (lastParsedData) {
+        await VoiceParseCallback(lastParsedData);
+        recognition.stop();
+        voiceOverlay.classList.add('hide');
+      }
+    });
+
+    // Ulangi / Reset Button click - stop current, reset UI and restart Speech Recognition
+    voiceBtnReset.addEventListener('click', () => {
+      recognition.stop();
+      resetVoiceUI();
+      // Restart after a small timeout to let the previous instance stop completely
+      setTimeout(() => {
+        if (!recognizing) {
+          recognition.start();
+        }
+      }, 300);
+    });
+
+    // Batal / Close Button click - just close overlay
+    voiceBtnCancel.addEventListener('click', () => {
+      recognition.stop();
+      voiceOverlay.classList.add('hide');
+    });
+  });
 </script>

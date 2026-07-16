@@ -128,31 +128,7 @@
     </div>
     <div id="ss-dropdown"></div>
   </form>
-
-  <!-- Voice Input FAB & Overlay -->
-  <button type="button" id="voice-fab" class="btn btn-primary" title="Input Suara">
-    <i class="fas fa-microphone"></i>
-  </button>
-
-  <div id="voice-overlay" class="voice-overlay hide">
-    <div class="voice-card">
-      <div class="voice-header mb-3">
-        <h5 class="mb-0">Mendengarkan...</h5>
-        <button type="button" id="voice-close" class="btn-close btn-close-white" style="filter: invert(1); opacity: 0.8;"></button>
-      </div>
-      <div class="voice-wave-container mb-4">
-        <div class="voice-wave-bar"></div>
-        <div class="voice-wave-bar"></div>
-        <div class="voice-wave-bar"></div>
-        <div class="voice-wave-bar"></div>
-        <div class="voice-wave-bar"></div>
-      </div>
-      <div class="voice-transcript-container p-3">
-        <p id="voice-transcript" class="mb-0 text-muted font-italic">Mulai berbicara...</p>
-      </div>
-      <div class="voice-status-feedback hide" id="voice-feedback"></div>
-    </div>
-  </div>
+  <?php $Controller->view('components/voice', $data); ?>
 </div>
 <script src="https://unpkg.com/slim-select@3/dist/slimselect.js" crossorigin="anonymous"></script>
 <link href="https://unpkg.com/slim-select@3/dist/slimselect.css" rel="stylesheet" crossorigin="anonymous">
@@ -359,7 +335,7 @@
     }
   }
 
-  function formState(e) {
+  async function formState(e) {
     let jenis_transaksi = e?.target.value ?? FORM.jenis_transaksi.value;
     // STATE.operasi = jenis_transaksi;
     const state = J_TRANS.map(v => v === jenis_transaksi);
@@ -633,7 +609,7 @@
     if (parsed.jenis) {
       FORM.jenis_transaksi.SlimSelect.setSelected(parsed.jenis);
       // Pass the hardcoded value so it doesn't rely on DOM sync
-      formState({
+      await formState({
         target: {
           value: parsed.jenis
         }

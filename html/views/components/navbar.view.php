@@ -6,11 +6,17 @@
     left: 0;
     right: 0;
     z-index: 1030;
+    pointer-events: none;
+
+    .col {
+      pointer-events: none;
+    }
 
     /* // margin-bottom: 2rem; */
     /* // min-height: var(--nav-min-height) !important; */
     .nav-container {
       position: relative;
+      pointer-events: auto;
       /* font-size: max(.9em, 16px); */
     }
 
