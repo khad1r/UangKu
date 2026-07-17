@@ -1,14 +1,14 @@
 {
-  "id": "/?pwa=v1.5",
+  "id": "/?pwa=v1.6",
   "name": "Uangku",
   "short_name": "UangKu - Cashflow",
   "description": "Catat Transaksi dan Cashflow",
   "start_url": "/",
   "scope": "/",
   "theme_color": "#04a5e5",
-  "background_color": "#ffffff",
+  "background_color": "#fbfbfb",
   "display": "standalone",
-  "orientation": "natural",
+  "orientation": "any",
   "icons": [
     {
       "purpose": "maskable",

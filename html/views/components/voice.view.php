@@ -486,23 +486,29 @@
 
     let kelompok = null;
 
-    // 1. Try to find explicit "kelompok [nama]" (takes everything after it)
+    // 1. Try to find explicit "kelompok [nama]" first
     const kelompokMatch = text.match(/\bkelompok\s+([a-z0-9\s]+)/i);
 
     if (kelompokMatch) {
       kelompok = kelompokMatch[1].trim();
-      text = text.replace(kelompokMatch[0], ''); // Remove the matched phrase
+      text = text.replace(kelompokMatch[0], '');
     }
-    // 2. Fallback: Find 1 or 2 words before OR after "rutin" (e.g., "makan rutin", "rutin bulanan")
+    // 2. Fallback: ONLY look for 1 or 2 words AFTER "rutin"
     else if (isRutin) {
-      // This Regex looks for 1-2 words before "rutin" OR 1-2 words after "rutin"
-      const rutinMatch = text.match(/\b([a-z0-9]+\s+[a-z0-9]+|[a-z0-9]+)\s+rutin\b|\brutin\s+([a-z0-9]+\s+[a-z0-9]+|[a-z0-9]+)\b/i);
+      // Look forward only to prevent eating prepositions like "dari dompet"
+      const rutinMatch = text.match(/\brutin\s+([a-z0-9]+\s+[a-z0-9]+|[a-z0-9]+)\b/i);
 
       if (rutinMatch) {
-        kelompok = (rutinMatch[1] || rutinMatch[2]).trim();
-        // Remove ONLY the extracted group word from the text so it doesn't leak into the 'barang' string.
-        // We leave the word "rutin" to be cleaned up globally below.
-        text = text.replace(kelompok, '');
+        const candidate = rutinMatch[1].trim();
+
+        // Safety check: Prevent it from capturing action words or prepositions (e.g., "rutin beli...")
+        const isStopWord = [...VOICE_KEYWORDS.pengeluaran, ...VOICE_KEYWORDS.pemasukan, ...VOICE_KEYWORDS.preps].some(w => candidate.includes(w));
+
+        if (!isStopWord) {
+          kelompok = candidate;
+          // Remove ONLY the extracted group word from the text so it doesn't leak into 'barang'
+          text = text.replace(kelompok, '');
+        }
       }
     }
 
