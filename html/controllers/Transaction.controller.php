@@ -42,6 +42,7 @@ class Transaction extends Controller
     $data['title'] = "Mutasi Rekening {$rekening['nama']}";
     $data['subTitle'] = "<i class='fas fa-wallet'></i> <strong><u>Mutasi Rekening {$rekening['nama']}</u></strong> <i class='fas fa-money-bill-wave'></i>";
     $data['rekening'] = $rekening;
+    $data['jenis_transaksi'] = JENIS_TRANSAKSI;
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'transaction/rekening';
     $data['top-left-view'] = 'components/header';
@@ -62,6 +63,7 @@ class Transaction extends Controller
     $data['title'] = "Pencarian Transaksi";
     $data['subTitle'] = "<i class='fas fa-wallet'></i> <strong><u>Pencarian Transaksi</u></strong> <i class='fas fa-magnifying-glass'></i>";
     $data['transaksi'] = $transaksi;
+    $data['jenis_transaksi'] = JENIS_TRANSAKSI
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'transaction/pencarian';
     $data['top-left-view'] = 'components/header';
