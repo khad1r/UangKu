@@ -1,9 +1,9 @@
 <div class="container">
-  <form id="form" method="post" class="row" enctype="multipart/form-data">
+  <form id="form" method="post" class="row" enctype="multipart/form-data" toolname="record_transaction" tooldescription="Catat transaksi keuangan baru (Pemasukan, Pengeluaran, atau Pindah Buku) ke dalam aplikasi UangKu">
     <div class="col-lg-8" id="main-group">
       <div class="form-group center-input">
         <label>Jenis Transaksi</label>
-        <select class="form-control" id="jenis_transaksi" placeholder="Jenis Transaksi" name="jenis_transaksi" required>
+        <select class="form-control" id="jenis_transaksi" placeholder="Jenis Transaksi" name="jenis_transaksi" tooldescription="Jenis transaksi: Pengeluaran, Pemasukan, atau Operasi (Pindah Buku)" required>
           <option value="" class="hide" data-placeholder="true" readonly="true">Jenis Transaksi</option>
           <?php foreach ($data['jenis_transaksi'] as $x) { ?>
             <option value="<?= $x ?>"><?= $x ?></option>
@@ -13,17 +13,17 @@
       </div>
       <div class="form-group">
         <label>Barang / Judul</label>
-        <input type="text" class="form-control" placeholder="Barang / Judul" name="barang" required>
+        <input type="text" class="form-control" placeholder="Barang / Judul" name="barang" tooldescription="Barang, judul, atau deskripsi singkat transaksi" required>
         <?php InputValidator('barang') ?>
       </div>
       <div class="p-3 mb-4 border-bottom border-top border-2 border-primary form-check form-switch d-flex justify-content-between ps-0" style="font-size: .75em;font-weight: 600;">
         <label class="form-check-label text-primary w-100" for="harta">Nilai Harta</label>
-        <input class="form-check-input hide-group" type="checkbox" id="harta" name="harta" disabled="true">
+        <input class="form-check-input hide-group" type="checkbox" id="harta" name="harta" tooldescription="Centang jika transaksi ini merupakan transaksi Nilai Harta / Aset" disabled="true">
         <?php InputValidator('harta') ?>
       </div>
       <div class="form-group center-input">
         <label>Rekening Sumber</label>
-        <select class="form-control hide-group" id="rekening_sumber" placeholder="Rekening Sumber" name="rekening_sumber" required disabled="true">
+        <select class="form-control hide-group" id="rekening_sumber" placeholder="Rekening Sumber" name="rekening_sumber" tooldescription="Rekening asal / sumber dana (untuk Pengeluaran atau Operasi)" required disabled="true">
           <option class="hide" value="" data-placeholder="true" readonly="true">Rekening Sumber</option>
         </select>
         <?php InputValidator('rekening_sumber') ?>
@@ -33,7 +33,7 @@
       </div>
       <div class="form-group center-input">
         <label>Rekening Masuk</label>
-        <select class="form-control hide-group" id="rekening_masuk" placeholder="Rekening Masuk" name="rekening_masuk" required disabled="true">
+        <select class="form-control hide-group" id="rekening_masuk" placeholder="Rekening Masuk" name="rekening_masuk" tooldescription="Rekening tujuan / penerima (untuk Pemasukan atau Operasi)" required disabled="true">
           <option class="hide" value="" data-placeholder="true" readonly="true">Rekening Masuk</option>
         </select>
         <?php InputValidator('rekening_masuk') ?>
@@ -45,14 +45,14 @@
         <label>Nominal</label>
         <div class="input-group">
           <span class="input-group-text">Rp.</span>
-          <input type="text" class="form-control input-text-lg" placeholder="Nominal" name="nominal" inputmode="numeric" id="nominal" required>
+          <input type="text" class="form-control input-text-lg" placeholder="Nominal" name="nominal" inputmode="numeric" id="nominal" tooldescription="Nominal transaksi dalam Rupiah (IDR)" required>
         </div>
         <?php InputValidator('nominal') ?>
       </div>
       <div class="form-group">
         <label>Nominal Asing</label>
         <div class="input-group">
-          <input type="text" class="form-control input-text-lg hide-group" placeholder="Nominal Asing" name="nominal_asing" inputmode="numeric" id="nominal_asing" required disabled="true">
+          <input type="text" class="form-control input-text-lg hide-group" placeholder="Nominal Asing" name="nominal_asing" inputmode="numeric" id="nominal_asing" tooldescription="Nominal transaksi dalam mata uang asing" required disabled="true">
           <span class="input-group-text" id="nominalasing">Rp.</span>
         </div>
         <?php InputValidator('nominal_asing') ?>
@@ -61,13 +61,13 @@
         <label>Penyusutan / Bunga</label>
         <div class="input-group">
           <span class="input-group-text">Rp.</span>
-          <input type="text" class="form-control input-text-lg hide-group" placeholder="Penyusutan / Bunga" name="penyusutan_bunga" inputmode="numeric" id="penyusutan_bunga" required disabled="true">
+          <input type="text" class="form-control input-text-lg hide-group" placeholder="Penyusutan / Bunga" name="penyusutan_bunga" inputmode="numeric" id="penyusutan_bunga" tooldescription="Nominal penyusutan atau bunga untuk transaksi harta" required disabled="true">
         </div>
         <?php InputValidator('penyusutan_bunga') ?>
       </div>
       <div class="form-group">
         <label>Kuantitas</label>
-        <input type="number" class="form-control input-text-lg" placeholder="Kuantitas" name="kuantitas" inputmode="numeric" id="kuantitas" min="1" value="1" required>
+        <input type="number" class="form-control input-text-lg" placeholder="Kuantitas" name="kuantitas" inputmode="numeric" id="kuantitas" min="1" value="1" tooldescription="Jumlah atau kuantitas barang/unit (default: 1)" required>
         <?php InputValidator('kuantitas') ?>
       </div>
       <div class="form-group">
@@ -88,12 +88,12 @@
       </div>
       <div class="p-3 mb-4 border-bottom border-top border-2 border-primary form-check form-switch d-flex justify-content-between ps-0" style="font-size: .75em;font-weight: 600;">
         <label class="form-check-label text-primary w-100" for="rutin">Rutin / Non Rutin</label>
-        <input class="form-check-input" type="checkbox" id="rutin" name="rutin">
+        <input class="form-check-input" type="checkbox" id="rutin" name="rutin" tooldescription="Centang jika transaksi ini bersifat rutin/berkala">
         <?php InputValidator('rutin') ?>
       </div>
       <div class="form-group">
         <label>Kelompok Transaksi</label>
-        <select class="form-control" id="kelompok" placeholder="Koneksikan Transaksi" name="kelompok">
+        <select class="form-control" id="kelompok" placeholder="Koneksikan Transaksi" name="kelompok" tooldescription="Kelompok atau kategori transaksi">
           <option class="hide" value="" data-placeholder="true" readonly="true">Kelompok Transaksi</option>
         </select>
         <?php InputValidator('kelompok') ?>
@@ -102,12 +102,12 @@
     <div class="col-lg-4" id="summary-group">
       <div class="form-group">
         <label>Tanggal Transaksi</label>
-        <input type="date" id="tanggal" placeholder="Tanggal Transaksi" name="tanggal" class="form-control input-text-lg date-format" required>
+        <input type="date" id="tanggal" placeholder="Tanggal Transaksi" name="tanggal" class="form-control input-text-lg date-format" tooldescription="Tanggal transaksi dalam format YYYY-MM-DD" required>
         <?php InputValidator('tanggal') ?>
       </div>
       <div class="form-group">
         <label>Koneksikan Transaksi</label>
-        <select class="form-control" id="relasi_transaksi" placeholder="Koneksikan Transaksi" name="relasi_transaksi">
+        <select class="form-control" id="relasi_transaksi" placeholder="Koneksikan Transaksi" name="relasi_transaksi" tooldescription="ID atau judul transaksi yang dikoneksikan">
           <option class="hide" value="" data-placeholder="true" readonly="true">Koneksikan Transaksi</option>
         </select>
         <?php InputValidator('relasi_transaksi') ?>
@@ -120,7 +120,7 @@
       </div>
       <div class="form-group">
         <div>
-          <textarea name="keterangan" class="form-control border-bottom border-primary mb-2" placeholder="Keterangan" rows="5"></textarea>
+          <textarea name="keterangan" class="form-control border-bottom border-primary mb-2" placeholder="Keterangan" rows="5" tooldescription="Catatan tambahan atau keterangan transaksi"></textarea>
           <?php InputValidator('keterangan') ?>
           <input type="submit" class="btn w-100" value="Catat Transaksi" name="record">
         </div>
@@ -709,4 +709,245 @@
       }
     })
   });
+
+  /* ==========================================================================
+     WebMCP (Web Model Context Protocol) Integration
+     Exposes transaction recording tools & form metadata to AI Agents
+     ========================================================================== */
+
+  const WebMCPToolRecordTransaction = {
+    name: 'record_transaction',
+    description: 'Catat atau isi formulir transaksi keuangan baru (Pemasukan, Pengeluaran, atau Pindah Buku / Operasi) di UangKu.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        jenis_transaksi: {
+          type: 'string',
+          enum: J_TRANS,
+          description: 'Jenis transaksi: "Pengeluaran", "Pemasukan", atau "Operasi" (Pindah Buku)'
+        },
+        barang: {
+          type: 'string',
+          description: 'Judul, nama barang, atau deskripsi singkat transaksi'
+        },
+        nominal: {
+          type: 'number',
+          description: 'Nominal transaksi (dalam Rupiah IDR)'
+        },
+        rekening_sumber: {
+          type: 'string',
+          description: 'Nama atau ID rekening sumber / asal (diperlukan untuk Pengeluaran atau Operasi)'
+        },
+        rekening_masuk: {
+          type: 'string',
+          description: 'Nama atau ID rekening masuk / tujuan (diperlukan untuk Pemasukan atau Operasi)'
+        },
+        kuantitas: {
+          type: 'integer',
+          description: 'Jumlah / kuantitas unit (default: 1)'
+        },
+        tanggal: {
+          type: 'string',
+          description: 'Tanggal transaksi dalam format YYYY-MM-DD (default: hari ini)'
+        },
+        kelompok: {
+          type: 'string',
+          description: 'Kelompok atau kategori transaksi (contoh: Makanan, Transport, Gaji, dll.)'
+        },
+        rutin: {
+          type: 'boolean',
+          description: 'Set true jika transaksi ini bersifat rutin/berkala'
+        },
+        harta: {
+          type: 'boolean',
+          description: 'Set true jika transaksi ini terkait Aset Harta'
+        },
+        keterangan: {
+          type: 'string',
+          description: 'Catatan tambahan / keterangan transaksi'
+        },
+        submit: {
+          type: 'boolean',
+          description: 'Set true untuk langsung mengirim/submit formulir setelah diisi'
+        }
+      },
+      required: ['jenis_transaksi', 'barang', 'nominal']
+    },
+    execute: async (params) => {
+      try {
+        const {
+          jenis_transaksi,
+          barang,
+          nominal,
+          rekening_sumber,
+          rekening_masuk,
+          kuantitas,
+          tanggal,
+          kelompok,
+          rutin,
+          harta,
+          keterangan,
+          submit
+        } = params;
+
+        // 1. Set Jenis Transaksi
+        if (jenis_transaksi && J_TRANS.includes(jenis_transaksi)) {
+          FORM.jenis_transaksi.SlimSelect.setSelected(jenis_transaksi);
+          await formState({ target: { value: jenis_transaksi } });
+        }
+
+        // 2. Set Barang / Judul
+        if (barang !== undefined) {
+          FORM.barang.value = barang;
+        }
+
+        // 3. Set Harta
+        if (harta !== undefined) {
+          FORM.harta.checked = !!harta;
+          FORM.harta.switchState(!!harta);
+        }
+
+        // Helper to find account by ID or Name
+        const findAccount = (val) => {
+          if (!val || !ARGS?.Rekening) return null;
+          return ARGS.Rekening.find(r => 
+            String(r.id) === String(val) || 
+            r.nama.toLowerCase() === String(val).toLowerCase() ||
+            r.nama.toLowerCase().includes(String(val).toLowerCase())
+          );
+        };
+
+        // 4. Set Rekening Sumber
+        if (rekening_sumber) {
+          const acc = findAccount(rekening_sumber);
+          if (acc) {
+            FORM.rekening_sumber.SlimSelect.setSelected(acc.id);
+            FORM.rekening_sumber.rekening = acc;
+          }
+        }
+
+        // 5. Set Rekening Masuk
+        if (rekening_masuk) {
+          const acc = findAccount(rekening_masuk);
+          if (acc) {
+            FORM.rekening_masuk.SlimSelect.setSelected(acc.id);
+            FORM.rekening_masuk.rekening = acc;
+          }
+        }
+
+        // 6. Set Nominal
+        if (nominal !== undefined && nominal > 0) {
+          FORM.nominal.value = formatID(nominal.toString());
+        }
+
+        // 7. Set Kuantitas
+        if (kuantitas !== undefined && kuantitas > 0) {
+          FORM.kuantitas.value = kuantitas;
+        }
+
+        // 8. Set Tanggal
+        if (tanggal) {
+          FORM.tanggal.value = tanggal;
+        }
+
+        // 9. Set Rutin
+        if (rutin !== undefined) {
+          FORM.rutin.checked = !!rutin;
+          FORM.rutin.switchState(!!rutin);
+        }
+
+        // 10. Set Kelompok
+        if (kelompok) {
+          let kelValue = kelompok;
+          const existingData = FORM.kelompok.SlimSelect.getData();
+          if (!existingData.some(opt => opt.value === kelValue)) {
+            FORM.kelompok.SlimSelect.setData([...existingData, { text: kelValue, value: kelValue }]);
+          }
+          FORM.kelompok.SlimSelect.setSelected(kelValue);
+        }
+
+        // 11. Set Keterangan
+        if (keterangan !== undefined) {
+          FORM.keterangan.value = keterangan;
+        }
+
+        // Recalculate totals and previews
+        hitung();
+
+        if (submit) {
+          if (typeof FORM.requestSubmit === 'function') {
+            FORM.requestSubmit();
+          } else {
+            FORM.submit();
+          }
+          return { success: true, message: 'Formulir transaksi berhasil diisi dan dikirim.', data: params };
+        }
+
+        return { success: true, message: 'Formulir transaksi berhasil diisi.', data: params };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    }
+  };
+
+  const WebMCPToolGetOptions = {
+    name: 'get_transaction_options',
+    description: 'Dapatkan daftar jenis transaksi dan daftar rekening (ID, nama, saldo) yang tersedia di UangKu.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    execute: async () => {
+      return {
+        jenis_transaksi: J_TRANS,
+        rekening: (ARGS?.Rekening || []).map(r => ({
+          id: r.id,
+          nama: r.nama,
+          saldo: r.saldo,
+          isAsing: r.isAsing,
+          harta: r.harta
+        }))
+      };
+    }
+  };
+
+  function registerWebMCP() {
+    const tools = [WebMCPToolRecordTransaction, WebMCPToolGetOptions];
+
+    // Standard Browser WebMCP API (navigator.modelContext or document.modelContext)
+    const mc = navigator.modelContext || document.modelContext;
+    if (mc && typeof mc.registerTool === 'function') {
+      tools.forEach(tool => {
+        try {
+          mc.registerTool(tool);
+        } catch (e) {
+          console.warn('Failed to register tool on modelContext:', e);
+        }
+      });
+    }
+
+    // Expose window.webmcp interface for polyfills, testing, or browser extension agents
+    window.webmcp = window.webmcp || {
+      tools: new Map(),
+      registerTool(tool) {
+        this.tools.set(tool.name, tool);
+      },
+      getTools() {
+        return Array.from(this.tools.values());
+      },
+      async executeTool(name, params) {
+        const tool = this.tools.get(name);
+        if (!tool) throw new Error(`WebMCP Tool '${name}' not found.`);
+        return await tool.execute(params);
+      }
+    };
+
+    tools.forEach(tool => window.webmcp.registerTool(tool));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', registerWebMCP);
+  } else {
+    registerWebMCP();
+  }
 </script>
