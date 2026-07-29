@@ -70,6 +70,16 @@ class Transaction extends Controller
     $data['right-bottom-view'] = 'components/navbar';
     $this->view('templates/template', $data);
   }
+  public function analisis()
+  {
+    $data['title'] = "Analisis Transaksi";
+    $data['subTitle'] = "<i class='fas fa-chart-line'></i> <strong><u>Analisis Transaksi</u></strong> <i class='fas fa-chart-bar'></i>";
+    setCacheControl(259200/* 3 Day Expired */);
+    $data['view'] = 'transaction/analisis';
+    $data['top-left-view'] = 'components/header';
+    $data['right-bottom-view'] = 'components/navbar';
+    $this->view('templates/template', $data);
+  }
 
 
   public function datatable()
@@ -87,6 +97,9 @@ class Transaction extends Controller
       $model = new Transaksi();
       $resp = $model->datatable($_POST);
       if ($_POST['queryGraph'] == 'true') {
+        $resp['cashIn'] = 0;
+        $resp['cashOut'] = 0;
+        $resp['cashFlow'] = [[], [], [], [], []];
         $cashFlow = (isset($_POST['id_rekening']))
           ? $model->rekeningCashFlowGraph($_POST['startDate'], $_POST['endDate'], $_POST['id_rekening'])
           : $model->cashFlowGraph($_POST['startDate'], $_POST['endDate']);
@@ -100,13 +113,17 @@ class Transaction extends Controller
           $jenis = $row['jenis_transaksi']; // 'Pemasukan' or 'Pengeluaran'
           $rutin = $row['rutin'] == 1 ? 'Rutin' : 'NonRutin'; // Convert to readable string
           $key = "{$jenis}-{$rutin}";
-          $resp['cashFlow'][$ref[$key]][] = [
-            new \DateTime($row['tanggal'], new \DateTimeZone('UTC'))->getTimestamp() * 1000,
-            $row['trans']
-          ];
-          if ($row['jenis_transaksi'] == 'Pemasukan') $resp['cashIn'] = ($resp['cashIn'] ?? 0) + $row['trans']; // this trhow error undefine key <br/><b>Warning</b>:  Undefined array key "cashIn" in <b>/var/www/html/controllers/Transaction.controller.php</b> on line <b>104</b><br/><br/><b>Warning</b>:  Undefined array key "cashOut" in <b>/var/www/html/controllers/Transaction.controller.php</b> on line <b>105</b><br/><br/><b>Warning</b>:  Cannot modify header information - headers already sent by (output started at /var/www/html/controllers/Transaction.controller.php: 104)in<b>/var/www/html/controllers/Transaction.controller.php</b> on line <b>134</b><br/>{
-
-          elseif ($row['jenis_transaksi'] == 'Pengeluaran') $resp['cashOut'] = ($resp['cashOut'] ?? 0) + $row['trans'];
+          if (isset($ref[$key])) {
+            $resp['cashFlow'][$ref[$key]][] = [
+              new \DateTime($row['tanggal'], new \DateTimeZone('UTC'))->getTimestamp() * 1000,
+              (float) $row['trans']
+            ];
+          }
+          if ($row['jenis_transaksi'] == 'Pemasukan') {
+            $resp['cashIn'] += (float) $row['trans'];
+          } elseif ($row['jenis_transaksi'] == 'Pengeluaran') {
+            $resp['cashOut'] += (float) $row['trans'];
+          }
         }
         $resp['comps'] = (isset($_POST['id_rekening']))
           ? $model->rekeningCompsGraph($_POST['startDate'], $_POST['endDate'], $_POST['id_rekening'])
@@ -115,11 +132,10 @@ class Transaction extends Controller
         $cashFlow = (isset($_POST['id_rekening']))
           ? $rekeningModel->rekeningAllCashFlowGraph($_POST['startDate'], $_POST['endDate'], $_POST['id_rekening'])
           : $rekeningModel->rangeFlowGraph($_POST['startDate'], $_POST['endDate']);
-        // : $rekeningModel->allCashFlowGraph($_POST['startDate'], $_POST['endDate']);
 
         $resp['cashFlow'][4] = array_map(fn($row) => [
           new \DateTime($row['tanggal'], new \DateTimeZone('UTC'))->getTimestamp() * 1000,
-          $row['saldo']
+          (float) $row['saldo']
         ], $cashFlow);
         if (isset($_POST['id_rekening'])) {
           if ($_POST['rekening_is_harta'] == 1) {
