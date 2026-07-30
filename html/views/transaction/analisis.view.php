@@ -23,6 +23,14 @@
           </div>
           <div class="small mt-2" id="ai-status">Menunggu AI menganalisis data...</div>
           <pre class="small bg-body-tertiary p-2 rounded mt-2" id="ai-last-code" style="display:none; white-space:pre-wrap;">Belum ada transformasi yang dijalankan.</pre>
+          <div class="d-flex align-items-center gap-2 mt-2">
+            <select class="form-select form-select-sm" id="preset-select" style="max-width: 220px;">
+              <option value="">Preset tersimpan...</option>
+            </select>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="preset-load" title="Muat preset" disabled><i class="fas fa-play"></i></button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="preset-delete" title="Hapus preset" disabled><i class="fas fa-trash"></i></button>
+            <button type="button" class="btn btn-sm btn-outline-primary ms-auto" id="preset-save" title="Simpan grafik saat ini sebagai preset" disabled><i class="fas fa-save"></i> Simpan</button>
+          </div>
         </div>
       </div>
     </div>
@@ -59,12 +67,93 @@
   const statusEl = document.querySelector('#ai-status');
   const logEl = document.querySelector('#ai-last-code');
   const toggleLogBtn = document.querySelector('#toggle-ai-log');
+  const presetSelect = document.querySelector('#preset-select');
+  const presetLoadBtn = document.querySelector('#preset-load');
+  const presetDeleteBtn = document.querySelector('#preset-delete');
+  const presetSaveBtn = document.querySelector('#preset-save');
 
   toggleLogBtn.addEventListener('click', () => {
     const hidden = logEl.style.display === 'none';
     logEl.style.display = hidden ? 'block' : 'none';
     toggleLogBtn.textContent = hidden ? 'Sembunyikan Kode Transform' : 'Lihat Kode Transform';
   });
+
+  /* ==========================================================================
+     Local presets (Step 2 + Step 3 bundled)
+     Lets the user save the last AI-generated transform code + chart options
+     under a name, then reapply them instantly without asking the AI again.
+     ========================================================================== */
+  const PRESET_KEY = 'analisis_presets_v1';
+
+  const getPresets = () => {
+    try {
+      return JSON.parse(localStorage.getItem(PRESET_KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  };
+
+  const savePresets = (presets) => localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
+
+  const refreshPresetSelect = () => {
+    const presets = getPresets();
+    const names = Object.keys(presets);
+    presetSelect.innerHTML = '<option value="">Preset tersimpan...</option>' +
+      names.map(n => `<option value="${n.replace(/"/g, '&quot;')}">${n}</option>`).join('');
+    const hasSelection = !!presetSelect.value;
+    presetLoadBtn.disabled = !hasSelection;
+    presetDeleteBtn.disabled = !hasSelection;
+  };
+
+  presetSelect.addEventListener('change', () => {
+    const hasSelection = !!presetSelect.value;
+    presetLoadBtn.disabled = !hasSelection;
+    presetDeleteBtn.disabled = !hasSelection;
+  });
+
+  presetSaveBtn.addEventListener('click', () => {
+    if (!lastTransformCode || !lastChartOptions) return;
+    const name = prompt('Nama preset:');
+    if (!name) return;
+    const presets = getPresets();
+    presets[name] = {
+      code: lastTransformCode,
+      options: lastChartOptions
+    };
+    savePresets(presets);
+    refreshPresetSelect();
+    presetSelect.value = name;
+    presetSelect.dispatchEvent(new Event('change'));
+  });
+
+  presetLoadBtn.addEventListener('click', () => {
+    const preset = getPresets()[presetSelect.value];
+    if (!preset) return;
+    try {
+      if (currentRawData.length) {
+        const transform = new Function('rawData', preset.code);
+        currentGraphData = transform(currentRawData);
+      }
+      lastTransformCode = preset.code;
+      lastChartOptions = preset.options;
+      logEl.textContent = preset.code;
+      Chart = Highcharts.chart('chart', preset.options);
+      setStatus(`Preset "${presetSelect.value}" dimuat.`);
+    } catch (err) {
+      setStatus(`Gagal memuat preset: ${err.message}`, true);
+    }
+  });
+
+  presetDeleteBtn.addEventListener('click', () => {
+    const name = presetSelect.value;
+    if (!name || !confirm(`Hapus preset "${name}"?`)) return;
+    const presets = getPresets();
+    delete presets[name];
+    savePresets(presets);
+    refreshPresetSelect();
+  });
+
+  refreshPresetSelect();
 
   flatpickr(startInput, {
     disableMobile: "true",
@@ -92,6 +181,7 @@
   let currentRawData = [];
   let currentGraphData = null; // output of the AI's transform_data call
   let lastTransformCode = null;
+  let lastChartOptions = null; // output of the AI's update_chart_config call
 
   const RAW_COLUMNS = ['id', 'jenis_transaksi', 'barang', 'rekening', 'nominal', 'total', 'rutin', 'kelompok', 'tanggal', 'keterangan'];
 
@@ -257,6 +347,8 @@
           }
           try {
             Chart = Highcharts.chart('chart', params.options);
+            lastChartOptions = params.options;
+            presetSaveBtn.disabled = !lastTransformCode;
             setStatus('Grafik berhasil dirender oleh AI.');
             return {
               success: true,
