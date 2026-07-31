@@ -52,7 +52,11 @@ class Databases extends Controller
     // }, glob(dirname(__DIR__, 2) . '/.databases/*.sqlite'));
     $data['title'] = 'Ekspor & Impor Database';
     $data['subTitle'] = '<i class="fas fa-book"></i> Ekspor & Impor Database <i class="fas fa-database"></i>';
-    setCacheControl(259200/* 3 Day Expired */);
+    // Never cache this page: it embeds a single-use, 5-minute CSRF token
+    // directly in its links/form action. A cached copy would keep serving an
+    // already-expired or already-consumed token, making every action fail
+    // with "Token CSRF tidak valid" until the user manually hard-refreshes.
+    setCacheControl(0);
     $data['view'] = 'database';
     $data['top-left-view'] = 'components/header';
     $data['right-bottom-view'] = 'components/navbar';
@@ -100,42 +104,36 @@ class Databases extends Controller
     $model = new Transaksi();
     $filePath = $_FILES['attachment']['tmp_name'];
 
-    // 1. Detect Delimiter (Excel often uses ; in Europe/Indonesia)
-    $fileHandle = fopen($filePath, 'r');
-    $firstLine = fgets($fileHandle);
-    $delimiter = (strpos($firstLine, ';') !== false) ? ';' : ',';
-
-    // 2. Handle the "sep=," line if it exists
-    if (trim($firstLine) === 'sep=,' || trim($firstLine) === 'sep=;') {
-      // If the first line is the separator hint, the header is actually on line 2
-      $headerLine = fgets($fileHandle);
-    } else {
-      // Otherwise, the first line we already read IS the header
-      $headerLine = $firstLine;
-    }
-    rewind($fileHandle); // Reset to start for proper processing
-
-    // 3. Clean the Header (Remove BOM and special characters)
-    // We read the file again using the detected logic
     $file = fopen($filePath, 'r');
 
-    // Skip BOM if present
+    // 1. Detect delimiter by frequency: whichever of , ; \t appears most in
+    // the header line wins. A plain "contains ';'" check breaks the moment
+    // any export (mobile spreadsheet apps, other locales, etc.) uses a
+    // different delimiter than Excel-on-Windows' European/Indonesian ';'.
+    $firstLine = fgets($file);
+    rewind($file);
+    $delimiterCounts = [',' => substr_count($firstLine, ','), ';' => substr_count($firstLine, ';'), "\t" => substr_count($firstLine, "\t")];
+    arsort($delimiterCounts);
+    $delimiter = $delimiterCounts && reset($delimiterCounts) > 0 ? array_key_first($delimiterCounts) : ',';
+
+    // 2. Skip BOM if present
     $bom = fread($file, 3);
     if ($bom !== "\xEF\xBB\xBF") rewind($file);
 
-    // Skip the 'sep=' line if it exists
-    $testSep = fgets($file);
-    if (stripos($testSep, 'sep=') === false) {
-      rewind($file);
-      if ($bom === "\xEF\xBB\xBF") fseek($file, 3);
+    // 3. Skip the 'sep=' hint line if present (Excel-specific convention;
+    // most other CSV producers, e.g. mobile spreadsheet apps, omit it)
+    $afterBomPos = ftell($file);
+    $testLine = fgets($file);
+    if ($testLine === false || stripos($testLine, 'sep=') === false) {
+      fseek($file, $afterBomPos);
     }
 
     // Now read the header with the detected delimiter
-    $header = fgetcsv($file, 0, $delimiter);
+    $header = fgetcsv($file, 0, $delimiter, '"', '');
 
-    // Clean invisible characters from header keys (Excel artifact)
+    // Clean invisible characters/whitespace from header keys (Excel/mobile-app artifact)
     $header = array_map(function ($h) {
-      return preg_replace('/[^a-zA-Z0-9_]/', '', $h);
+      return preg_replace('/[^a-zA-Z0-9_]/', '', trim($h));
     }, $header);
 
     $required_columns = ['id', 'jenis_transaksi', 'harta', 'barang', 'rekening_sumber', 'rekening_masuk', 'nominal', 'nominal_asing', 'kuantitas', 'penyusutan_bunga', 'rutin', 'kelompok', 'tanggal', 'relasi_transaksi', 'attachment', 'keterangan'];
@@ -157,16 +155,35 @@ class Databases extends Controller
       // This stops SQLite from writing to disk for every single row
       $model->beginTransaction();
 
-      while ($row = fgetcsv($file, 0, $delimiter)) {
+      $decimalCommaColumns = ['nominal', 'nominal_asing', 'kuantitas', 'penyusutan_bunga'];
+      while ($row = fgetcsv($file, 0, $delimiter, '"', '')) {
         if ($successCount >= 15) break; // limit to 15 updates per import to prevent server overload
+        // Trim stray whitespace/line-ending remnants some mobile apps leave on fields
+        $row = array_map('trim', $row);
         if (count($header) === count($row)) {
           $rowData = array_combine($header, $row);
           $sanitizedData = array_intersect_key($rowData, $required_keys);
 
+          // Locale number formatting: spreadsheet apps set to a ',' decimal
+          // locale (common outside the US) write "1234,56" and, to avoid
+          // colliding with that comma, export with ';' as the delimiter. If
+          // we detected a non-comma delimiter, numeric fields are safe to
+          // normalize back to "1234.56" for PHP/SQLite.
+          if ($delimiter !== ',') {
+            foreach ($decimalCommaColumns as $col) {
+              if (isset($sanitizedData[$col]) && $sanitizedData[$col] !== '') {
+                $sanitizedData[$col] = str_replace(',', '.', $sanitizedData[$col]);
+              }
+            }
+          }
+
           // Date Formatting
           if (!empty($sanitizedData['tanggal'])) {
-            $date = new \DateTime(str_replace('/', '-', $sanitizedData['tanggal']));
-            $sanitizedData['tanggal'] = $date->format('Y-m-d');
+            $parsedDate = $this->parseFlexibleDate($sanitizedData['tanggal']);
+            if ($parsedDate === null) {
+              throw new \Exception("Format tanggal tidak dikenali pada baris ID {$sanitizedData['id']}: '{$sanitizedData['tanggal']}'");
+            }
+            $sanitizedData['tanggal'] = $parsedDate;
           }
 
           $targetId = $sanitizedData['id'] ?? null;
@@ -199,6 +216,49 @@ class Databases extends Controller
     fclose($file);
     Route::Referer('/Databases');
     exit;
+  }
+
+  /**
+   * Parses a date value that may come from any spreadsheet app/locale, e.g.
+   * "2026-07-30" (ISO, the database's native format), "30/07/2026" (Windows
+   * Excel with Indonesian regional settings), or "7/30/2026" (mobile apps,
+   * which often default to US M/D/Y regardless of device region). Field
+   * order is disambiguated by value, not by separator character: a segment
+   * greater than 12 can only be a day, never a month, which resolves the
+   * common cross-platform mismatch unambiguously. When both segments are
+   * <= 12 and genuinely ambiguous, defaults to D/M/Y to match this app's
+   * Indonesian-locale convention used everywhere else.
+   * Returns 'Y-m-d', or null if the value can't be parsed as a valid date.
+   */
+  private function parseFlexibleDate(string $value): ?string
+  {
+    $value = trim($value);
+    if ($value === '') return null;
+
+    if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m)) {
+      return checkdate((int) $m[2], (int) $m[3], (int) $m[1]) ? $value : null;
+    }
+
+    if (preg_match('#^(\d{1,4})[/\-](\d{1,2})[/\-](\d{1,4})$#', $value, $m)) {
+      [, $a, $b, $c] = $m;
+      if (strlen($a) === 4) {
+        [$year, $month, $day] = [(int) $a, (int) $b, (int) $c];
+      } else {
+        $a = (int) $a;
+        $b = (int) $b;
+        $year = (int) $c;
+        if ($a > 12) {
+          [$day, $month] = [$a, $b];
+        } elseif ($b > 12) {
+          [$month, $day] = [$a, $b];
+        } else {
+          [$day, $month] = [$a, $b];
+        }
+      }
+      return checkdate($month, $day, $year) ? sprintf('%04d-%02d-%02d', $year, $month, $day) : null;
+    }
+
+    return null;
   }
 
   private function changeDatabase($version)
