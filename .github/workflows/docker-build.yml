@@ -47,6 +47,8 @@ jobs:
           push: true
           tags: ${{ env.DOCKER_TAGS }}
           platforms: linux/amd64
+          build-args: |
+            GIT_SHA=${{ github.sha }}
 
       - name: Google Auth
         uses: google-github-actions/auth@v2

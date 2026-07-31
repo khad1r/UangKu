@@ -6,6 +6,7 @@ class Route
 {
   private static $router = [
     'GET:/uploads/.*' => [\App\Controllers\Record::class, 'c9184f37cff01bcdc32dc486ec36961'],
+    'GET:/sw.js' => [\App\Controllers\error::class, 'serviceWorker'],
     // 'POST:/v1.0/transfer-va/inquiry' => [\App\Controllers\inquiry::class, 'index'],
     // 'POST:/v1.0/transfer-va/payment' => [\App\Controllers\payment::class, 'index'],
     '*:/mcp' => [\App\Controllers\Record::class, 'mcp'], // MCP endpoint for all HTTP methods

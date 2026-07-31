@@ -30,6 +30,12 @@ ENV SERVER_NAME=https://localhost
 ENV TZ=Asia/Jakarta
 ENV SQLITE_DEFAULT_NAME=default.sqlite
 
+# Baked in at build time from the commit that triggered the build (see
+# .github/workflows/docker-build.yml). Used to auto-bust the service
+# worker's cache on every deploy — see APP_VERSION in app/config.php.
+ARG GIT_SHA=unknown
+ENV GIT_SHA=$GIT_SHA
+
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 RUN composer dump-autoload --optimize

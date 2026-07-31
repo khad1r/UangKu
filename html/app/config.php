@@ -23,6 +23,18 @@ define('WEB_TITLE', 'UangKu');
 define('USE_SESSION', true);
 define('TRANSFORM_RAW_TO_PHP_POST', true);
 define('IS_PROD', getenv('ENV') !== 'development');
+// Changes on every real deploy: GIT_SHA is baked in at Docker build time from
+// the commit that triggered the build (see .github/workflows/docker-build.yml
+// and .docker/Dockerfile.production). Used to auto-bust the service worker's
+// cache (see error::serviceWorker()) so users never get stuck on a stale
+// build without needing to remember to bump a version string by hand.
+// Falls back to a hash of key asset mtimes for local dev, where GIT_SHA isn't set.
+$gitSha = getenv('GIT_SHA');
+define('APP_VERSION', $gitSha ? substr($gitSha, 0, 12) : substr(md5(
+  (@filemtime(__DIR__ . '/../public/assets/js/script.js') ?: 0) . '-' .
+  (@filemtime(__DIR__ . '/../public/assets/css/style.css') ?: 0)
+), 0, 12));
+unset($gitSha);
 define('ENABLE_AUTH', (getenv('ENABLE_AUTH') ?: 'true') === 'true');
 define('DEFAULT_CONTROLLER', ENABLE_AUTH ? App\Controllers\Auth::class : App\Controllers\Transaction::class);
 define('JENIS_TRANSAKSI', ['Pengeluaran', 'Pemasukan', 'Pindah Buku']);
