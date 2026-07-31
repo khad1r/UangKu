@@ -21,7 +21,7 @@ class tools
       - Pastikan terlebih dahulu terdapat transaksi pengeluaran dari rekening untuk membeli lalu buatkan transaksi pemasukan ke rekening harta dengan nilai barang yang telah dibeli. Relasikan transaksi Harta ke Transaksi Pembelian
       - Bila penjualan maka Pengeluaran di Rekening Harta Terkait, lalu pemasukan
     3. NOMINAL ASING: Gunakan "nominal_asing" jika transaksi melibatkan Emas (dalam Gram) atau mata uang asing seperti USD (Paypal).
-    4. VALIDASI: Selalu gunakan tool "get_rekening" untuk memastikan ID rekening sumber/masuk sudah tepat sebelum mencatat.
+    4. VALIDASI: WAJIB panggil tool "get_rekening" ULANG tepat sebelum memanggil tool ini, SETIAP KALI, walaupun sudah pernah memanggilnya sebelumnya di percakapan ini. DILARANG memakai ID rekening dari ingatan/hasil pemanggilan sebelumnya — daftar rekening bisa berubah (ditambah/dinonaktifkan) kapan saja, dan ID yang salah akan diam-diam memindahkan uang ke rekening yang salah.
     5. DISKON:
       - Jika diskon per item: Catat harga NETTO (setelah diskon).
       - Jika diskon total di akhir struk: Gunakan metode PRORATA (bagi diskon ke setiap item secara proporsional) agar total pengeluaran sesuai dengan nominal yang dibayarkan di kasir.
@@ -64,7 +64,7 @@ class tools
             'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat, Harus di generalkan jangan terlalu spesifik (contoh: "Makan siang" bukan "Nasi Padang Sari Ratu"), Gunakan Keterangan untuk lainnya.'],
             'rekening_sumber'   => [
               'type' => ['integer', 'null'],
-              'description' => 'ID Rekening asal. Gunakan tool get_rekening untuk mencari ID yang tepat. (Wajib jika Pengeluaran/Pindah Buku)
+              'description' => 'ID Rekening asal. WAJIB ambil dari hasil pemanggilan get_rekening PALING BARU (turn ini) — JANGAN pernah pakai ID dari ingatan/percakapan sebelumnya. (Wajib jika Pengeluaran/Pindah Buku)
                   ATURAN PINDAH BUKU:
                   1. Tidak boleh sama dengan rekening_masuk.
                   2. Dilarang menggunakan rekening tipe HARTA (Aset).
@@ -72,7 +72,7 @@ class tools
             ],
             'rekening_masuk'    => [
               'type' => ['integer', 'null'],
-              'description' => 'ID Rekening tujuan. Gunakan tool get_rekening untuk mencari ID yang tepat. (Wajib jika Pemasukan/Pindah Buku)
+              'description' => 'ID Rekening tujuan. WAJIB ambil dari hasil pemanggilan get_rekening PALING BARU (turn ini) — JANGAN pernah pakai ID dari ingatan/percakapan sebelumnya. (Wajib jika Pemasukan/Pindah Buku)
                 ATURAN PINDAH BUKU:
                 1. Tidak boleh sama dengan rekening_sumber.
                 2. Dilarang menggunakan rekening tipe HARTA (Aset).
@@ -270,8 +270,8 @@ class tools
             ],
             'harta'             => ['type' => 'boolean', 'description' => 'Set TRUE untuk aset permanen (HP, Motor, Emas). Set FALSE untuk habis pakai.'],
             'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat.'],
-            'rekening_sumber'   => ['type' => ['integer', 'null'], 'description' => 'ID Rekening asal.'],
-            'rekening_masuk'    => ['type' => ['integer', 'null'], 'description' => 'ID Rekening tujuan.'],
+            'rekening_sumber'   => ['type' => ['integer', 'null'], 'description' => 'ID Rekening asal. WAJIB panggil get_rekening ulang dan pakai hasil terbaru bila mengubah field ini — jangan pakai ID dari ingatan.'],
+            'rekening_masuk'    => ['type' => ['integer', 'null'], 'description' => 'ID Rekening tujuan. WAJIB panggil get_rekening ulang dan pakai hasil terbaru bila mengubah field ini — jangan pakai ID dari ingatan.'],
             'nominal'           => ['type' => 'number', 'description' => 'Jumlah dalam Rupiah.'],
             'nominal_asing'     => ['type' => ['number', 'null'], 'description' => 'Wajib diisi jika mata uang asing (Emas/USD).'],
             'kuantitas'         => ['type' => 'number', 'default' => 1],
