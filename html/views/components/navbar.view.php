@@ -1,5 +1,5 @@
 <style>
-  nav {
+  nav.container-full {
 
     position: fixed;
     bottom: 0;

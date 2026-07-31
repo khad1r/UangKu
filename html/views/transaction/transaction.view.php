@@ -498,8 +498,8 @@
         'orderable': false,
         'render': (item, type, data, meta) => {
           return /* HTML */ `
-            <div class="small w-lg-50 truncate-text"><span class="fw-bold text-warning">${data.attachment? '<i class="fas fa-paperclip"></i>' : ''}</span>${data.keterangan}</div>
-            <div class="small w-lg-50 truncate-text text-secondary">${data.review ?? ''}</div>
+            <div class="small w-lg-50 text-wrap line-clamp-4"><span class="fw-bold text-warning">${data.attachment? '<i class="fas fa-paperclip"></i>' : ''}</span>${data.keterangan}</div>
+            <div class="small w-lg-50 text-wrap line-clamp-4 text-secondary">${data.review ?? ''}</div>
             `
         }
       },
@@ -535,8 +535,14 @@
     createdRow: function(row, data, dataIndex) {
       const cells = row.querySelectorAll('td');
       cells.forEach((td, index) => {
-        const header = this.api().column(index).header();
-        td.setAttribute('data-label', header.textContent);
+        // Column 1 ("Jenis Transaksi") has an empty title by design: its
+        // header hosts the type-filter <select> instead of text. Reading
+        // header.textContent there picks up the dropdown's own <option>
+        // text too, which leaked into the responsive view and the
+        // double-click detail modal as a garbled label. Give it an
+        // explicit label instead of deriving it from the live header DOM.
+        const label = index === 1 ? 'Jenis Transaksi' : this.api().column(index).header().textContent;
+        td.setAttribute('data-label', label);
       });
     },
     'drawCallback': function(settings) {

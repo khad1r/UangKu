@@ -712,6 +712,13 @@ details {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
 #preview-canvas {
   margin-top: 0.8em;
   border: 2px solid var(--primary-color);
@@ -892,7 +899,9 @@ details {
           text-decoration: underline;
           font-size: larger;
           font-weight: 900;
-          /* background-color: var(--primary-color-alt); */
+          background: transparent !important;
+          border-color: transparent !important;
+          color: var(--primary-color) !important;
           &:after {
           }
         }
