@@ -35,6 +35,25 @@ class error extends Controller
     $data['view'] = 'error/Network';
     $this->view('templates/template', $data);
   }
+  /**
+   * Serves the service worker with its cache-version placeholder replaced by
+   * APP_VERSION, so a new deploy (new GIT_SHA) automatically gets its own
+   * cache name — the SW's own activate handler then deletes the old-named
+   * cache. No more remembering to bump a version string by hand.
+   */
+  public function serviceWorker()
+  {
+    $templatePath = dirname(__DIR__) . '/public/sw.template.js';
+    if (!file_exists($templatePath)) {
+      http_response_code(404);
+      exit;
+    }
+    header('Content-Type: application/javascript; charset=utf-8');
+    // Never let the browser cache the SW file itself past this response,
+    // otherwise it won't notice new versions in a timely manner.
+    setCacheControl(0);
+    echo str_replace('__APP_VERSION__', APP_VERSION, file_get_contents($templatePath));
+  }
   public function preCache()
   {
     $rate_limit_interval = 10; // 15 detik

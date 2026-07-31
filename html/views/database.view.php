@@ -8,7 +8,7 @@
           <input class="form-control" id="endDate" type="text" placeholder="Akhir">
         </div>
         <a href="/Databases?export=true&csrf_token=<?= $data['csrf_token'] ?>" class="btn bg-success font-weight-bold w-100" id="export">Download CSV</a>
-        <input type="file" placeholder="Upload CSV File" class="form-control" accept="text/csv" name="attachment" />
+        <input type="file" placeholder="Upload CSV File" class="form-control" accept=".csv,text/csv,text/comma-separated-values,application/csv,application/vnd.ms-excel,text/plain" name="attachment" />
         <?php InputValidator('attachment') ?>
         <small style="font-size: .5em;">Ini hanya akan mengupdate data yang ada di CSV sesuai id saja, silahkan hapus yang tidak perlu diupdate</small>
       </div>

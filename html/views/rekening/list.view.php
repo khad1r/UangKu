@@ -25,6 +25,7 @@
       <thead class="sticky-top">
         <tr>
           <th scope="col" class="no-sort no-search"></th>
+          <th scope="col" class="no-sort no-search"></th>
           <th scope="col" class="no-sort no-search">ID</th>
           <th scope="col" class="no-sort">Nama</th>
           <th scope="col" class="no-sort">Saldo</th>
@@ -115,7 +116,7 @@
     'responsive': true,
     select: {
       style: 'multi',
-      selector: 'td:first-child'
+      selector: 'td.dt-select'
     },
     'ajax': {
       'url': '<?= BASEURL ?>/Rekening/args?datatable=1',
@@ -159,7 +160,7 @@
       }
     },
     "order": [
-      [1, "desc"]
+      [2, "desc"]
     ],
     "columnDefs": [{
         targets: "no-search",
@@ -170,28 +171,32 @@
         "orderable": false
       },
       {
-        targets: [0],
+        targets: [1],
         render: DataTable.render.select(),
         orderable: false,
       },
       {
-        // NEW: Explicitly assign the mobile expand/collapse arrow to the "Nama" column
-        // so it doesn't overlap with the newly visible checkbox.
-        targets: [2],
-        className: 'dtr-control'
-      },
-      {
         responsivePriority: 1,
-        // REMOVED 0: ID, Jenis Uang, Keterangan will still collapse
-        targets: [1, 4, 5]
+        // ID, Jenis Uang, Keterangan will still collapse
+        targets: [2, 5, 6]
       },
       {
         responsivePriority: 0,
-        // ADDED 0: Checkbox, Nama, Saldo, Action will always stay visible
-        targets: [0, 2, 3, 6]
+        // Control, Checkbox, Nama, Saldo, Action will always stay visible
+        targets: [0, 1, 3, 4, 7]
       },
     ],
     'columns': [{
+        // Dedicated column for the mobile expand/collapse control, kept
+        // separate from the checkbox column so Select's row-selector click
+        // area and Responsive's expand-arrow click area don't fight over the
+        // same cell, and separate from "Nama" so it never gets caught up in
+        // Responsive's own hide/show decisions for the control column.
+        className: 'dtr-control',
+        data: null,
+        defaultContent: '',
+        title: '',
+      }, {
         'data': 'id',
         'title': '',
       }, {

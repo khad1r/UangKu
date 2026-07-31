@@ -31,8 +31,8 @@ class resources
       === MANDATORY WORKFLOW ===
 
       1. Receive user input
-      2. Call get_rekening() — MANDATORY every session, to get current account list and IDs
-      3. Call get_kelompok() — MANDATORY every session, to get current category list
+      2. Call get_rekening() — MANDATORY before EVERY transaction-recording turn, no exceptions, even if you already called it earlier in this same conversation. NEVER reuse a remembered/cached account ID — account IDs can be added, deactivated, or changed at any time, and long conversations make misremembering an ID likely. A fresh call costs almost nothing; a wrong ID silently moves money into the wrong account.
+      3. Call get_kelompok() — same rule: call it fresh before every transaction-recording turn, never from memory.
       4. Build recap table
       5. Show recap to user → wait for "oke" (or correction)
       6. Execute uangku_catat_transaksi_masal
@@ -40,10 +40,11 @@ class resources
 
       NEVER record anything before user confirms.
       NEVER ask questions before showing the recap — decide everything yourself using the rules below.
+      NEVER skip step 2/3 because you "already know" the IDs from earlier in this conversation — re-fetch every single time, unconditionally.
 
       === ACCOUNT RULES ===
 
-      Always use get_rekening() result as reference for account names and IDs — never hardcode.
+      Always use THIS TURN's get_rekening() result as reference for account names and IDs — never hardcode, and never reuse IDs recalled from an earlier turn in this conversation.
 
       DEFAULT ACCOUNT if user does not specify:
       - Food / minimarket / canteen / medicine → ShopeePay
@@ -381,6 +382,53 @@ class resources
       throw new ToolCallException("Error: " . $e->getMessage());
     }
   }
+  /**
+   * Mencari transaksi berdasarkan kriteria tertentu
+   * Gunakan tool ini untuk mendapatkan data transaksi dalam format yang mudah dipahami untuk analisis
+   */
+  #[McpTool(
+    name: 'search_Transaksi',
+    description: 'Mencari transaksi berdasarkan kriteria tertentu',
+    annotations: new ToolAnnotations(
+      readOnlyHint: true,
+      openWorldHint: false
+    ),
+    outputSchema: [
+      'type' => 'object',
+      'properties' => [
+        'data' => [
+          'type' => 'array',
+          'items' => [
+            'type' => 'object',
+            'properties' => [
+              'id'                   => ['type' => 'integer'],
+              'jenis_transaksi'      => ['type' => 'string'],
+              'harta'                => ['type' => 'boolean'],
+              'barang'               => ['type' => 'string'],
+              'rekening_sumber'      => ['type' => ['integer', 'null']],
+              'rekening_masuk'       => ['type' => ['integer', 'null']],
+              'nominal'              => ['type' => 'number'],
+              'nominal_asing'        => ['type' => 'number'],
+              'kuantitas'            => ['type' => 'number'],
+              'penyusutan_bunga'     => ['type' => 'number'],
+              'rutin'                => ['type' => 'boolean'],
+              'kelompok'             => ['type' => ['string', 'null']],
+              'tanggal'              => ['type' => 'string', 'format' => 'date'],
+              'relasi_transaksi'     => ['type' => ['integer', 'null']],
+              'attachment'           => ['type' => ['string', 'null']],
+              'keterangan'           => ['type' => ['string', 'null']],
+              'review'               => ['type' => ['string', 'null']],
+              'created_at'           => ['type' => 'string', 'format' => 'date-time'],
+              'nama_rekening_sumber' => ['type' => ['string', 'null']],
+              'nama_rekening_masuk'  => ['type' => ['string', 'null']],
+              'jenis_budget_sumber'  => ['type' => ['string', 'null']],
+              'jenis_budget_masuk'   => ['type' => ['string', 'null']]
+            ]
+          ]
+        ]
+      ]
+    ]
+  )]
   #[Schema(
     properties: [
       'search'           => [
