@@ -12,7 +12,9 @@
       <div class="col-md-12 card">
         <div class="card-body">
           <h6 class="text-center card-title">Chart</h6>
-          <div id="chart"></div>
+          <div id="charts-container">
+            <div id="chart"></div>
+          </div>
         </div>
       </div>
       <div class="col-md-12 card mt-2">
@@ -55,7 +57,32 @@
     }
   });
 
-  var Chart = null;
+  const DEFAULT_CHART_TARGET = 'chart';
+  const chartsContainer = document.querySelector('#charts-container');
+  let charts = {}; // containerId -> { target, code, options, instance }
+
+  const containerIdFor = (target) => {
+    const t = (target && String(target).trim()) || DEFAULT_CHART_TARGET;
+    if (t === DEFAULT_CHART_TARGET) return DEFAULT_CHART_TARGET;
+    const safe = t.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+    return 'chart-' + (safe || 'extra');
+  };
+
+  const getOrCreateChartContainer = (target) => {
+    const id = containerIdFor(target);
+    let el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = id;
+      el.className = 'mt-3';
+      chartsContainer.appendChild(el);
+    }
+    return id;
+  };
+
+  const removeChartContainer = (id) => {
+    document.getElementById(id)?.remove();
+  };
 
   var dateRange = dateRange || [
     new Date(new Date().getFullYear(), new Date().getMonth(), 1),
@@ -79,9 +106,10 @@
   });
 
   /* ==========================================================================
-     Local presets (Step 2 + Step 3 bundled)
-     Lets the user save the last AI-generated transform code + chart options
-     under a name, then reapply them instantly without asking the AI again.
+     Local presets (Step 2 + Step 3 bundled, all active charts)
+     Lets the user save every currently rendered chart (transform code + chart
+     options, keyed by target) under a name, then reapply the whole set
+     instantly without asking the AI again.
      ========================================================================== */
   const PRESET_KEY = 'analisis_presets_v1';
 
@@ -112,13 +140,18 @@
   });
 
   presetSaveBtn.addEventListener('click', () => {
-    if (!lastTransformCode || !lastChartOptions) return;
+    const ids = Object.keys(charts);
+    if (!ids.length) return;
     const name = prompt('Nama preset:');
     if (!name) return;
     const presets = getPresets();
     presets[name] = {
-      code: lastTransformCode,
-      options: lastChartOptions
+      charts: ids.map(id => ({
+        target: charts[id].target,
+        code: charts[id].code,
+        optionsBuilder: charts[id].optionsBuilder,
+        options: charts[id].options
+      }))
     };
     savePresets(presets);
     refreshPresetSelect();
@@ -129,16 +162,49 @@
   presetLoadBtn.addEventListener('click', () => {
     const preset = getPresets()[presetSelect.value];
     if (!preset) return;
+    // Backward-compatible with older single-chart presets ({code, options}).
+    const chartList = preset.charts || (preset.options ? [{
+      target: DEFAULT_CHART_TARGET,
+      code: preset.code,
+      options: preset.options
+    }] : []);
+    if (!chartList.length) return;
     try {
-      if (currentRawData.length) {
-        const transform = new Function('rawData', preset.code);
-        currentGraphData = transform(currentRawData);
-      }
-      lastTransformCode = preset.code;
-      lastChartOptions = preset.options;
-      logEl.textContent = preset.code;
-      Chart = Highcharts.chart('chart', preset.options);
-      setStatus(`Preset "${presetSelect.value}" dimuat.`);
+      Object.keys(charts).forEach(id => {
+        charts[id].instance?.destroy();
+        removeChartContainer(id);
+      });
+      charts = {};
+      chartList.forEach(c => {
+        let graphData = null;
+        if (currentRawData.length && c.code) {
+          try {
+            graphData = new Function('rawData', c.code)(currentRawData);
+            currentGraphData = graphData;
+          } catch (e) {}
+        }
+        let options = c.options;
+        if (c.optionsBuilder) {
+          try {
+            options = new Function('graphData', 'rawData', c.optionsBuilder)(graphData, currentRawData);
+          } catch (e) {
+            options = c.options; // fall back to the last-known-good baked options
+          }
+        }
+        const id = getOrCreateChartContainer(c.target);
+        const instance = Highcharts.chart(id, options);
+        charts[id] = {
+          target: c.target || DEFAULT_CHART_TARGET,
+          code: c.code,
+          optionsBuilder: c.optionsBuilder || null,
+          options,
+          instance
+        };
+        if (c.code) lastTransformCode = c.code;
+      });
+      presetSaveBtn.disabled = false;
+      renderLog();
+      setStatus(`Preset "${presetSelect.value}" dimuat (${chartList.length} grafik).`);
     } catch (err) {
       setStatus(`Gagal memuat preset: ${err.message}`, true);
     }
@@ -181,13 +247,57 @@
   let currentRawData = [];
   let currentGraphData = null; // output of the AI's transform_data call
   let lastTransformCode = null;
-  let lastChartOptions = null; // output of the AI's update_chart_config call
 
   const RAW_COLUMNS = ['id', 'jenis_transaksi', 'barang', 'rekening', 'nominal', 'total', 'rutin', 'kelompok', 'tanggal', 'keterangan'];
 
   const setStatus = (text, isError = false) => {
     statusEl.textContent = text;
     statusEl.classList.toggle('text-danger', isError);
+  };
+
+  const renderLog = () => {
+    const ids = Object.keys(charts);
+    if (!ids.length) {
+      logEl.textContent = lastTransformCode
+        ? `// Step 2: transform_data (belum dipakai di grafik manapun)\n${lastTransformCode.trim()}`
+        : 'Belum ada transformasi yang dijalankan.';
+      return;
+    }
+    logEl.textContent = ids.map(id => {
+      const c = charts[id];
+      const parts = [`// Grafik "${c.target}"`];
+      if (c.code) parts.push(`// Step 2: transform_data\n${c.code.trim()}`);
+      parts.push(c.optionsBuilder
+        ? `// Step 3: update_chart_config (optionsBuilder, auto-refresh aktif)\n${c.optionsBuilder.trim()}`
+        : `// Step 3: update_chart_config (options statis, tidak auto-refresh)\n${JSON.stringify(c.options, null, 2)}`);
+      return parts.join('\n');
+    }).join('\n\n---\n\n');
+  };
+
+  /* ==========================================================================
+     Re-runs every chart's stored transform code + optionsBuilder against the
+     freshly loaded currentRawData, so charts stay in sync with the active
+     date range without needing the AI in the loop again. Charts saved with a
+     static "options" object (no optionsBuilder) are left untouched.
+     ========================================================================== */
+  const refreshAllCharts = () => {
+    let refreshed = 0;
+    Object.keys(charts).forEach(id => {
+      const c = charts[id];
+      if (!c.code || !c.optionsBuilder) return;
+      try {
+        const graphData = new Function('rawData', c.code)(currentRawData);
+        const options = new Function('graphData', 'rawData', c.optionsBuilder)(graphData, currentRawData);
+        c.instance?.destroy();
+        c.instance = Highcharts.chart(id, options);
+        c.options = options;
+        refreshed++;
+      } catch (err) {
+        setStatus(`Gagal memperbarui grafik "${c.target}" setelah ganti tanggal: ${err.message}`, true);
+      }
+    });
+    if (refreshed) renderLog();
+    return refreshed;
   };
 
   async function loadRawData() {
@@ -221,7 +331,10 @@
       currentRawData = json.data || [];
       currentGraphData = null;
 
-      setStatus(`Data siap: ${currentRawData.length} transaksi. Silakan minta AI untuk menganalisis & membuat grafik.`);
+      const refreshed = refreshAllCharts();
+      setStatus(refreshed
+        ? `Data siap: ${currentRawData.length} transaksi. ${refreshed} grafik diperbarui otomatis.`
+        : `Data siap: ${currentRawData.length} transaksi. Silakan minta AI untuk menganalisis & membuat grafik.`);
     } catch (err) {
       setStatus(`Gagal memuat data: ${err.message}`, true);
       showAlert(`Gagal memuat data analisis: ${err.message}`, 'danger');
@@ -236,7 +349,14 @@
      Flow the AI is expected to follow:
        1. get_raw_transactions -> raw rows for the active date range
        2. transform_data       -> AI-authored JS reshapes raw rows into series data
-       3. update_chart_config  -> AI-authored Highcharts.Options renders #chart
+       3. update_chart_config  -> renders a chart (optionally targeted, for
+                                   multiple charts at once). Prefer sending
+                                   "optionsBuilder" (JS code) over a static
+                                   "options" object: it's stored alongside the
+                                   chart's transform code and both are re-run
+                                   automatically whenever the date range
+                                   changes, so charts stay live without the AI.
+       4. delete_chart          -> optional, removes a previously rendered chart
      ========================================================================== */
   function registerWebMCPAnalytics() {
     const tools = [{
@@ -310,7 +430,7 @@
             const result = transform(currentRawData);
             currentGraphData = result;
             lastTransformCode = params.code;
-            logEl.textContent = params.code;
+            renderLog();
             setStatus('Transformasi data berhasil dijalankan oleh AI.');
             return {
               success: true,
@@ -327,32 +447,56 @@
       },
       {
         name: 'update_chart_config',
-        description: 'Langkah 3: Memuat & merender objek Highcharts.Options yang dibuat secara penuh oleh AI Agent (biasanya memakai hasil transform_data) ke elemen #chart.',
+        description: 'Langkah 3: Merender grafik Highcharts. Halaman ini mendukung LEBIH DARI SATU grafik sekaligus: kirim "target" untuk membuat/memperbarui grafik terpisah (mis. "trend", "per-kelompok"). Jika "target" kosong, memakai grafik utama. Memanggil ulang dengan target yang sama akan mengganti (replace) grafik tersebut. DIREKOMENDASIKAN memakai "optionsBuilder" (bukan "options" statis) agar grafik otomatis diperbarui saat pengguna mengganti rentang tanggal, tanpa perlu memanggil AI lagi.',
         inputSchema: {
           type: 'object',
           properties: {
             options: {
               type: 'object',
-              description: 'Objek Highcharts.Options lengkap yang dibangun oleh AI Agent'
+              description: 'Objek Highcharts.Options statis yang sudah jadi. Pakai ini hanya untuk grafik sekali-pakai — TIDAK akan otomatis diperbarui saat rentang tanggal berubah. Abaikan jika mengisi "optionsBuilder".'
+            },
+            optionsBuilder: {
+              type: 'string',
+              description: 'Direkomendasikan. Body fungsi JS dengan parameter `graphData` (hasil transform_data terbaru) dan `rawData` (data mentah terbaru), WAJIB `return` sebuah objek Highcharts.Options. Disimpan dan dijalankan ulang otomatis (bersama kode transform_data milik grafik ini) setiap kali rentang tanggal berubah, sehingga grafik selalu mengikuti data terbaru.'
+            },
+            target: {
+              type: 'string',
+              description: 'Nama grafik, opsional. Gunakan nama berbeda untuk menampilkan beberapa grafik sekaligus di halaman. Kosongkan untuk grafik utama.'
             }
-          },
-          required: ['options']
+          }
         },
         execute: async (params) => {
-          if (!params || !params.options) {
+          if (!params || (!params.options && !params.optionsBuilder)) {
             return {
               success: false,
-              error: 'Parameter "options" (Highcharts.Options object) wajib diisi oleh AI.'
+              error: 'Wajib mengisi salah satu: "options" (objek statis) atau "optionsBuilder" (kode JS, direkomendasikan).'
             };
           }
           try {
-            Chart = Highcharts.chart('chart', params.options);
-            lastChartOptions = params.options;
-            presetSaveBtn.disabled = !lastTransformCode;
-            setStatus('Grafik berhasil dirender oleh AI.');
+            const target = (params.target && String(params.target).trim()) || DEFAULT_CHART_TARGET;
+            const id = getOrCreateChartContainer(target);
+            let options = params.options;
+            if (params.optionsBuilder) {
+              options = new Function('graphData', 'rawData', params.optionsBuilder)(currentGraphData, currentRawData);
+            }
+            charts[id]?.instance?.destroy();
+            const instance = Highcharts.chart(id, options);
+            charts[id] = {
+              target,
+              code: lastTransformCode,
+              optionsBuilder: params.optionsBuilder || null,
+              options,
+              instance
+            };
+            presetSaveBtn.disabled = false;
+            renderLog();
+            setStatus(`Grafik "${target}" berhasil dirender oleh AI.`);
             return {
               success: true,
-              message: 'Objek Highcharts berhasil dirender.'
+              message: 'Objek Highcharts berhasil dirender.',
+              target,
+              autoRefresh: !!(params.optionsBuilder && lastTransformCode),
+              activeCharts: Object.values(charts).map(c => c.target)
             };
           } catch (err) {
             setStatus(`Render grafik gagal: ${err.message}`, true);
@@ -361,6 +505,39 @@
               error: err.message
             };
           }
+        }
+      },
+      {
+        name: 'delete_chart',
+        description: 'Menghapus grafik dengan "target" tertentu dari halaman (untuk membersihkan/mengganti tampilan multi-grafik). Kirim nilai "target" yang sama dengan yang dipakai saat update_chart_config. Kosongkan untuk menghapus grafik utama.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            target: {
+              type: 'string',
+              description: 'Nama grafik yang ingin dihapus, opsional (default: grafik utama).'
+            }
+          }
+        },
+        execute: async (params) => {
+          const target = (params && params.target && String(params.target).trim()) || DEFAULT_CHART_TARGET;
+          const id = containerIdFor(target);
+          if (!charts[id]) {
+            return {
+              success: false,
+              error: `Grafik dengan target "${target}" tidak ditemukan.`
+            };
+          }
+          charts[id].instance?.destroy();
+          delete charts[id];
+          removeChartContainer(id);
+          presetSaveBtn.disabled = Object.keys(charts).length === 0;
+          renderLog();
+          setStatus(`Grafik "${target}" dihapus.`);
+          return {
+            success: true,
+            activeCharts: Object.values(charts).map(c => c.target)
+          };
         }
       }
     ];
