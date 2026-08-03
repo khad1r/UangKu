@@ -2,8 +2,13 @@
 
 /**
  * WebMCP (Web Model Context Protocol) Component
- * Exposes UangKu transaction recording tools, options, and system prompt guidelines to AI Agents.
- * References backend MCP definitions from html/libs/mcp (tools.lib.php & resources.lib.php).
+ * Exposes UangKu transaction recording tools, Wishlist tools, and system prompt guidelines to AI Agents
+ * acting in the browser on behalf of the user. Included on any page that has the relevant DOM present —
+ * transaction tools on views/transaction/record.view.php, Wishlist tools on views/wishlist/list.view.php.
+ * Each tool group below is feature-detected (only registered if that page's globals/DOM exist), so a page
+ * only ever advertises tools it can actually fulfill.
+ * References backend MCP definitions from html/libs/mcp (transaksi.lib.php, rekening.lib.php, wishlist.lib.php,
+ * resources.lib.php).
  */
 ?>
 <script>
@@ -77,7 +82,9 @@ rutin: false → Sunday transactions, events, non-routine purchases (gadgets, as
     };
 
     /* ==========================================================================
-       WebMCP Tools Definitions (Reference: html/libs/mcp/tools.lib.php)
+       WebMCP Tools Definitions — Transaction domain (Reference: html/libs/mcp/transaksi.lib.php,
+       rekening.lib.php). Only registered on pages with the transaction form present — see
+       registerWebMCP() below.
        ========================================================================== */
 
     // 1. catat_transaksi / record_transaction
@@ -386,17 +393,140 @@ rutin: false → Sunday transactions, events, non-routine purchases (gadgets, as
     };
 
     /* ==========================================================================
+       WebMCP Tools Definitions — Wishlist domain (Reference: html/libs/mcp/wishlist.lib.php).
+       Only registered on views/wishlist/list.view.php — see registerWebMCP() below. Wishlist is
+       deliberately separate from the transaction-recording workflow above: it's a parking list for
+       "decide later" purchases, not a recorded transaction, so it isn't part of WEBMCP_SYSTEM_PROMPT.
+       ========================================================================== */
+
+    const WebMCPToolListWishlist = {
+      name: 'list_wishlist',
+      description: 'Mendapatkan seluruh isi Wishlist (barang yang sedang dipertimbangkan untuk dibeli, belum dicatat sebagai transaksi) yang sedang tampil di halaman ini.',
+      inputSchema: { type: 'object', properties: {} },
+      execute: async () => ({ data: typeof WISHLIST_DATA !== 'undefined' ? WISHLIST_DATA : [] })
+    };
+
+    const WebMCPToolAddWishlist = {
+      name: 'add_wishlist',
+      description: 'Mengisi (dan opsional langsung mengirim) formulir tambah Wishlist di halaman ini.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          nama: { type: 'string', description: 'Nama barang' },
+          harga_estimasi: { type: 'number', description: 'Estimasi harga barang dalam Rupiah (opsional)' },
+          link: { type: 'string', description: 'Link/URL ke halaman produk (opsional)' },
+          catatan: { type: 'string', description: 'Catatan atau pertimbangan tentang barang ini (opsional)' },
+          submit: { type: 'boolean', description: 'Set true untuk langsung mengirim formulir setelah diisi' }
+        },
+        required: ['nama']
+      },
+      execute: async (params) => {
+        try {
+          if (typeof openAdd !== 'function' || typeof FORM === 'undefined' || !FORM) {
+            throw new Error('Formulir Wishlist tidak ditemukan pada halaman ini.');
+          }
+          const { nama, harga_estimasi, link, catatan, submit } = params;
+          openAdd();
+          if (nama !== undefined) FORM.nama.value = nama;
+          if (harga_estimasi !== undefined) FORM.harga_estimasi.value = harga_estimasi;
+          if (link !== undefined) FORM.link.value = link;
+          if (catatan !== undefined) FORM.catatan.value = catatan;
+          if (submit) {
+            FORM.requestSubmit();
+            return { success: true, message: 'Wishlist berhasil diisi dan dikirim.', data: params };
+          }
+          return { success: true, message: 'Wishlist berhasil diisi.', data: params };
+        } catch (err) {
+          return { success: false, error: err.message };
+        }
+      }
+    };
+
+    const WebMCPToolUpdateWishlist = {
+      name: 'update_wishlist',
+      description: 'Mengisi (dan opsional langsung mengirim) formulir edit Wishlist untuk item tertentu — misal mengubah catatan pertimbangan setelah dipikirkan lagi.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: { type: 'number', description: 'ID item Wishlist yang akan diperbarui' },
+          nama: { type: 'string' },
+          harga_estimasi: { type: 'number' },
+          link: { type: 'string' },
+          catatan: { type: 'string' },
+          submit: { type: 'boolean', description: 'Set true untuk langsung mengirim formulir setelah diisi' }
+        },
+        required: ['id']
+      },
+      execute: async (params) => {
+        try {
+          if (typeof openEdit !== 'function' || typeof WISHLIST_DATA === 'undefined') {
+            throw new Error('Formulir Wishlist tidak ditemukan pada halaman ini.');
+          }
+          const { id, nama, harga_estimasi, link, catatan, submit } = params;
+          const item = WISHLIST_DATA.find(w => String(w.id) === String(id));
+          if (!item) throw new Error(`Item Wishlist #${id} tidak ditemukan di halaman ini.`);
+          openEdit(item);
+          if (nama !== undefined) FORM.nama.value = nama;
+          if (harga_estimasi !== undefined) FORM.harga_estimasi.value = harga_estimasi;
+          if (link !== undefined) FORM.link.value = link;
+          if (catatan !== undefined) FORM.catatan.value = catatan;
+          if (submit) {
+            FORM.requestSubmit();
+            return { success: true, message: `Wishlist #${id} berhasil diisi dan dikirim.`, data: params };
+          }
+          return { success: true, message: `Wishlist #${id} berhasil diisi.`, data: params };
+        } catch (err) {
+          return { success: false, error: err.message };
+        }
+      }
+    };
+
+    const WebMCPToolDeleteWishlist = {
+      name: 'delete_wishlist',
+      description: 'Menghapus item Wishlist berdasarkan ID. Tetap menampilkan konfirmasi ke user sebelum benar-benar menghapus (aksi ini tidak bisa dibatalkan).',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: { type: 'number', description: 'ID item Wishlist yang akan dihapus' }
+        },
+        required: ['id']
+      },
+      execute: async ({ id }) => {
+        if (typeof confirmDeleteWishlist !== 'function') {
+          return { success: false, error: 'Fungsi hapus Wishlist tidak ditemukan pada halaman ini.' };
+        }
+        confirmDeleteWishlist(id);
+        return { success: true, message: `Konfirmasi hapus Wishlist #${id} ditampilkan ke user.` };
+      }
+    };
+
+    /* ==========================================================================
        WebMCP Registration & Global Export
        ========================================================================== */
     function registerWebMCP() {
-      const tools = [
-        WebMCPToolRecordTransaction,
-        WebMCPToolRecordTransactionAlias,
-        WebMCPToolGetRekening,
-        WebMCPToolGetKelompok,
-        WebMCPToolGetHarta,
-        WebMCPToolGetOptions
-      ];
+      const tools = [];
+
+      // Transaction-domain tools — only on pages with the transaction form (record.view.php)
+      if (typeof FORM !== 'undefined' && FORM?.jenis_transaksi) {
+        tools.push(
+          WebMCPToolRecordTransaction,
+          WebMCPToolRecordTransactionAlias,
+          WebMCPToolGetRekening,
+          WebMCPToolGetKelompok,
+          WebMCPToolGetHarta,
+          WebMCPToolGetOptions
+        );
+      }
+
+      // Wishlist-domain tools — only on the Wishlist page (wishlist/list.view.php)
+      if (typeof WISHLIST_DATA !== 'undefined') {
+        tools.push(
+          WebMCPToolListWishlist,
+          WebMCPToolAddWishlist,
+          WebMCPToolUpdateWishlist,
+          WebMCPToolDeleteWishlist
+        );
+      }
 
       const resources = [
         {

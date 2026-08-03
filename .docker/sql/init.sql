@@ -63,6 +63,16 @@ CREATE INDEX idx_transaksi_keterangan ON TRANSAKSI(keterangan);
 CREATE INDEX idx_transaksi_review ON TRANSAKSI(review);
 CREATE INDEX idx_transaksi_rutin ON TRANSAKSI(rutin);
 
+CREATE TABLE WISHLIST (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nama TEXT NOT NULL,
+  harga_estimasi NUMERIC,
+  link TEXT,
+  catatan TEXT,
+  created_at TEXT DEFAULT (datetime('now', 'localtime')),
+  updated_at TEXT
+);
+
 CREATE VIEW REKENING_SALDO AS
 SELECT
   r.*,
