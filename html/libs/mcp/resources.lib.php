@@ -94,19 +94,24 @@ class resources
 
       === RUTIN vs NON-RUTIN ===
 
-      rutin: true → daily operational spending, recurring every weekday (Mon–Sat):
-      - Ojek to office, canteen meals, sedekah, internet package, laundry, kos, electricity
-      - E-wallet topups & cash withdrawals
+      Decide in this EXACT order — stop at the first rule that matches. Do not combine rules or guess; precedence resolves every conflict below.
 
-      rutin: false → any of these:
-      - Transactions on Sunday
-      - Part of event/perjadin
-      - Non-routine purchases (gadgets, furniture, assets)
-      - GoFood / delivery orders
-      - Monthly subscriptions (scheduled, not daily)
+      1. Kelompok is Event/Perjadin/Mudik (unique event group) → rutin: false. Always, no exceptions — even for a daily meal during the trip.
+      2. Item is a FIXED MONTHLY BILL essential to basic living/work (Kos, Listrik, Admin Rekening, essential data/internet plan) → rutin: true, regardless of which day it's paid on. A bill due on Sunday is still routine — this rule outranks the Sunday rule below.
+      3. Item is a DISCRETIONARY/ENTERTAINMENT subscription (Gojek Plus, Bilibili, Arknights, non-essential apps), a one-off asset/gadget/furniture purchase, or a GoFood/delivery order → rutin: false. This outranks "it's a weekday" or "it belongs to a rutin kelompok" below.
+      4. Transaction date is Sunday → rutin: false.
+      5. Kelompok is one of the daily-frequency kelompok (Konsumsi, Transportasi, Sedekah, Topup) on Monday–Saturday → rutin: true.
+      6. Otherwise, check get_kelompok()'s per-kelompok rutin/count breakdown: if this item's kelompok has an overwhelmingly dominant historical rutin value (one side's count is clearly larger), follow that history.
+      7. Still ambiguous after step 6 → rutin: false (default to non-routine when unsure).
 
-      Rule of thumb: if the item belongs to a rutin kelompok (Konsumsi, Transportasi, Sedekah, Topup) AND it's a weekday → rutin: true by default.
-      Event/Mudik/Perjadin kelompok → always rutin: false.
+      Note: get_kelompok() returns [kelompok, rutin, count] — up to two rows per kelompok, one per rutin value, with a count of past transactions. This is only a tiebreaker for step 6 — it never overrides rules 1–5.
+
+      Examples (to keep this unambiguous):
+      - Ojek to office, canteen meal, sedekah, e-wallet topup, cash withdrawal on a Tuesday → rutin: true (rule 5)
+      - Kos payment or PLN electricity bill, even if paid on a Sunday → rutin: true (rule 2 beats rule 4)
+      - Bilibili/Arknights/Gojek Plus subscription → rutin: false (rule 3) — "recurring monthly" does NOT mean rutin; it must also be an essential living/work cost, not entertainment
+      - GoFood order on a Wednesday → rutin: false (rule 3 beats rule 5, even though Konsumsi is normally a daily kelompok)
+      - Any Perjadin/event item → rutin: false (rule 1), even if it's routine-looking spending like a daily meal
 
       === NOMINAL & DISCOUNT RULES ===
 
@@ -135,9 +140,9 @@ class resources
 
       === RECAP FORMAT (show before executing) ===
 
-      | # | Barang | Nominal | Qty | Rekening | Kelompok | Rutin | Tanggal |
-      |---|--------|---------|-----|----------|----------|-------|---------|
-      | 1 | ...    | ...     | 1   | ...      | ...      | ✓/✗   | ...     |
+      | # | Barang | Nominal | Qty | Rekening (ID) | Kelompok | Rutin | Tanggal |
+      |---|--------|---------|-----|---------------|----------|-------|---------|
+      | 1 | ...    | ...     | 1   | ...      (ID) | ...      | ✓/✗   | ...     |
 
       Add a short note if any important assumption was made (default account, prorata discount, etc).
 
@@ -223,7 +228,9 @@ class resources
    */
   #[McpTool(
     name: 'get_kelompok',
-    description: 'Mendapatkan daftar kategori/kelompok transaksi yang sudah ada Dengan format data [kelompok,count]',
+    description: 'Mendapatkan daftar kategori/kelompok transaksi yang sudah ada, dipecah per status rutin. Format data [kelompok,rutin,count].
+    Setiap kelompok bisa muncul hingga 2 baris (satu untuk rutin=true, satu untuk rutin=false) — count menunjukkan berapa kali kelompok itu tercatat dengan status rutin tersebut.
+    GUNAKAN INI SEBAGAI SINYAL TAMBAHAN untuk menentukan field "rutin" saat mencatat transaksi: jika suatu kelompok historisnya dominan rutin=true (count rutin=true jauh lebih besar), item baru di kelompok yang sama kemungkinan besar rutin=true juga, dan sebaliknya. Sinyal historis ini TIDAK menggantikan urutan prioritas di system_prompt (bagian RUTIN vs NON-RUTIN) — pakai untuk menajamkan keputusan pada kasus ambigu di rule 5/6, bukan untuk membatalkan rule 1-4 (event, tagihan bulanan esensial, langganan non-esensial, hari Minggu).',
     annotations: new ToolAnnotations(
       readOnlyHint: true,
       openWorldHint: false
@@ -237,6 +244,7 @@ class resources
             'type' => 'object',
             'properties' => [
               'kelompok' => ['type' => 'string'],
+              'rutin'    => ['type' => 'boolean', 'description' => 'Status rutin untuk baris hitungan ini'],
               'count'    => ['type' => 'integer']
             ]
           ]
@@ -247,8 +255,12 @@ class resources
   public function getKelompok(): array
   {
     try {
+      $rows = new Transaksi()->getKelompok();
       return [
-        'data' => new Transaksi()->getKelompok()
+        'data' => array_map(
+          fn($row) => [...$row, 'rutin' => $row['rutin'] == 1],
+          $rows
+        )
       ];
     } catch (\Exception $e) {
       throw new ResourceReadException("Error: " . $e->getMessage());

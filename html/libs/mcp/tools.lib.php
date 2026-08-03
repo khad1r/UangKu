@@ -95,9 +95,14 @@ class tools
             'rutin'             => [
               'type' => 'boolean',
               'default' => false,
-              'description' => 'KLASIFIKASI RUTINITAS:
-                - TRUE: (Pengeluaran Rutin) Pengeluaran harian yang mendukung kerja/hidup dasar.
-                - FALSE: (Pengeluaran Non/Tidak Rutin) Pengeluaran yang tidak terjadi setiap minggu/bulan, atau bagian dari event khusus.'
+              'description' => 'KLASIFIKASI RUTINITAS. Tentukan dengan urutan prioritas ini (hentikan di aturan pertama yang cocok — lihat system_prompt bagian RUTIN vs NON-RUTIN untuk detail & contoh):
+                1. Bagian dari Event/Perjadin/Mudik -> FALSE, selalu.
+                2. Tagihan bulanan tetap untuk kebutuhan hidup/kerja dasar (Kos, Listrik, Admin Rekening, paket data esensial) -> TRUE, walau dibayar hari Minggu.
+                3. Langganan hiburan/non-esensial (Gojek Plus, Bilibili, Arknights, app non-esensial), pembelian aset/gadget/furnitur, atau GoFood/delivery -> FALSE.
+                4. Transaksi hari Minggu -> FALSE.
+                5. Kelompok harian (Konsumsi, Transportasi, Sedekah, Topup) di hari Senin-Sabtu -> TRUE.
+                6. Masih ragu -> cek breakdown rutin/count per kelompok dari get_kelompok(); ikuti nilai rutin yang historisnya dominan untuk kelompok tsb.
+                7. Masih ragu juga -> FALSE (default non-rutin).'
             ],
             'kelompok'          => [
               'type' => ['string', 'null'],
