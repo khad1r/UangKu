@@ -165,6 +165,7 @@
       <div class="navbar-more d-flex justify-content-around flex-column mb-3">
         <a class="nav-link" href="<?= BASEURL ?>/Transaction/pencarian"><i class="fas fa-magnifying-glass"></i>&nbsp;&nbsp; Pencarian</a>
         <a class="nav-link" href="<?= BASEURL ?>/Rekening/"><i class="fas fa-wallet"></i>&nbsp;&nbsp; Rekening</a>
+        <a class="nav-link" href="<?= BASEURL ?>/Wishlist/"><i class="fas fa-star"></i>&nbsp;&nbsp; Wishlist</a>
         <a class="nav-link" href="<?= BASEURL ?>/Transaction/analisis"><i class="fas fa-chart-line"></i>&nbsp;&nbsp; Analisis</a>
         <!-- <a class="nav-link" href="<?= BASEURL ?>/Transaction/database"><i class="fas fa-file-invoice"></i>&nbsp;&nbsp; Laporan & Evaluasi</a> -->
         <?php if (ENABLE_AUTH) { ?>

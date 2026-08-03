@@ -43,7 +43,7 @@ class Users extends Controller
         showAlert($e->getMessage(), 'danger');
       }
     }
-    $data['title'] = 'Daftar Rekening';
+    $data['title'] = 'Daftar User';
     setCacheControl(259200/* 3 Day Expired */);
     $data['view'] = 'users/list';
     $data['top-left-view'] = 'components/header';

@@ -4,10 +4,11 @@ namespace App\libs;
 
 use Mcp\Capability\Attribute\{McpTool, Schema};
 use Mcp\Exception\ToolCallException;
+use Mcp\Exception\ResourceReadException;
 use Mcp\Schema\ToolAnnotations;
-use App\models\Transaksi;
+use App\models\Transaksi as ModelsTransaksi;
 
-class tools
+class transaksi
 {
   /**
    * Mencatat transaksi keuangan baru (Pemasukan, Pengeluaran, atau Pindah Buku)
@@ -141,7 +142,7 @@ class tools
   )]
   public function catatTransaksi(array $data, bool $autoRelate = false): string
   {
-    $transaksi = new Transaksi();
+    $transaksi = new ModelsTransaksi();
     $results = [];
     $firstInsertId = null;
 
@@ -299,7 +300,7 @@ class tools
   )]
   public function updateTransaksi(array $data): string
   {
-    $transaksi = new Transaksi();
+    $transaksi = new ModelsTransaksi();
     $results = [];
     try {
       foreach ($data as $index => $item) {
@@ -341,6 +342,191 @@ class tools
       return "✅ Berhasil! " . count($results) . " Transaksi diperbarui: " . implode(";\n", $results) . $linkSuffix;
     } catch (\Exception $e) {
       throw new ToolCallException("⚠️ Error: " . $e->getMessage());
+    }
+  }
+  /**
+   * Mendapatkan daftar kategori/kelompok transaksi yang sudah ada
+   * Gunakan tool ini untuk referensi saat mengisi field "kelompok" di catat_transaksi.
+   */
+  #[McpTool(
+    name: 'get_kelompok',
+    description: 'Mendapatkan daftar kategori/kelompok transaksi yang sudah ada, dipecah per status rutin. Format data [kelompok,rutin,count].
+    Setiap kelompok bisa muncul hingga 2 baris (satu untuk rutin=true, satu untuk rutin=false) — count menunjukkan berapa kali kelompok itu tercatat dengan status rutin tersebut.
+    GUNAKAN INI SEBAGAI SINYAL TAMBAHAN untuk menentukan field "rutin" saat mencatat transaksi: jika suatu kelompok historisnya dominan rutin=true (count rutin=true jauh lebih besar), item baru di kelompok yang sama kemungkinan besar rutin=true juga, dan sebaliknya. Sinyal historis ini TIDAK menggantikan urutan prioritas di system_prompt (bagian RUTIN vs NON-RUTIN) — pakai untuk menajamkan keputusan pada kasus ambigu di rule 5/6, bukan untuk membatalkan rule 1-4 (event, tagihan bulanan esensial, langganan non-esensial, hari Minggu).',
+    annotations: new ToolAnnotations(
+      readOnlyHint: true,
+      openWorldHint: false
+    ),
+    outputSchema: [
+      'type' => 'object',
+      'properties' => [
+        'data' => [
+          'type' => 'array',
+          'items' => [
+            'type' => 'object',
+            'properties' => [
+              'kelompok' => ['type' => 'string'],
+              'rutin'    => ['type' => 'boolean', 'description' => 'Status rutin untuk baris hitungan ini'],
+              'count'    => ['type' => 'integer']
+            ]
+          ]
+        ]
+      ]
+    ]
+  )]
+  public function getKelompok(): array
+  {
+    try {
+      $rows = new ModelsTransaksi()->getKelompok();
+      return [
+        'data' => array_map(
+          fn($row) => [...$row, 'rutin' => $row['rutin'] == 1],
+          $rows
+        )
+      ];
+    } catch (\Exception $e) {
+      throw new ResourceReadException("Error: " . $e->getMessage());
+    }
+  }
+  /**
+   * Mendapatkan daftar transaksi dalam rentang tanggal tertentu
+   * Gunakan tool ini untuk mendapatkan data transaksi dalam format yang mudah dipahami untuk analisis
+   */
+  #[McpTool(
+    name: 'get_transaksi',
+    description: 'Mendapatkan daftar transaksi dalam rentang tanggal tertentu ',
+    annotations: new ToolAnnotations(
+      readOnlyHint: true,
+      openWorldHint: false
+    ),
+    outputSchema: [
+      'type' => 'object',
+      'properties' => [
+        'data' => [
+          'type' => 'array',
+          'items' => [
+            'type' => 'object',
+            'properties' => [
+              'id'                   => ['type' => 'integer'],
+              'jenis_transaksi'      => ['type' => 'string'],
+              'harta'                => ['type' => 'boolean'],
+              'barang'               => ['type' => 'string'],
+              'rekening_sumber'      => ['type' => ['integer', 'null']],
+              'rekening_masuk'       => ['type' => ['integer', 'null']],
+              'nominal'              => ['type' => 'number'],
+              'nominal_asing'        => ['type' => 'number'],
+              'kuantitas'            => ['type' => 'number'],
+              'penyusutan_bunga'     => ['type' => 'number'],
+              'rutin'                => ['type' => 'boolean'],
+              'kelompok'             => ['type' => ['string', 'null']],
+              'tanggal'              => ['type' => 'string', 'format' => 'date'],
+              'relasi_transaksi'     => ['type' => ['integer', 'null']],
+              'attachment'           => ['type' => ['string', 'null']],
+              'keterangan'           => ['type' => ['string', 'null']],
+              'review'               => ['type' => ['string', 'null']],
+              'created_at'           => ['type' => 'string', 'format' => 'date-time'],
+              'nama_rekening_sumber' => ['type' => ['string', 'null']],
+              'nama_rekening_masuk'  => ['type' => ['string', 'null']],
+              'jenis_budget_sumber'  => ['type' => ['string', 'null']],
+              'jenis_budget_masuk'   => ['type' => ['string', 'null']]
+            ]
+          ]
+        ]
+      ]
+    ]
+  )]
+  #[Schema(
+    properties: [
+      'startDate'           => [
+        'type' => ['string', 'null'],
+        'format' => 'date',
+        'description' => 'Format: YYYY-MM-DD'
+      ],
+      'endDate'           => [
+        'type' => ['string', 'null'],
+        'format' => 'date',
+        'description' => 'Format: YYYY-MM-DD'
+      ],
+    ]
+  )]
+  public function getTransaksi(
+    ?string $startDate = null,
+    ?string $endDate = null,
+  ): array {
+    $startDate = $startDate ?? date('Y-m-01'); // Default ke tanggal 1
+    $endDate = $endDate ?? date('Y-m-d'); // Default ke hari ini
+    try {
+      return [
+        'data' => (new ModelsTransaksi())->getInRange($startDate, $endDate)
+      ];
+    } catch (\Exception $e) {
+      throw new ToolCallException("Error: " . $e->getMessage());
+    }
+  }
+  /**
+   * Mencari transaksi berdasarkan kriteria tertentu
+   * Gunakan tool ini untuk mendapatkan data transaksi dalam format yang mudah dipahami untuk analisis
+   */
+  #[McpTool(
+    name: 'search_Transaksi',
+    description: 'Mencari transaksi berdasarkan kriteria tertentu',
+    annotations: new ToolAnnotations(
+      readOnlyHint: true,
+      openWorldHint: false
+    ),
+    outputSchema: [
+      'type' => 'object',
+      'properties' => [
+        'data' => [
+          'type' => 'array',
+          'items' => [
+            'type' => 'object',
+            'properties' => [
+              'id'                   => ['type' => 'integer'],
+              'jenis_transaksi'      => ['type' => 'string'],
+              'harta'                => ['type' => 'boolean'],
+              'barang'               => ['type' => 'string'],
+              'rekening_sumber'      => ['type' => ['integer', 'null']],
+              'rekening_masuk'       => ['type' => ['integer', 'null']],
+              'nominal'              => ['type' => 'number'],
+              'nominal_asing'        => ['type' => 'number'],
+              'kuantitas'            => ['type' => 'number'],
+              'penyusutan_bunga'     => ['type' => 'number'],
+              'rutin'                => ['type' => 'boolean'],
+              'kelompok'             => ['type' => ['string', 'null']],
+              'tanggal'              => ['type' => 'string', 'format' => 'date'],
+              'relasi_transaksi'     => ['type' => ['integer', 'null']],
+              'attachment'           => ['type' => ['string', 'null']],
+              'keterangan'           => ['type' => ['string', 'null']],
+              'review'               => ['type' => ['string', 'null']],
+              'created_at'           => ['type' => 'string', 'format' => 'date-time'],
+              'nama_rekening_sumber' => ['type' => ['string', 'null']],
+              'nama_rekening_masuk'  => ['type' => ['string', 'null']],
+              'jenis_budget_sumber'  => ['type' => ['string', 'null']],
+              'jenis_budget_masuk'   => ['type' => ['string', 'null']]
+            ]
+          ]
+        ]
+      ]
+    ]
+  )]
+  #[Schema(
+    properties: [
+      'search'           => [
+        'type' => ['string'],
+        'description' => 'Search By Id, Name, Kelompok'
+      ],
+    ]
+  )]
+  public function searchTransaksi(
+    string $search,
+  ): array {
+    try {
+      return [
+        'data' => new ModelsTransaksi()->find($search)
+      ];
+    } catch (\Exception $e) {
+      throw new ToolCallException("Error: " . $e->getMessage());
     }
   }
 }
