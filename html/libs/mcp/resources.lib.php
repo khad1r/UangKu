@@ -133,13 +133,37 @@ class resources
       - Item name: GENERALIZE (e.g. "Roti Tawar" not "Sari Roti Tawar Soft Rasa Susu Jumbo 540g")
       - Full SKU detail → put in keterangan field
 
-      === RECAP FORMAT (show before executing) ===
+      === RECAP FORMAT (SEBELUM EXECUTION) ===
 
-      | # | Barang | Nominal | Qty | Rekening (ID) | Kelompok | Rutin | Tanggal |
-      |---|--------|---------|-----|---------------|----------|-------|---------|
-      | 1 | ...    | ...     | 1   | ...      (ID) | ...      | ✓/✗   | ...     |
+      ALWAYS display the recap in a CODE BLOCK (raw text inside triple backticks, NOT rendered markdown table).
+      This raw text format allows the user to easily copy, edit, and paste it back if corrections are needed.
+      Ensure consistent column padding and vertical alignment across all rows.
 
-      Add a short note if any important assumption was made (default account, prorata discount, etc).
+      Template:
+      ```
+      | Barang          | Nominal | Qty | Rekening        | Kelompok    | Rutin | Tanggal    |
+      | Kopi Susu       | 18.000  | 1   | ShopeePay (8)   | Konsumsi    | ✓     | 2026-08-23 |
+      | Roti Cokelat    | 12.000  | 1   | ShopeePay (8)   | Konsumsi    | ✓     | 2026-08-23 |
+
+      Auto relate: ✓
+      Attachment: x
+      ```
+
+      Rules for recap:
+      - Enclose strictly inside a code block (```)
+      - Columns: | Barang | Nominal | Qty | Rekening | Kelompok | Rutin | Tanggal |
+      - In the Rekening column, MUST show the account name and its ID from get_rekening(), e.g. "ShopeePay (8)"
+      - Ensure consistent column padding and vertical alignment across all rows (all `|` pipes must line up vertically)
+      - Line break after the table, followed by:
+        Auto relate: x/✓
+        Attachment: x/✓
+      - Use ✓ (true) and x (false)
+      - If any important assumption was made (e.g. prorata discount, default account), write a brief note below the code block.
+
+      === ATTACHMENT RULES ===
+
+      - FALSE (default / x): routine/small purchases (food, ojek, topup, daily groceries/necessities)
+      - TRUE (✓): exclusive/rare/significant items (gadget, electronics, furniture, expensive assets, official receipts/invoices) for proof/warranty
 
       === DATE RULES ===
 

@@ -6,6 +6,7 @@ const preCache = async () => {
   try {
     await caches.open(STATIC).then(cache => cache.addAll([
       "/assets/js/script.js",
+      "/assets/js/wishlist-share.js",
       "/assets/css/style.css",
       "/error/notConnected",
       "/",
@@ -56,21 +57,34 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', e => {
-  // Handle Share Target file submission
+  // Handle Share Target file & link/text submission
   if (e.request.url.includes('pwa-share-handle')) {
     e.respondWith(
       (async () => {
         try {
           const formData = await e.request.formData();
           const file = formData.get('attachment');
-          if (file && file instanceof File) {
-            const cache = await caches.open('shared-files');
+          const title = formData.get('name') || '';
+          const text = formData.get('description') || '';
+          const link = formData.get('link') || '';
 
+          const cache = await caches.open('shared-files');
+
+          if (file && file instanceof File && file.size > 0) {
             const fileResponse = new Response(file, {
               headers: { 'Content-Type': file.type, 'File-name': file.name }
             });
 
             await cache.put('/pwa-share-handle', fileResponse);
+            return Response.redirect('/Record', 303);
+          } else if (title || text || link) {
+            const sharePayload = JSON.stringify({ title, text, url: link });
+            const shareResponse = new Response(sharePayload, {
+              headers: { 'Content-Type': 'application/json' }
+            });
+
+            await cache.put('/pwa-share-wishlist', shareResponse);
+            return Response.redirect('/Wishlist', 303);
           }
         } catch (error) {
           console.error("Cache handling sharing,", error, e.request.url);

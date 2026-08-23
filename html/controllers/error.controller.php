@@ -66,6 +66,7 @@ class error extends Controller
     $to_pre_cache = [
       "private" => [
         BASEURL . "/Transaction",
+        BASEURL . "/Wishlist",
         BASEURL . "/Transaction/Qris",
         BASEURL . "/Transaction/Graph",
         BASEURL . "/Transaction/Setting",
@@ -73,6 +74,7 @@ class error extends Controller
       ],
       "public" => [
         BASEURL . "/assets/js/notification-helper.js",
+        BASEURL . "/assets/js/wishlist-share.js",
         BASEURL . "/assets/js/script.js",
         BASEURL . "/assets/css/style.css",
         "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
