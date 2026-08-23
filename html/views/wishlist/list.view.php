@@ -28,9 +28,16 @@
           <?php if (!empty($item['catatan'])): ?>
             <div class="small text-secondary truncate-text mt-1"><?= htmlspecialchars($item['catatan']) ?></div>
           <?php endif; ?>
-          <?php if (!empty($item['link'])): ?>
-            <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="small"><i class="fas fa-link"></i>&nbsp;Lihat Barang</a>
-          <?php endif; ?>
+          <div class="d-flex justify-content-between align-items-center mt-2 pt-1 border-top border-light">
+            <?php if (!empty($item['link'])): ?>
+              <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="small text-decoration-none"><i class="fas fa-link"></i>&nbsp;Lihat Barang</a>
+            <?php else: ?>
+              <span></span>
+            <?php endif; ?>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill" onclick="shareWishlistItem(event, <?= htmlspecialchars(json_encode($item), ENT_QUOTES) ?>)" title="Bagikan">
+              <i class="fas fa-share-nodes"></i> <span class="small">Bagikan</span>
+            </button>
+          </div>
         </div>
       <?php endforeach; ?>
     </div>
@@ -77,6 +84,7 @@
   <input type="hidden" name="id">
 </form>
 
+<script src="<?= BASEURL ?>/assets/js/wishlist-share.js"></script>
 <script>
   const FORM = document.querySelector('form#form');
   const MODAL = document.querySelector('#wishlist-dialog');
@@ -90,9 +98,13 @@
     if (!isInDialog) MODAL.close();
   });
 
-  const openAdd = () => {
+  const openAdd = (prefill = {}) => {
     FORM.reset();
     FORM.id.value = '';
+    FORM.nama.value = prefill.nama || '';
+    FORM.harga_estimasi.value = prefill.harga_estimasi || '';
+    FORM.link.value = prefill.link || '';
+    FORM.catatan.value = prefill.catatan || '';
     FORM.action = '<?= BASEURL ?>/Wishlist/add';
     document.querySelector('#dialog-title').textContent = 'Tambah Wishlist';
     document.querySelector('#btn-submit').value = 'Tambah';
@@ -134,6 +146,14 @@
 
   document.querySelectorAll('.wishlist-card').forEach(card => {
     card.addEventListener('click', () => openEdit(card.dataset));
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initWishlistShareTarget({
+      onData: (parsed) => {
+        openAdd(parsed);
+      }
+    });
   });
 </script>
 <?php $Controller->view('components/webmcp', $data); ?>
