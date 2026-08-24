@@ -13,7 +13,6 @@ html/application/logs/*
 .zsh_history
 *.log
 log/*
-composer.lock
 
 # html/vendor/
 .databases/*
