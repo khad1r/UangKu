@@ -90,7 +90,6 @@ class error extends Controller
         BASEURL . "/assets/img/icon.ico",
         BASEURL . "/assets/img/logo_512.png",
         BASEURL . "/assets/img/qris_contoh.png",
-        BASEURL . "/manifest.json",
         "/ShowError/notConnected",
         // "https://code.highcharts.com/stock/highstock.js"
       ]
