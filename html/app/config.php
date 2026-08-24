@@ -17,6 +17,13 @@ $protocol = $is_https ? 'https://' : 'http://';
 $hostname = getenv('HOSTNAME') ?: $_SERVER['HTTP_HOST']; // fallback jika getenv kosong
 define('HOSTNAME', $hostname);
 define('BASEURL', $protocol . $hostname);
+define('ALLOWED_HOSTS', array_values(array_filter(array_unique([
+  'localhost',
+  '127.0.0.1',
+  '::1',
+  $hostname,
+  ...explode(',', getenv('ALLOWED_HOSTS') ?: '')
+]))));
 unset($is_https, $protocol, $hostname);
 // define('BASEURL', 'http://localhost');
 define('WEB_TITLE', 'UangKu');

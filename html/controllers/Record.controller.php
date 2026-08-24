@@ -9,6 +9,7 @@ use App\Route;
 use Http\Discovery\Psr17Factory;
 use Mcp\Server;
 use Mcp\Server\Transport\StreamableHttpTransport;
+use Mcp\Server\Transport\Http\Middleware\DnsRebindingProtectionMiddleware;
 use Mcp\Server\Session\FileSessionStore;
 use Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
@@ -187,6 +188,7 @@ class Record extends Controller
     setCacheControl(0);
     validateApi($rate_limit_max_request, $rate_limit_interval);
     http_response_code(200);
+    $resp = [];
     try {
       sanitize_input($_GET);
       if (isset($_GET['rekening']))
@@ -273,7 +275,12 @@ class Record extends Controller
 
       ->build();
 
-    $transport = new StreamableHttpTransport($request);
+    $transport = new StreamableHttpTransport(
+      $request,
+      middleware: [
+        new DnsRebindingProtectionMiddleware(allowedHosts: ALLOWED_HOSTS),
+      ]
+    );
 
 
     $response = $server->run($transport);
