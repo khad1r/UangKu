@@ -24,3 +24,12 @@
     # RewriteCond %{REQUEST_URI} !^/index\.php
     RewriteRule ^(.*)$ index.php/$1 [L,QSA]
 </IfModule>
+
+<IfModule mod_headers.c>
+    # Prevent caching for manifest and service worker
+    <FilesMatch "^(manifest\.json|sw\.js)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+</IfModule>

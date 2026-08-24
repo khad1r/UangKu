@@ -57,6 +57,12 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', e => {
+  // Always fetch manifest.json directly from network
+  if (e.request.url.includes('manifest.json')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
   // Handle Share Target file & link/text submission
   if (e.request.url.includes('pwa-share-handle')) {
     e.respondWith(
