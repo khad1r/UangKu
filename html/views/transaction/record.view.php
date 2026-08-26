@@ -398,7 +398,7 @@
   });
   FORM.kuantitas.addEventListener('keyup', function(e) {
     hitung()
-  })
+  });
   [FORM.nominal, FORM.nominal_asing].forEach(el => {
     // el.addEventListener('change', () => hitung());
     el.addEventListener('keyup', function(e) {
