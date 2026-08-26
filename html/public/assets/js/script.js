@@ -80,6 +80,19 @@ function showAlert(message, type = 'primary', title = null) {
 }
 
 const formattedNumber = new Intl.NumberFormat('id-ID')
+// Helper to format as Indonesian Currency/Number
+const formatID = (val) => {
+  if (!val && val !== 0) return '';
+  let parts = val.toString().replace(/[^0-9,]/g, '').split(',');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return parts.length > 1 ? parts[0] + ',' + parts[1].substring(0, 4) : parts[0];
+};
+const processValue = (input) => {
+  // Convert Indonesian format (1.250,50) to standard Float (1250.50)
+  if (!input || !input.value) return 0;
+  let raw = input.value.replace(/\./g, '').replace(',', '.');
+  return parseFloat(raw) || 0;
+};
 let formatDate = ($date, options) => {
   return (new Intl.DateTimeFormat("id", options)).format($date)
 }

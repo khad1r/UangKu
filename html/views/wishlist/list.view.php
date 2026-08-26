@@ -44,7 +44,7 @@
   <?php endif; ?>
 </div>
 
-<dialog id="wishlist-dialog">
+<dialog id="wishlist-dialog" class="p-2">
   <div class="dialog-header mb-2">
     <h4 class="fw-bold w-100 text-center" id="dialog-title">Tambah Wishlist</h4>
     <form method="dialog">
@@ -61,7 +61,10 @@
       </div>
       <div class="form-group">
         <label>Estimasi Harga</label>
-        <input type="number" name="harga_estimasi" class="form-control mt-1 border-bottom border-primary mb-2" autocomplete="off" placeholder="Estimasi Harga (Rp)">
+        <div class="input-group mt-1 mb-2">
+          <span class="input-group-text">Rp.</span>
+          <input type="text" name="harga_estimasi" class="form-control border-bottom border-primary" autocomplete="off" placeholder="Estimasi Harga" inputmode="numeric" id="harga_estimasi">
+        </div>
         <?php InputValidator('harga_estimasi') ?>
       </div>
       <div class="form-group">
@@ -91,6 +94,30 @@
   const DELETE_FORM = document.querySelector('#delete-form');
   const WISHLIST_DATA = <?= json_encode($data['items']) ?>;
 
+  FORM.harga_estimasi.addEventListener('keyup', function(e) {
+    let v = e.target.value.replace(/[^0-9,]/g, '');
+    const commaCount = (v.match(/,/g) || []).length;
+    if (commaCount > 1) {
+      v = v.lastIndexOf(',') !== -1 ? v.substring(0, v.lastIndexOf(',')) : v;
+    }
+    e.target.value = formatID(v);
+  });
+
+  FORM.addEventListener('submit', async e => {
+    await e.preventDefault();
+    const btnSubmit = document.querySelector('#btn-submit');
+    if (btnSubmit.disabled) return;
+    btnSubmit.disabled = true;
+    btnSubmit.value = "Memproses...";
+    await showAlert('Memproses....', 'warning');
+
+    if (FORM.harga_estimasi.value) {
+      FORM.harga_estimasi.value = processValue(FORM.harga_estimasi);
+    }
+
+    e.currentTarget.submit();
+  });
+
   MODAL.addEventListener('click', function(event) {
     const rect = MODAL.getBoundingClientRect();
     const isInDialog = (rect.top <= event.clientY && event.clientY <= rect.top + rect.height &&
@@ -102,12 +129,14 @@
     FORM.reset();
     FORM.id.value = '';
     FORM.nama.value = prefill.nama || '';
-    FORM.harga_estimasi.value = prefill.harga_estimasi || '';
+    FORM.harga_estimasi.value = prefill.harga_estimasi ? formatID(prefill.harga_estimasi) : '';
     FORM.link.value = prefill.link || '';
     FORM.catatan.value = prefill.catatan || '';
     FORM.action = '<?= BASEURL ?>/Wishlist/add';
+    const btnSubmit = document.querySelector('#btn-submit');
+    btnSubmit.disabled = false;
+    btnSubmit.value = 'Tambah';
     document.querySelector('#dialog-title').textContent = 'Tambah Wishlist';
-    document.querySelector('#btn-submit').value = 'Tambah';
     document.querySelector('#btn-delete').classList.add('hide');
     document.querySelector('#hr-delete').classList.add('hide');
     MODAL.showModal();
@@ -117,12 +146,14 @@
     FORM.reset();
     FORM.id.value = item.id;
     FORM.nama.value = item.nama || '';
-    FORM.harga_estimasi.value = item.harga_estimasi || '';
+    FORM.harga_estimasi.value = item.harga_estimasi ? formatID(item.harga_estimasi) : '';
     FORM.link.value = item.link || '';
     FORM.catatan.value = item.catatan || '';
     FORM.action = `<?= BASEURL ?>/Wishlist/edit/${item.id}`;
+    const btnSubmit = document.querySelector('#btn-submit');
+    btnSubmit.disabled = false;
+    btnSubmit.value = 'Simpan';
     document.querySelector('#dialog-title').textContent = 'Edit Wishlist';
-    document.querySelector('#btn-submit').value = 'Simpan';
     document.querySelector('#btn-delete').classList.remove('hide');
     document.querySelector('#hr-delete').classList.remove('hide');
     MODAL.showModal();

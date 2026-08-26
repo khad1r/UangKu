@@ -399,14 +399,6 @@
   FORM.kuantitas.addEventListener('keyup', function(e) {
     hitung()
   })
-  // Helper to format as Indonesian Currency/Number
-  const formatID = (val) => {
-    if (!val) return '';
-    // Split parts to handle decimals separately
-    let parts = val.toString().replace(/[^0-9,]/g, '').split(',');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return parts.length > 1 ? parts[0] + ',' + parts[1].substring(0, 4) : parts[0];
-  };
   [FORM.nominal, FORM.nominal_asing].forEach(el => {
     // el.addEventListener('change', () => hitung());
     el.addEventListener('keyup', function(e) {
@@ -425,11 +417,6 @@
   });
   FORM.addEventListener('submit', async e => {
     await e.preventDefault()
-    const processValue = (input) => {
-      // Convert Indonesian format (1.250,50) to standard Float (1250.50)
-      let raw = input.value.replace(/\./g, '').replace(',', '.');
-      return parseFloat(raw) || 0;
-    };
     await showAlert('Memproses....', 'warning')
     FORM.record.disabled = true;
     FORM.record.value = "Memproses...";
