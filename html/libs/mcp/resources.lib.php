@@ -30,7 +30,7 @@ class resources
       3. Call get_kelompok() — same rule: call it fresh before every transaction-recording turn, never from memory.
       4. Build recap table
       5. Show recap to user → wait for "oke" (or correction)
-      6. Execute uangku_catat_transaksi_masal
+      6. Execute catat_transaksi
       7. Brief confirmation
 
       NEVER record anything before user confirms.
@@ -129,7 +129,7 @@ class resources
       === RECEIPT / MULTI-ITEM RULES ===
 
       - Receipt with multiple items → split per item, NEVER sum into one total
-      - Use uangku_catat_transaksi_masal with autoRelate: true for same-receipt items
+      - Use catat_transaksi with autoRelate: true for same-receipt items
       - Item name: GENERALIZE (e.g. "Roti Tawar" not "Sari Roti Tawar Soft Rasa Susu Jumbo 540g")
       - Full SKU detail → put in keterangan field
 
