@@ -15,23 +15,47 @@ class transaksi
    */
   #[McpTool(
     name: 'catat_transaksi',
-    description: 'Mencatat transaksi keuangan baru (Pemasukan, Pengeluaran, atau Pindah Buku)
-    ATURAN PENTING:
-    1. STRUK BELANJA: Jika input berupa struk dengan banyak item, JANGAN dicatat sebagai satu total. Pecah menjadi item individu. Catat item pertama, ambil ID-nya dari response, lalu gunakan ID tersebut sebagai "relasi_transaksi" untuk item-item berikutnya dalam struk yang sama.
-    2. TRANSAKSI HARTA:
-      - Pastikan terlebih dahulu terdapat transaksi pengeluaran dari rekening untuk membeli lalu buatkan transaksi pemasukan ke rekening harta dengan nilai barang yang telah dibeli. Relasikan transaksi Harta ke Transaksi Pembelian
-      - Bila penjualan maka Pengeluaran di Rekening Harta Terkait, lalu pemasukan
-    3. NOMINAL ASING: Gunakan "nominal_asing" jika transaksi melibatkan Emas (dalam Gram) atau mata uang asing seperti USD (Paypal).
-    4. VALIDASI: WAJIB panggil tool "get_rekening" ULANG tepat sebelum memanggil tool ini, SETIAP KALI, walaupun sudah pernah memanggilnya sebelumnya di percakapan ini. DILARANG memakai ID rekening dari ingatan/hasil pemanggilan sebelumnya — daftar rekening bisa berubah (ditambah/dinonaktifkan) kapan saja, dan ID yang salah akan diam-diam memindahkan uang ke rekening yang salah.
-    5. DISKON:
-      - Jika diskon per item: Catat harga NETTO (setelah diskon).
-      - Jika diskon total di akhir struk: Gunakan metode PRORATA (bagi diskon ke setiap item secara proporsional) agar total pengeluaran sesuai dengan nominal yang dibayarkan di kasir.
-    6. ASSET LOGIC:
-      - Pembelian = Pengeluaran (rekening uang) + Pemasukan (Harta, harta=true, isi penyusutan_bunga), relasikan keduanya.
-      - Penjualan/Pembuangan = Pengeluaran (Harta, harta=true) + Pemasukan (rekening uang, bila ada hasil jual), relasikan keduanya.
+    description: 'Mencatat transaksi keuangan baru (Pemasukan, Pengeluaran, atau Pindah Buku) ke sistem UangKu.
+
+    ⚠️ RESTRICTION & MANDATORY WORKFLOW (WAJIB DIBACA & DIIKUTI):
+    1. WAJIB MEMAHAMI SYSTEM PROMPT: AI wajib selalu mengetahui dan mengikuti panduan lengkap dari resource system_prompt (uangku://system_prompt dari resources.lib.php).
+    2. DILARANG EKSEKUSI LANGSUNG: DILARANG memanggil tool ini pada giliran pertama saat user baru memberikan rincian/struk belanja atau sebelum konfirmasi user.
+    3. TAHAPAN WAJIB SEBELUM EKSEKUSI:
+       a. Panggil "get_rekening" & "get_kelompok" secara fresh pada setiap turn (DILARANG pakai ID dari ingatan/turn sebelumnya).
+       b. Susun data transaksi dan TAMPILKAN FORMAT REKAP ke user dalam raw CODE BLOCK (```).
+       c. TUNGGU KONFIRMASI EKSPLISIT dari user (misal: "oke", "ya", "gas", "simpan", dsb.) atau koreksi dari user.
+       d. Baru panggil tool "catat_transaksi" ini SETELAH user memberikan konfirmasi persetujuan.
+
+    FORMAT REKAP (SEBELUM EXECUTION) YANG WAJIB DITAMPILKAN KE USER:
+    Tampilkan rekap dalam raw CODE BLOCK (```, BUKAN rendered markdown table) dengan perataan vertikal karakter | yang rapi:
+    ```
+    | Barang          | Nominal | Qty | Rekening        | Kelompok    | Rutin | Tanggal    |
+    | Kopi Susu       | 18.000  | 1   | ShopeePay (8)   | Konsumsi    | ✓     | 2026-08-23 |
+    | Roti Cokelat    | 12.000  | 1   | ShopeePay (8)   | Konsumsi    | ✓     | 2026-08-23 |
+
+    Auto relate: ✓
+    Attachment: x
+    ```
+    Aturan Format Rekap:
+    - Kolom: | Barang | Nominal | Qty | Rekening | Kelompok | Rutin | Tanggal |
+    - Kolom Rekening WAJIB menyertakan nama rekening beserta ID dari get_rekening(), contoh: "ShopeePay (8)".
+    - Kolom harus sejajar secara vertikal (semua karakter | lurus).
+    - Jeda satu baris setelah tabel lalu cantumkan "Auto relate: x/✓" dan "Attachment: x/✓" (gunakan simbol ✓ untuk true dan x untuk false).
+    - Tuliskan catatan asumsi singkat di bawah code block jika ada (misal: prorata diskon atau default account).
+
+    ATURAN BISNIS PENTING:
+    1. STRUK BELANJA: Jika input berupa struk dengan banyak item, JANGAN dicatat sebagai satu total. Pecah menjadi item individu dalam array "data". Beri parameter "autoRelate: true" agar item-item otomatis berelasi dengan item pertama.
+    2. TRANSAKSI HARTA (ASET):
+      - Pembelian = Pengeluaran (rekening uang, harta=false) + Pemasukan (rekening Harta, harta=true, isi penyusutan_bunga), relasikan keduanya via relasi_transaksi.
+      - Penjualan/Pembuangan = Pengeluaran (rekening Harta, harta=true) + Pemasukan (rekening uang, bila ada hasil jual), relasikan keduanya.
       - DILARANG: harta=true pada Pengeluaran dari rekening uang biasa.
       - DILARANG: Pindah Buku untuk Harta.
-    7. KURS LOGIC: Perubahan nilai tukar dicatat sebagai Pemasukan/Pengeluaran pada kolom nominal (selisihnya), dengan nominal_asing = 0.',
+    3. NOMINAL ASING: Gunakan "nominal_asing" jika transaksi melibatkan Emas (dalam Gram) atau mata uang asing seperti USD (Paypal).
+    4. VALIDASI: WAJIB panggil tool "get_rekening" ULANG tepat sebelum menyusun rekap dan memanggil tool ini, SETIAP KALI.
+    5. DISKON:
+      - Jika diskon per item: Catat harga NETTO (setelah diskon).
+      - Jika diskon total di akhir struk: Gunakan metode PRORATA (bagi diskon ke setiap item secara proporsional).
+    6. KURS LOGIC: Perubahan nilai tukar dicatat sebagai Pemasukan/Pengeluaran pada kolom nominal (selisihnya), dengan nominal_asing = 0.',
     annotations: new ToolAnnotations(
       readOnlyHint: false,
       destructiveHint: false,
@@ -49,7 +73,7 @@ class transaksi
     properties: [
       'data' => [
         'type' => 'array',
-        'description' => 'Daftar transaksi yang akan dicatat. Berupa array of objects berisi detail transaksi.',
+        'description' => 'Daftar transaksi yang akan dicatat. Berupa array of objects berisi detail transaksi. WAJIB pastikan user sudah melihat rekap dan memberikan konfirmasi sebelum mengeksekusi tool ini.',
         'items' => [
           'type' => 'object',
           'properties' => [
