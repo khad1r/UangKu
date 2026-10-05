@@ -62,7 +62,7 @@
     </table>
   </div>
 </div>
-<dialog>
+<dialog style="width: min(88dvw, 900px); max-width: 95vw;">
   <div class="dialog-header mb-2">
     <h4 class="fw-bold w-100 text-center" id="dialog-title"></h4>
     <form method="dialog">
@@ -86,6 +86,31 @@
       <a id="attachment" href="#" target="_blank">
         <canvas id="preview-canvas" style="display:none;"></canvas>
       </a>
+    </div>
+    <div class="col-12 mt-3" id="dialog-related-section" style="display:none;">
+      <hr>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-bold text-primary mb-0"><i class="fas fa-layer-group"></i> Transaksi Terkait (<span id="dialog-related-count">0</span>)</h6>
+        <div id="dialog-related-total-badge"></div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle text-center mb-0" id="dialog-related-table" style="font-size: 0.85em;">
+          <thead class="table-secondary">
+            <tr>
+              <th>ID</th>
+              <th>Tipe</th>
+              <th>Barang / Judul</th>
+              <th>Rekening</th>
+              <th>Nominal</th>
+              <th>Qty</th>
+              <th>Total</th>
+              <th>Keterangan</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot class="fw-bold bg-light"></tfoot>
+        </table>
+      </div>
     </div>
   </div>
 </dialog>
@@ -578,13 +603,27 @@
     }
   });
 
+  const relatedSection = MODAL.querySelector('#dialog-related-section');
+  const relatedTbody = MODAL.querySelector('#dialog-related-table tbody');
+  const relatedTfoot = MODAL.querySelector('#dialog-related-table tfoot');
+  const relatedCount = MODAL.querySelector('#dialog-related-count');
+  const relatedTotalBadge = MODAL.querySelector('#dialog-related-total-badge');
+
   // Double click to edit
   TABLE.querySelector('tbody').addEventListener('dblclick', function(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
     const row = DT_TABLE.row(tr).data();
+    if (!row) return;
+
     MODAL.querySelector('#dialog-title').textContent = row.barang;
-    MODAL.querySelector('.dialog-body').children[0].innerHTML = ''
+    MODAL.querySelector('.dialog-body').children[0].innerHTML = '';
+
+    // Reset related section
+    relatedSection.style.display = 'none';
+    relatedTbody.innerHTML = '';
+    relatedTfoot.innerHTML = '';
+
     tr.childNodes.forEach(td => {
       if (td.dataset.label == 'Keterangan') return;
       const divEl = document.createElement('div');
@@ -595,14 +634,17 @@
         <div>${td.innerHTML}</div>
       `
       MODAL.querySelector('.dialog-body').children[0].append(divEl);
-    })
+    });
+
     const divEl = document.createElement('div');
     divEl.classList.add('d-flex', 'flex-row', 'justify-content-between', 'w-100', 'pt-3', 'px-5');
-    divEl.innerHTML = /* HTML */ `<pre class="no-decoration" style="white-space: pre-wrap;">${row.keterangan}</pre>`
+    divEl.innerHTML = /* HTML */ `<pre class="no-decoration" style="white-space: pre-wrap;">${row.keterangan}</pre>`;
     MODAL.querySelector('.dialog-body').children[0].append(divEl);
+
     // FORM.review.textContent = row.review;
     FORM.review.value = row.review;
-    FORM.id.value = row.id
+    FORM.id.value = row.id;
+
     const canvas = document.querySelector('#preview-canvas');
     const ctx = canvas.getContext('2d');
     canvas.style.display = 'none';
@@ -641,9 +683,89 @@
     }
 
     MODAL.querySelector('a#attachment').href = row.attachment;
-    MODAL.showModal()
+    MODAL.showModal();
 
-    // window.location.href = `<?= BASEURL ?>/Transaction/detail/${row.id}`;
+    // Fetch related transactions
+    fetch(`<?= BASEURL ?>/Transaction/related/${row.id}`)
+      .then(res => res.json())
+      .then(result => {
+        if (result.status === 'success' && result.count > 1) {
+          relatedCount.textContent = result.count;
+          relatedTotalBadge.innerHTML = `<span class="badge bg-primary fs-6">Grand Total: Rp ${(+result.total).toLocaleString('id')}</span>`;
+
+          const typeColor = { 'Pengeluaran': 'danger', 'Pemasukan': 'success', 'Pindah Buku': 'warning' };
+
+          let tbodyHtml = '';
+          result.data.forEach(item => {
+            const isCurrent = (item.id == row.id);
+            const currentHighlight = isCurrent ? 'table-primary fw-bold' : '';
+            const currentTag = isCurrent ? ' <span class="badge bg-primary">Saat Ini</span>' : '';
+            const hartaBadge = item.harta == 1 ? ' <span class="badge bg-danger rounded-pill">Properti</span>' : '';
+            const color = typeColor[item.jenis_transaksi] || 'secondary';
+
+            let rekeningHtml = '';
+            if (item.nama_rekening_sumber) {
+              rekeningHtml += `<div class="text-danger small"><i class="fas fa-sign-out-alt"></i> ${item.nama_rekening_sumber}</div>`;
+            }
+            if (item.nama_rekening_masuk) {
+              rekeningHtml += `<div class="text-success small"><i class="fas fa-sign-in-alt"></i> ${item.nama_rekening_masuk}</div>`;
+            }
+
+            tbodyHtml += `
+              <tr class="${currentHighlight}">
+                <td><code>${item.formatted_id}</code>${currentTag}</td>
+                <td><span class="badge bg-${color}">${item.jenis_transaksi}</span></td>
+                <td class="text-start"><strong>${item.barang}</strong>${hartaBadge}</td>
+                <td class="text-start">${rekeningHtml}</td>
+                <td class="text-end">Rp ${(+item.nominal).toLocaleString('id')}</td>
+                <td>${item.kuantitas}</td>
+                <td class="text-end fw-bold">Rp ${(+item.total_idr).toLocaleString('id')}</td>
+                <td class="text-start small text-muted">${item.keterangan || '-'}</td>
+              </tr>
+            `;
+          });
+
+          relatedTbody.innerHTML = tbodyHtml;
+
+          // Footer summary
+          let tfootHtml = '';
+          if (result.total_in > 0 && result.total_out > 0) {
+            tfootHtml = `
+              <tr>
+                <td colspan="6" class="text-end">Total Pemasukan:</td>
+                <td class="text-end text-success">Rp ${(+result.total_in).toLocaleString('id')}</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td colspan="6" class="text-end">Total Pengeluaran:</td>
+                <td class="text-end text-danger">Rp ${(+result.total_out).toLocaleString('id')}</td>
+                <td></td>
+              </tr>
+              <tr class="table-secondary">
+                <td colspan="6" class="text-end">NET TOTAL:</td>
+                <td class="text-end text-primary">Rp ${(+result.total).toLocaleString('id')}</td>
+                <td></td>
+              </tr>
+            `;
+          } else {
+            tfootHtml = `
+              <tr class="table-secondary">
+                <td colspan="6" class="text-end">TOTAL KESELURUHAN:</td>
+                <td class="text-end text-primary">Rp ${(+result.total).toLocaleString('id')}</td>
+                <td></td>
+              </tr>
+            `;
+          }
+          relatedTfoot.innerHTML = tfootHtml;
+          relatedSection.style.display = 'block';
+        } else {
+          relatedSection.style.display = 'none';
+        }
+      })
+      .catch(err => {
+        console.error('Gagal memuat relasi:', err);
+        relatedSection.style.display = 'none';
+      });
   });
   MODAL.addEventListener('click', function(event) {
     var rect = MODAL.getBoundingClientRect();

@@ -24,6 +24,35 @@ class Transaksi extends Database
     $data['harta'] = $data['harta'] === 1;
     return $data;
   }
+  public function getRelatedFamily(string|int $id)
+  {
+    $id = intval($id);
+    return $this
+      ->query(<<<SQL
+        SELECT
+          t.*,
+          printf('%04d', t.id) AS formatted_id,
+          rs.nama AS nama_rekening_sumber,
+          rm.nama AS nama_rekening_masuk,
+          COALESCE(NULLIF(rs.nominal_asing, ''), NULLIF(rm.nominal_asing, ''), '') AS mata_uang,
+          (t.nominal * t.kuantitas) AS total_idr
+        FROM {$this->table} t
+        LEFT JOIN REKENING rs ON t.rekening_sumber = rs.id
+        LEFT JOIN REKENING rm ON t.rekening_masuk = rm.id
+        WHERE
+          t.id = :id
+          OR t.relasi_transaksi = :id
+          OR (
+            t.id = (SELECT relasi_transaksi FROM {$this->table} WHERE id = :id AND relasi_transaksi IS NOT NULL)
+          )
+          OR (
+            t.relasi_transaksi = (SELECT relasi_transaksi FROM {$this->table} WHERE id = :id AND relasi_transaksi IS NOT NULL)
+          )
+        ORDER BY t.id ASC
+      SQL)
+      ->bind('id', $id)
+      ->resultSet();
+  }
   public function getAll()
   {
     $rows = $this

@@ -81,6 +81,41 @@ class Transaction extends Controller
     $this->view('templates/template', $data);
   }
 
+  public function related($id = '')
+  {
+    header("Content-Type: application/json");
+    setCacheControl(0);
+    try {
+      sanitize_input($id);
+      if (empty($id)) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'ID tidak ditemukan']);
+        exit;
+      }
+      $model = new Transaksi();
+      $rows = $model->getRelatedFamily($id);
+
+      $totalIn = $totalOut = $totalAll = 0;
+      foreach ($rows as $row) {
+        $sub = floatval($row['total_idr']);
+        $totalAll += $sub;
+        $row['jenis_transaksi'] === 'Pemasukan' ? ($totalIn += $sub) : ($totalOut += $sub);
+      }
+
+      echo json_encode([
+        'status' => 'success',
+        'count' => count($rows),
+        'total' => $totalAll,
+        'total_in' => $totalIn,
+        'total_out' => $totalOut,
+        'data' => $rows
+      ]);
+    } catch (\Throwable $th) {
+      http_response_code(500);
+      echo json_encode(['status' => 'error', 'message' => $th->getMessage()]);
+    }
+    exit;
+  }
 
   public function datatable()
   {
