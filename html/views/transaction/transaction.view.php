@@ -83,9 +83,20 @@
           <button role="button" type="button" onclick="deleteRekeing()" class="btn w-100" style="--primary-color:var(--red-color)" id="btn-delete">Hapus <i class="fas fa-trash-alt"></i></button>
         </div>
       </form>
-      <a id="attachment" href="#" target="_blank">
-        <canvas id="preview-canvas" style="display:none;"></canvas>
-      </a>
+      <div id="attachment-gallery-container" class="mt-2 text-center" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <small class="fw-bold text-secondary" id="attachment-counter"><i class="fas fa-paperclip"></i> Lampiran (<span id="attachment-idx">1</span>/<span id="attachment-total">1</span>)</small>
+          <a id="attachment-open-btn" href="#" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
+            Buka File <i class="fas fa-external-link-alt"></i>
+          </a>
+        </div>
+        <div class="border rounded p-1 bg-light position-relative" style="min-height: 80px; overflow: hidden;">
+          <a id="attachment" href="#" target="_blank">
+            <canvas id="preview-canvas" class="img-fluid" style="display:none; max-height: 380px; margin: 0 auto;"></canvas>
+          </a>
+        </div>
+        <div id="attachment-selector" class="d-flex flex-wrap gap-1 justify-content-center mt-2" style="display:none;"></div>
+      </div>
     </div>
     <div class="col-12 mt-3" id="dialog-related-section" style="display:none;">
       <hr>
@@ -522,8 +533,12 @@
         'data': 'keterangan',
         'orderable': false,
         'render': (item, type, data, meta) => {
+          const attachments = Array.isArray(data.attachment) ? data.attachment : (data.attachment ? [data.attachment] : []);
+          const attachBadge = attachments.length > 1
+            ? `<span class="badge bg-warning text-dark me-1"><i class="fas fa-paperclip"></i> ${attachments.length}</span>`
+            : (attachments.length === 1 ? '<span class="text-warning me-1"><i class="fas fa-paperclip"></i></span>' : '');
           return /* HTML */ `
-            <div class="small w-lg-50 text-wrap line-clamp-4"><span class="fw-bold text-warning">${data.attachment? '<i class="fas fa-paperclip"></i>' : ''}</span>${data.keterangan}</div>
+            <div class="small w-lg-50 text-wrap line-clamp-4">${attachBadge}${data.keterangan}</div>
             <div class="small w-lg-50 text-wrap line-clamp-4 text-secondary">${data.review ?? ''}</div>
             `
         }
@@ -647,27 +662,46 @@
 
     const canvas = document.querySelector('#preview-canvas');
     const ctx = canvas.getContext('2d');
+    const galleryContainer = MODAL.querySelector('#attachment-gallery-container');
+    const attachmentSelector = MODAL.querySelector('#attachment-selector');
+    const attachmentIdxEl = MODAL.querySelector('#attachment-idx');
+    const attachmentTotalEl = MODAL.querySelector('#attachment-total');
+    const openBtn = MODAL.querySelector('#attachment-open-btn');
+    const attachmentLink = MODAL.querySelector('a#attachment');
+
     canvas.style.display = 'none';
-    if (row.attachment) {
-      const loadingTask = pdfjsLib.getDocument(row.attachment);
-      loadingTask.promise.then(function(pdf) {
-        pdf.getPage(1).then(function(page) {
-          const scale = 1.5;
-          const viewport = page.getViewport({
-            scale: scale
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (galleryContainer) galleryContainer.style.display = 'none';
+    if (attachmentSelector) {
+      attachmentSelector.innerHTML = '';
+      attachmentSelector.style.display = 'none';
+    }
+
+    const attachments = Array.isArray(row.attachment) ? row.attachment : (row.attachment ? [row.attachment] : []);
+
+    function renderAttachment(url) {
+      canvas.style.display = 'none';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!url) return;
+
+      if (attachmentLink) attachmentLink.href = url;
+      if (openBtn) openBtn.href = url;
+
+      if (url.toLowerCase().endsWith('.pdf') || url.includes('/pdf')) {
+        const loadingTask = pdfjsLib.getDocument(url);
+        loadingTask.promise.then(function(pdf) {
+          pdf.getPage(1).then(function(page) {
+            const scale = 1.5;
+            const viewport = page.getViewport({ scale: scale });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            page.render({ canvasContext: ctx, viewport: viewport });
+            canvas.style.display = 'block';
           });
-
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-
-          const renderContext = {
-            canvasContext: ctx,
-            viewport: viewport
-          };
-          page.render(renderContext);
-          canvas.style.display = 'block';
+        }).catch(e => {
+          console.warn("PDF render error", e);
         });
-      }).catch(e => {
+      } else {
         const img = new Image();
         img.onload = () => {
           const maxWidth = 600;
@@ -675,14 +709,43 @@
           canvas.width = img.width * scale;
           canvas.height = img.height * scale;
           canvas.style.display = "block";
-
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         };
-        img.src = row.attachment;
-      });
+        img.src = url;
+      }
     }
 
-    MODAL.querySelector('a#attachment').href = row.attachment;
+    if (attachments.length > 0) {
+      if (galleryContainer) galleryContainer.style.display = 'block';
+      if (attachmentTotalEl) attachmentTotalEl.textContent = attachments.length;
+      if (attachmentIdxEl) attachmentIdxEl.textContent = '1';
+
+      if (attachments.length > 1 && attachmentSelector) {
+        attachmentSelector.style.display = 'flex';
+        attachments.forEach((attUrl, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `btn btn-sm ${idx === 0 ? 'btn-primary' : 'btn-outline-secondary'} py-0 px-2`;
+          btn.style.fontSize = '0.75rem';
+          btn.textContent = `File ${idx + 1}`;
+          btn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            attachmentSelector.querySelectorAll('button').forEach(b => {
+              b.className = 'btn btn-sm btn-outline-secondary py-0 px-2';
+              b.style.fontSize = '0.75rem';
+            });
+            btn.className = 'btn btn-sm btn-primary py-0 px-2';
+            btn.style.fontSize = '0.75rem';
+            if (attachmentIdxEl) attachmentIdxEl.textContent = (idx + 1).toString();
+            renderAttachment(attUrl);
+          });
+          attachmentSelector.appendChild(btn);
+        });
+      }
+
+      renderAttachment(attachments[0]);
+    }
+
     MODAL.showModal();
 
     // Fetch related transactions

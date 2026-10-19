@@ -349,7 +349,12 @@ class Transaksi extends Database
       [
         'db' => "attachment",
         'dt' => 'attachment',
-        'formatter' => fn($d, $row) => !empty($d) ? BASEURL . "/uploads/$d" : null
+        'formatter' => function ($d, $row) {
+          if (empty($d) || $d === 'uploading') return null;
+          $decoded = json_decode($d, true);
+          $files = is_array($decoded) ? $decoded : [$d];
+          return array_map(fn($f) => BASEURL . "/uploads/" . $f, $files);
+        }
       ],
     ];
     if ((isset($data['id_rekening'])) && isset($data['rekening_is_harta']) && $data['rekening_is_harta'] == 1) {

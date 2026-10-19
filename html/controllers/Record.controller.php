@@ -52,7 +52,7 @@ class Record extends Controller
           'kelompok'          => $post['kelompok'] ?? null,
           'tanggal'           => $post['tanggal'] ?? null,
           'relasi_transaksi'  => $post['relasi_transaksi'] ?? null,
-          'attachment'        => $_FILES['attachment']['size'] > 0 ? $this->handleFileUpload('attachment') : null,
+          'attachment'        => $this->hasUploadedFile('attachment') ? $this->handleFileUpload('attachment') : null,
           'keterangan'        => $post['keterangan'] ?? null,
           // 'review'            => $post['review'] ?? null,
         ];
@@ -140,10 +140,21 @@ class Record extends Controller
       }
     }
 
+    $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+      || (isset($_POST['ajax']) && $_POST['ajax'] == '1')
+      || (str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json'));
+
+    if ($isAjax && !empty($error) && !empty($_POST)) {
+      http_response_code(400);
+      header('Content-Type: application/json');
+      echo json_encode(['success' => false, 'error' => $error]);
+      exit;
+    }
+
     $success = false;
     if (empty($error) && !empty($_POST)) {
       try {
-        if (!isset($_FILES['attachment']) || $_FILES['attachment']['error'] !== UPLOAD_ERR_OK) {
+        if (!$this->hasUploadedFile('attachment')) {
           throw new \Exception('File wajib diunggah atau file bermasalah.');
         }
 
@@ -151,12 +162,23 @@ class Record extends Controller
         if ((new Transaksi())->updateTransaksi(['attachment' => $fileName], ['id' => intval($id)]) > 0) {
           showAlert("Upload Lampiran Berhasil", 'success');
           $success = true;
+          if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Upload Lampiran Berhasil']);
+            exit;
+          }
         } else {
           throw new \Exception("Gagal update data transaksi di database.");
         }
       } catch (\Exception $e) {
         showAlert($e->getMessage(), 'danger');
         $error = $e->getMessage();
+        if ($isAjax) {
+          http_response_code(400);
+          header('Content-Type: application/json');
+          echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+          exit;
+        }
       }
     }
 
@@ -206,30 +228,99 @@ class Record extends Controller
     header('Content-Type: application/json');
     echo json_encode($resp);
   }
+  private function hasUploadedFile($field): bool
+  {
+    if (!isset($_FILES[$field])) return false;
+    if (is_array($_FILES[$field]['name'])) {
+      foreach ($_FILES[$field]['error'] as $i => $err) {
+        if ($err === UPLOAD_ERR_OK && ($_FILES[$field]['size'][$i] ?? 0) > 0) {
+          return true;
+        }
+      }
+      return false;
+    }
+    return ($_FILES[$field]['error'] ?? 1) === UPLOAD_ERR_OK && ($_FILES[$field]['size'] ?? 0) > 0;
+  }
+
   private function handleFileUpload($field, $delete_old = null)
   {
-    $allowed = ['pdf', 'jpg', 'jpeg', 'png'];
-    if (!isset($_FILES[$field]) || $_FILES[$field]['error'] !== UPLOAD_ERR_OK)
-      throw new \Exception('Upload gagal.');
-
-    $file = $_FILES[$field];
-    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    if (!in_array($ext, $allowed))
-      throw new \Exception('tipe file Invalid .');
-
-    $name = uniqid('file_') . '.' . $ext;
-    $path = dirname(__DIR__) . '/uploads/' . $name;
-
-    if (!is_dir(dirname(__DIR__) . '/uploads')) {
-      mkdir(dirname(__DIR__) . '/uploads', 0755, true);
+    $allowed = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+    if (!$this->hasUploadedFile($field)) {
+      throw new \Exception('Upload gagal atau tidak ada file valid.');
     }
 
-    if (move_uploaded_file($file['tmp_name'], $path)) {
-      if (!empty($delete_old)) unlink($delete_old);
-      return $name;
-    } else {
-      throw new \Exception('Upload error.');
+    $uploadDir = dirname(__DIR__) . '/uploads';
+    if (!is_dir($uploadDir)) {
+      mkdir($uploadDir, 0755, true);
     }
+
+    $files = $_FILES[$field];
+    $uploadedNames = [];
+
+    try {
+      if (is_array($files['name'])) {
+        $count = count($files['name']);
+        for ($i = 0; $i < $count; $i++) {
+          if (($files['error'][$i] ?? 1) === UPLOAD_ERR_NO_FILE || ($files['size'][$i] ?? 0) === 0) {
+            continue;
+          }
+          if ($files['error'][$i] !== UPLOAD_ERR_OK) {
+            throw new \Exception('Salah satu file gagal diunggah (Error: ' . $files['error'][$i] . ').');
+          }
+          $ext = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
+          if (!in_array($ext, $allowed)) {
+            throw new \Exception("Tipe file .{$ext} tidak didukung. Gunakan PDF, JPG, JPEG, PNG, atau WEBP.");
+          }
+          $name = uniqid('file_') . '.' . $ext;
+          $path = $uploadDir . '/' . $name;
+          if (!move_uploaded_file($files['tmp_name'][$i], $path)) {
+            throw new \Exception('Gagal menyimpan file upload.');
+          }
+          $uploadedNames[] = $name;
+        }
+      } else {
+        $ext = strtolower(pathinfo($files['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowed)) {
+          throw new \Exception("Tipe file .{$ext} tidak didukung. Gunakan PDF, JPG, JPEG, PNG, atau WEBP.");
+        }
+        $name = uniqid('file_') . '.' . $ext;
+        $path = $uploadDir . '/' . $name;
+        if (!move_uploaded_file($files['tmp_name'], $path)) {
+          throw new \Exception('Gagal menyimpan file upload.');
+        }
+        $uploadedNames[] = $name;
+      }
+    } catch (\Throwable $th) {
+      // Rollback: Hapus file yang sudah sempat ter-upload dalam batch ini jika terjadi kegagalan
+      foreach ($uploadedNames as $partialFile) {
+        $partialPath = $uploadDir . '/' . $partialFile;
+        if (file_exists($partialPath)) {
+          @unlink($partialPath);
+        }
+      }
+      throw $th;
+    }
+
+    if (empty($uploadedNames)) {
+      throw new \Exception('Tidak ada file valid yang berhasil diunggah.');
+    }
+
+    // Delete old attachment files if replacement requested
+    if (!empty($delete_old)) {
+      $oldFiles = json_decode($delete_old, true);
+      if (!is_array($oldFiles)) {
+        $oldFiles = [$delete_old];
+      }
+      foreach ($oldFiles as $old) {
+        $oldFileClean = basename($old);
+        $oldPath = $uploadDir . '/' . $oldFileClean;
+        if (file_exists($oldPath)) {
+          @unlink($oldPath);
+        }
+      }
+    }
+
+    return count($uploadedNames) > 1 ? json_encode($uploadedNames) : $uploadedNames[0];
   }
   public function c9184f37cff01bcdc32dc486ec36961()
   {
