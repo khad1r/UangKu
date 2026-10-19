@@ -389,7 +389,7 @@ class transaksi
           'items' => [
             'type' => 'object',
             'properties' => [
-              'kelompok' => ['type' => 'string'],
+              'kelompok' => ['type' => ['string', 'null']],
               'rutin'    => ['type' => 'boolean', 'description' => 'Status rutin untuk baris hitungan ini'],
               'count'    => ['type' => 'integer']
             ]
