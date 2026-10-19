@@ -23,13 +23,33 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set Docker tags
         run: |
           if [ "${{ github.ref_type }}" == "tag" ]; then
             echo "DOCKER_TAGS=${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_ENV
+            echo "APP_SEMVER=${{ github.ref_name }}" >> $GITHUB_ENV
           else
             echo "DOCKER_TAGS=${{ env.IMAGE_NAME }}:sha-${{ github.sha }},${{ env.IMAGE_NAME }}:latest" >> $GITHUB_ENV
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.17.9")
+            CLEAN_TAG="${LATEST_TAG#v}"
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CLEAN_TAG"
+            MAJOR=${MAJOR:-1}
+            MINOR=${MINOR:-17}
+            PATCH=${PATCH:-9}
+
+            if [ -n "$(git log ${LATEST_TAG}..HEAD --grep="^.*!:" --grep="BREAKING CHANGE" -n 1 --oneline 2>/dev/null)" ]; then
+              RESOLVED_VER="$((MAJOR + 1)).0.0"
+            elif [ -n "$(git log ${LATEST_TAG}..HEAD --grep="^feat" -n 1 --oneline 2>/dev/null)" ]; then
+              RESOLVED_VER="${MAJOR}.$((MINOR + 1)).0"
+            elif [ -n "$(git log ${LATEST_TAG}..HEAD -n 1 --oneline 2>/dev/null)" ]; then
+              RESOLVED_VER="${MAJOR}.${MINOR}.$((PATCH + 1))"
+            else
+              RESOLVED_VER="${MAJOR}.${MINOR}.${PATCH}"
+            fi
+            echo "APP_SEMVER=$RESOLVED_VER" >> $GITHUB_ENV
           fi
 
       - name: Set up Docker Buildx
@@ -53,6 +73,7 @@ jobs:
           platforms: linux/amd64
           build-args: |
             GIT_SHA=${{ github.sha }}
+            APP_SEMVER=${{ env.APP_SEMVER }}
 
       - name: Test Docker image
         if: github.event_name == 'pull_request'
