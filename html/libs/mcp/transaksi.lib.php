@@ -82,13 +82,13 @@ class transaksi
               'enum' => ['Pengeluaran', 'Pemasukan', 'Pindah Buku'],
               'description' => 'Tipe transaksi'
             ],
-            'harta'             => ['type' => 'boolean', 'description' => '
+            'harta' => ['type' => 'boolean', 'description' => '
                 Set TRUE jika rekening yang digunakan adalah rekening Harta (baik Pemasukan maupun Pengeluaran).
                 DILARANG set TRUE pada Pengeluaran dari rekening uang biasa.
               '],
-            'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat, Harus di generalkan jangan terlalu spesifik (contoh: "Makan siang" bukan "Nasi Padang Sari Ratu"), Gunakan Keterangan untuk lainnya.'],
+            'barang' => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat, Harus di generalkan jangan terlalu spesifik (contoh: "Makan siang" bukan "Nasi Padang Sari Ratu"), Gunakan Keterangan untuk lainnya.'],
             'rekening_sumber'   => [
-              'type' => ['integer', 'null'],
+              'anyOf' => [['type' => 'integer'], ['type' => 'null']],
               'description' => 'ID Rekening asal. WAJIB ambil dari hasil pemanggilan get_rekening PALING BARU (turn ini) — JANGAN pernah pakai ID dari ingatan/percakapan sebelumnya. (Wajib jika Pengeluaran/Pindah Buku)
                   ATURAN PINDAH BUKU:
                   1. Tidak boleh sama dengan rekening_masuk.
@@ -96,7 +96,7 @@ class transaksi
                   3. Jika rekening asal adalah mata uang ASING (Emas/USD), maka rekening tujuan HARUS memiliki jenis mata uang asing yang sama.'
             ],
             'rekening_masuk'    => [
-              'type' => ['integer', 'null'],
+              'anyOf' => [['type' => 'integer'], ['type' => 'null']],
               'description' => 'ID Rekening tujuan. WAJIB ambil dari hasil pemanggilan get_rekening PALING BARU (turn ini) — JANGAN pernah pakai ID dari ingatan/percakapan sebelumnya. (Wajib jika Pemasukan/Pindah Buku)
                 ATURAN PINDAH BUKU:
                 1. Tidak boleh sama dengan rekening_sumber.
@@ -108,7 +108,7 @@ class transaksi
               'description' => 'Jumlah Per Kuantitas dalam Rupiah. Untuk selisih kurs: isi selisih nilainya di sini, set nominal_asing = 0.'
             ],
             'nominal_asing'     => [
-              'type' => ['number', 'null'],
+              'anyOf' => [['type' => 'number'], ['type' => 'null']],
               'description' => 'Wajib diisi jika rekening menggunakan mata uang asing (Emas/USD). Masukkan nilai dalam satuan aslinya (misal: 0.1 untuk emas gram, bukan nilai rupiahnya).'
             ],
             'kuantitas'         => ['type' => 'number', 'default' => 1],
@@ -130,7 +130,7 @@ class transaksi
                 7. Masih ragu juga -> FALSE (default non-rutin).'
             ],
             'kelompok'          => [
-              'type' => ['string', 'null'],
+              'anyOf' => [['type' => 'string'], ['type' => 'null']],
               'default' => null,
               'description' => 'Kategori transaksi. Gunakan get_kelompok untuk referensi, boleh buat baru sesuai kebutuhan. Aturan penentuan kelompok:
                 1. OPERASIONAL (Rutin): Gunakan kategori umum (contoh: "Konsumsi", "Transportasi", "Listrik") jika dilakukan untuk kebutuhan dasar harian.
@@ -139,19 +139,19 @@ class transaksi
                 DILARANG ASAL PILIH: Analisis konteks waktu dan tujuan transaksi sebelum menentukan kelompok.'
             ],
             'tanggal'           => [
-              'type' => ['string', 'null'],
+              'anyOf' => [['type' => 'string'], ['type' => 'null']],
               'format' => 'date',
               'description' => 'Format: YYYY-MM-DD'
             ],
             'relasi_transaksi'  => [
-              'type' => ['integer', 'null'],
+              'anyOf' => [['type' => 'integer'], ['type' => 'null']],
               'description' =>
               'ID transaksi utama untuk menghubungkan beberapa item dalam satu struk/kejadian.,
                 - ID ini bisa didapatkan dari response setelah mencatat transaksi melalui tool ini dengan format "✅ Berhasil! Transaksi Id #{id} telah dicatat.".
                 - Jika menginput struk belanja, catat item pertama, dapatkan ID-nya, lalu gunakan ID tersebut di field ini untuk item-item selanjutnya.
         '
             ],
-            'keterangan'        => ['type' => ['string', 'null'], 'default' => '', 'description' => 'Informasi tambahan tentang transaksi. Gunakan untuk detail spesifik yang tidak tercakup di field lain (contoh: nama toko, metode pembayaran, alasan pembelian).'],
+            'keterangan'        => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'default' => '', 'description' => 'Informasi tambahan tentang transaksi. Gunakan untuk detail spesifik yang tidak tercakup di field lain (contoh: nama toko, metode pembayaran, alasan pembelian).'],
             'attachment' => [
               'type' => 'boolean',
               'description' => 'Set TRUE jika transaksi memerlukan/mempunyai struk/nota/bukti transaksi (attachment) yang ingin diunggah oleh user.'
@@ -300,17 +300,17 @@ class transaksi
             ],
             'harta'             => ['type' => 'boolean', 'description' => 'Set TRUE untuk aset permanen (HP, Motor, Emas). Set FALSE untuk habis pakai.'],
             'barang'            => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat.'],
-            'rekening_sumber'   => ['type' => ['integer', 'null'], 'description' => 'ID Rekening asal. WAJIB panggil get_rekening ulang dan pakai hasil terbaru bila mengubah field ini — jangan pakai ID dari ingatan.'],
-            'rekening_masuk'    => ['type' => ['integer', 'null'], 'description' => 'ID Rekening tujuan. WAJIB panggil get_rekening ulang dan pakai hasil terbaru bila mengubah field ini — jangan pakai ID dari ingatan.'],
+            'rekening_sumber'   => ['anyOf' => [['type' => 'integer'], ['type' => 'null']], 'description' => 'ID Rekening asal. WAJIB panggil get_rekening ulang dan pakai hasil terbaru bila mengubah field ini — jangan pakai ID dari ingatan.'],
+            'rekening_masuk'    => ['anyOf' => [['type' => 'integer'], ['type' => 'null']], 'description' => 'ID Rekening tujuan. WAJIB panggil get_rekening ulang dan pakai hasil terbaru bila mengubah field ini — jangan pakai ID dari ingatan.'],
             'nominal'           => ['type' => 'number', 'description' => 'Jumlah dalam Rupiah.'],
-            'nominal_asing'     => ['type' => ['number', 'null'], 'description' => 'Wajib diisi jika mata uang asing (Emas/USD).'],
+            'nominal_asing'     => ['anyOf' => [['type' => 'number'], ['type' => 'null']], 'description' => 'Wajib diisi jika mata uang asing (Emas/USD).'],
             'kuantitas'         => ['type' => 'number', 'default' => 1],
             'penyusutan_bunga'  => ['type' => 'number', 'default' => 0],
             'rutin'             => ['type' => 'boolean', 'default' => false],
-            'kelompok'          => ['type' => ['string', 'null'], 'default' => null],
-            'tanggal'           => ['type' => ['string', 'null'], 'format' => 'date'],
-            'relasi_transaksi'  => ['type' => ['integer', 'null']],
-            'keterangan'        => ['type' => ['string', 'null'], 'default' => ''],
+            'kelompok'          => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'default' => null],
+            'tanggal'           => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'format' => 'date'],
+            'relasi_transaksi'  => ['anyOf' => [['type' => 'integer'], ['type' => 'null']]],
+            'keterangan'        => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'default' => ''],
             'attachment'        => [
               'type' => 'boolean',
               'description' => 'Set TRUE jika ingin mengunggah/mengganti struk/nota/bukti transaksi (attachment) baru.'
@@ -389,7 +389,7 @@ class transaksi
           'items' => [
             'type' => 'object',
             'properties' => [
-              'kelompok' => ['type' => ['string', 'null']],
+              'kelompok' => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'rutin'    => ['type' => 'boolean', 'description' => 'Status rutin untuk baris hitungan ini'],
               'count'    => ['type' => 'integer']
             ]
@@ -435,24 +435,24 @@ class transaksi
               'jenis_transaksi'      => ['type' => 'string'],
               'harta'                => ['type' => 'boolean'],
               'barang'               => ['type' => 'string'],
-              'rekening_sumber'      => ['type' => ['integer', 'null']],
-              'rekening_masuk'       => ['type' => ['integer', 'null']],
+              'rekening_sumber'      => ['anyOf' => [['type' => 'integer'], ['type' => 'null']]],
+              'rekening_masuk'       => ['anyOf' => [['type' => 'integer'], ['type' => 'null']]],
               'nominal'              => ['type' => 'number'],
               'nominal_asing'        => ['type' => 'number'],
               'kuantitas'            => ['type' => 'number'],
               'penyusutan_bunga'     => ['type' => 'number'],
               'rutin'                => ['type' => 'boolean'],
-              'kelompok'             => ['type' => ['string', 'null']],
+              'kelompok'             => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'tanggal'              => ['type' => 'string', 'format' => 'date'],
-              'relasi_transaksi'     => ['type' => ['integer', 'null']],
-              'attachment'           => ['type' => ['string', 'null']],
-              'keterangan'           => ['type' => ['string', 'null']],
-              'review'               => ['type' => ['string', 'null']],
+              'relasi_transaksi'     => ['anyOf' => [['type' => 'integer'], ['type' => 'null']]],
+              'attachment'           => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'keterangan'           => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'review'               => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'created_at'           => ['type' => 'string', 'format' => 'date-time'],
-              'nama_rekening_sumber' => ['type' => ['string', 'null']],
-              'nama_rekening_masuk'  => ['type' => ['string', 'null']],
-              'jenis_budget_sumber'  => ['type' => ['string', 'null']],
-              'jenis_budget_masuk'   => ['type' => ['string', 'null']]
+              'nama_rekening_sumber' => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'nama_rekening_masuk'  => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'jenis_budget_sumber'  => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'jenis_budget_masuk'   => ['anyOf' => [['type' => 'string'], ['type' => 'null']]]
             ]
           ]
         ]
@@ -462,12 +462,12 @@ class transaksi
   #[Schema(
     properties: [
       'startDate'           => [
-        'type' => ['string', 'null'],
+        'anyOf' => [['type' => 'string'], ['type' => 'null']],
         'format' => 'date',
         'description' => 'Format: YYYY-MM-DD'
       ],
       'endDate'           => [
-        'type' => ['string', 'null'],
+        'anyOf' => [['type' => 'string'], ['type' => 'null']],
         'format' => 'date',
         'description' => 'Format: YYYY-MM-DD'
       ],
@@ -510,24 +510,24 @@ class transaksi
               'jenis_transaksi'      => ['type' => 'string'],
               'harta'                => ['type' => 'boolean'],
               'barang'               => ['type' => 'string'],
-              'rekening_sumber'      => ['type' => ['integer', 'null']],
-              'rekening_masuk'       => ['type' => ['integer', 'null']],
+              'rekening_sumber'      => ['anyOf' => [['type' => 'integer'], ['type' => 'null']]],
+              'rekening_masuk'       => ['anyOf' => [['type' => 'integer'], ['type' => 'null']]],
               'nominal'              => ['type' => 'number'],
               'nominal_asing'        => ['type' => 'number'],
               'kuantitas'            => ['type' => 'number'],
               'penyusutan_bunga'     => ['type' => 'number'],
               'rutin'                => ['type' => 'boolean'],
-              'kelompok'             => ['type' => ['string', 'null']],
+              'kelompok'             => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'tanggal'              => ['type' => 'string', 'format' => 'date'],
-              'relasi_transaksi'     => ['type' => ['integer', 'null']],
-              'attachment'           => ['type' => ['string', 'null']],
-              'keterangan'           => ['type' => ['string', 'null']],
-              'review'               => ['type' => ['string', 'null']],
+              'relasi_transaksi'     => ['anyOf' => [['type' => 'integer'], ['type' => 'null']]],
+              'attachment'           => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'keterangan'           => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'review'               => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'created_at'           => ['type' => 'string', 'format' => 'date-time'],
-              'nama_rekening_sumber' => ['type' => ['string', 'null']],
-              'nama_rekening_masuk'  => ['type' => ['string', 'null']],
-              'jenis_budget_sumber'  => ['type' => ['string', 'null']],
-              'jenis_budget_masuk'   => ['type' => ['string', 'null']]
+              'nama_rekening_sumber' => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'nama_rekening_masuk'  => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'jenis_budget_sumber'  => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'jenis_budget_masuk'   => ['anyOf' => [['type' => 'string'], ['type' => 'null']]]
             ]
           ]
         ]
@@ -537,7 +537,7 @@ class transaksi
   #[Schema(
     properties: [
       'search'           => [
-        'type' => ['string'],
+        'type' => 'string',
         'description' => 'Search By Id, Name, Kelompok'
       ],
     ]

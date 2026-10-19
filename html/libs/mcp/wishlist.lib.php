@@ -33,9 +33,9 @@ class wishlist
   #[Schema(
     properties: [
       'nama'            => ['type' => 'string', 'description' => 'Nama barang'],
-      'harga_estimasi'  => ['type' => ['number', 'null'], 'description' => 'Estimasi harga barang dalam Rupiah (opsional)'],
-      'link'            => ['type' => ['string', 'null'], 'description' => 'Link/URL ke halaman produk (opsional)'],
-      'catatan'         => ['type' => ['string', 'null'], 'description' => 'Catatan atau pertimbangan tentang barang ini, bisa diperbarui kapan saja lewat update_wishlist'],
+      'harga_estimasi'  => ['anyOf' => [['type' => 'number'], ['type' => 'null']], 'description' => 'Estimasi harga barang dalam Rupiah (opsional)'],
+      'link'            => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'description' => 'Link/URL ke halaman produk (opsional)'],
+      'catatan'         => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'description' => 'Catatan atau pertimbangan tentang barang ini, bisa diperbarui kapan saja lewat update_wishlist'],
     ],
     required: ['nama']
   )]
@@ -77,11 +77,11 @@ class wishlist
             'properties' => [
               'id'              => ['type' => 'integer'],
               'nama'            => ['type' => 'string'],
-              'harga_estimasi'  => ['type' => ['number', 'null']],
-              'link'            => ['type' => ['string', 'null']],
-              'catatan'         => ['type' => ['string', 'null']],
+              'harga_estimasi'  => ['anyOf' => [['type' => 'number'], ['type' => 'null']]],
+              'link'            => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'catatan'         => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'created_at'      => ['type' => 'string', 'format' => 'date-time'],
-              'updated_at'      => ['type' => ['string', 'null'], 'format' => 'date-time'],
+              'updated_at'      => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'format' => 'date-time'],
             ]
           ]
         ]
@@ -120,10 +120,10 @@ class wishlist
   #[Schema(
     properties: [
       'id'              => ['type' => 'integer', 'description' => 'ID item Wishlist yang akan diperbarui'],
-      'nama'            => ['type' => ['string', 'null']],
-      'harga_estimasi'  => ['type' => ['number', 'null']],
-      'link'            => ['type' => ['string', 'null']],
-      'catatan'         => ['type' => ['string', 'null']],
+      'nama'            => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+      'harga_estimasi'  => ['anyOf' => [['type' => 'number'], ['type' => 'null']]],
+      'link'            => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+      'catatan'         => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
     ],
     required: ['id']
   )]
