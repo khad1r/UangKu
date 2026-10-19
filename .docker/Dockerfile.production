@@ -35,6 +35,8 @@ ENV SQLITE_DEFAULT_NAME=default.sqlite
 # worker's cache on every deploy — see APP_VERSION in app/config.php.
 ARG GIT_SHA=unknown
 ENV GIT_SHA=$GIT_SHA
+ARG APP_SEMVER=
+ENV APP_SEMVER=$APP_SEMVER
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader

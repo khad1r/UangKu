@@ -41,7 +41,38 @@ define('APP_VERSION', $gitSha ? substr($gitSha, 0, 12) : substr(md5(
   (@filemtime(__DIR__ . '/../public/assets/js/script.js') ?: 0) . '-' .
   (@filemtime(__DIR__ . '/../public/assets/css/style.css') ?: 0)
 ), 0, 12));
-unset($gitSha);
+// Versi Semantic Otomatis berbasis Conventional Commits:
+// 1. Prioritas dari environment APP_SEMVER (di-inject saat Docker build)
+// 2. Fallback analisis riwayat Git lokal sejak tag rilis terakhir
+$appSemver = getenv('APP_SEMVER');
+if (empty($appSemver)) {
+  $latestTag = @exec('git describe --tags --abbrev=0 2>/dev/null') ?: 'v1.17.9';
+  if (preg_match('/^v?(\d+)\.(\d+)\.(\d+)$/', trim($latestTag), $m)) {
+    $major = (int)$m[1];
+    $minor = (int)$m[2];
+    $patch = (int)$m[3];
+
+    // Cek jenis commit sejak tag terakhir (Conventional Commits)
+    $hasMajor = @exec("git log {$latestTag}..HEAD --grep=\"^.*!:\" --grep=\"BREAKING CHANGE\" -n 1 --oneline 2>/dev/null");
+    $hasFeat  = @exec("git log {$latestTag}..HEAD --grep=\"^feat\" -n 1 --oneline 2>/dev/null");
+    $hasAny   = @exec("git log {$latestTag}..HEAD -n 1 --oneline 2>/dev/null");
+
+    if (!empty($hasMajor)) {
+      $appSemver = sprintf('%d.0.0', $major + 1);
+    } elseif (!empty($hasFeat)) {
+      $appSemver = sprintf('%d.%d.0', $major, $minor + 1);
+    } elseif (!empty($hasAny)) {
+      $appSemver = sprintf('%d.%d.%d', $major, $minor, $patch + 1);
+    } else {
+      $appSemver = sprintf('%d.%d.%d', $major, $minor, $patch);
+    }
+  }
+}
+
+define('APP_SEMVER', ltrim(trim($appSemver ?: '1.18.0'), 'v'));
+define('MCP_VERSION', getenv('MCP_VERSION') ?: APP_SEMVER);
+unset($appSemver);
+
 define('ENABLE_AUTH', (getenv('ENABLE_AUTH') ?: 'true') === 'true');
 define('DEFAULT_CONTROLLER', ENABLE_AUTH ? App\Controllers\Auth::class : App\Controllers\Transaction::class);
 define('JENIS_TRANSAKSI', ['Pengeluaran', 'Pemasukan', 'Pindah Buku']);

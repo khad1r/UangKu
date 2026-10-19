@@ -1,0 +1,62 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+change-template: '- $TITLE by @$AUTHOR in #$NUMBER'
+
+categories:
+  - title: '🚀 Fitur Baru'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: '🐛 Perbaikan Bug'
+    labels:
+      - 'fix'
+      - 'bug'
+  - title: '🧰 Refactoring & Pemeliharaan'
+    labels:
+      - 'refactor'
+      - 'chore'
+      - 'documentation'
+
+version-resolver:
+  major:
+    labels:
+      - 'major'
+      - 'breaking'
+  minor:
+    labels:
+      - 'minor'
+      - 'feature'
+      - 'enhancement'
+  patch:
+    labels:
+      - 'patch'
+      - 'fix'
+      - 'bug'
+      - 'refactor'
+      - 'chore'
+  default: patch
+
+autolabeler:
+  - label: 'feature'
+    title:
+      - '/^feat(\(.*\))?:/i'
+  - label: 'fix'
+    title:
+      - '/^fix(\(.*\))?:/i'
+  - label: 'refactor'
+    title:
+      - '/^refactor(\(.*\))?:/i'
+  - label: 'chore'
+    title:
+      - '/^chore(\(.*\))?:/i'
+  - label: 'major'
+    title:
+      - '/^.*!:/i'
+      - '/BREAKING CHANGE/i'
+
+template: |
+  ## Ringkasan Perubahan
+
+  $CHANGES
+
+  **Full Changelog**: https://github.com/khad1r/UangKu/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
