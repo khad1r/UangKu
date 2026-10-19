@@ -80,13 +80,45 @@ class Record extends Controller
     try {
       // if (!csrf_security('record-form', validate: $_POST)) return;
       $post = $this->validateData($_POST);
+      $id = (int)($post['id'] ?? 0);
+      if ($id <= 0) {
+        throw new \Exception("ID Transaksi tidak valid.");
+      }
+
+      $transaksiModel = new Transaksi();
+      $oldTrx = $transaksiModel->find($id);
+      if (!$oldTrx) {
+        throw new \Exception("Transaksi #{$id} tidak ditemukan.");
+      }
+
       $data = [
-        'review'            => $post['review'] ?? null,
+        'review' => $post['review'] ?? null,
       ];
-      if (new Transaksi()->updateTransaksi($data, ['id' => $_POST['id']]) > 0) {
-        showAlert("Review Trx.{$_POST['id']} Berhasil", 'success');
+
+      // Jika ada file attachment baru yang diunggah, gabungkan (append) dengan attachment yang lama
+      if ($this->hasUploadedFile('attachment')) {
+        $uploaded = $this->handleFileUpload('attachment');
+        $newFiles = is_array(json_decode($uploaded, true)) ? json_decode($uploaded, true) : [$uploaded];
+
+        $existingFiles = [];
+        if (!empty($oldTrx['attachment']) && $oldTrx['attachment'] !== 'uploading') {
+          $decoded = json_decode($oldTrx['attachment'], true);
+          $existingFiles = is_array($decoded) ? $decoded : [$oldTrx['attachment']];
+        }
+
+        $combined = array_merge($existingFiles, $newFiles);
+        $data['attachment'] = count($combined) > 1 ? json_encode(array_values($combined)) : ($combined[0] ?? null);
+      }
+
+      $reviewChanged = ($oldTrx['review'] ?? '') !== ($data['review'] ?? '');
+      $attachmentChanged = isset($data['attachment']);
+
+      if ($reviewChanged || $attachmentChanged) {
+        $transaksiModel->updateTransaksi($data, ['id' => $id]);
+        $msg = $attachmentChanged ? "Review & Lampiran Trx.{$id} Berhasil Disimpan" : "Review Trx.{$id} Berhasil Disimpan";
+        showAlert($msg, 'success');
       } else {
-        throw new \Exception("Error Processing Request", 1);
+        showAlert("Tidak ada perubahan pada Trx.{$id}", 'info');
       }
     } catch (\Exception $e) {
       showAlert($e->getMessage(), 'danger');

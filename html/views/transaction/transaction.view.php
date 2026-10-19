@@ -72,13 +72,21 @@
   <div class="dialog-body row flex-row">
     <div class="col-md-8"></div>
     <div class="col-md-4">
-      <form id="form" action="<?= BASEURL ?>/Record/review" method="post" style="--primary-color:var(--secondary-color)">
+      <form id="form" action="<?= BASEURL ?>/Record/review" method="post" enctype="multipart/form-data" style="--primary-color:var(--secondary-color)">
         <input type="hidden" name="id">
         <div class="form-group">
-          <label>Review</label>
-          <textarea name="review" class="form-control mt-1 border-bottom border-primary mb-2" autocomplete="off" placeholder="Review" rows="4"></textarea>
+          <label class="fw-bold small text-secondary">Review / Catatan</label>
+          <textarea name="review" class="form-control mt-1 border-bottom border-primary mb-2" autocomplete="off" placeholder="Tulis review atau catatan transaksi..." rows="3"></textarea>
           <?php InputValidator('review') ?>
-          <input type="submit" class="btn w-100 btn-secondary" value="Beri Review" name="record">
+
+          <label class="fw-bold small text-secondary mt-1 d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-camera me-1"></i> Tambah Lampiran / Foto</span>
+            <small id="modal-attachment-info" class="text-primary fw-normal" style="display:none;"></small>
+          </label>
+          <input type="file" name="attachment[]" id="modal-attachment" multiple accept="image/*, application/pdf" class="form-control form-control-sm mb-2" />
+          <?php InputValidator('attachment') ?>
+
+          <input type="submit" class="btn w-100 btn-secondary mt-1" value="Simpan Review & Lampiran" name="record">
           <hr>
           <button role="button" type="button" onclick="deleteRekeing()" class="btn w-100" style="--primary-color:var(--red-color)" id="btn-delete">Hapus <i class="fas fa-trash-alt"></i></button>
         </div>
@@ -657,8 +665,16 @@
     MODAL.querySelector('.dialog-body').children[0].append(divEl);
 
     // FORM.review.textContent = row.review;
-    FORM.review.value = row.review;
+    FORM.review.value = row.review || '';
     FORM.id.value = row.id;
+
+    const modalAttachment = MODAL.querySelector('#modal-attachment');
+    const modalAttachmentInfo = MODAL.querySelector('#modal-attachment-info');
+    if (modalAttachment) modalAttachment.value = '';
+    if (modalAttachmentInfo) {
+      modalAttachmentInfo.textContent = '';
+      modalAttachmentInfo.style.display = 'none';
+    }
 
     const canvas = document.querySelector('#preview-canvas');
     const ctx = canvas.getContext('2d');
@@ -837,5 +853,20 @@
     if (!isInDialog) {
       MODAL.close();
     }
-  })
+  });
+
+  const modalAttachment = document.querySelector('#modal-attachment');
+  const modalAttachmentInfo = document.querySelector('#modal-attachment-info');
+  if (modalAttachment && modalAttachmentInfo) {
+    modalAttachment.addEventListener('change', () => {
+      const count = modalAttachment.files ? modalAttachment.files.length : 0;
+      if (count > 0) {
+        modalAttachmentInfo.textContent = `(+${count} file baru dipilih)`;
+        modalAttachmentInfo.style.display = 'inline';
+      } else {
+        modalAttachmentInfo.textContent = '';
+        modalAttachmentInfo.style.display = 'none';
+      }
+    });
+  }
 </script>
