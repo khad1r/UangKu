@@ -16,9 +16,8 @@ class rekening
    */
   #[McpTool(
     name: 'get_rekening',
-    description: 'Mendapatkan daftar rekening dan ID untuk input transaksi
-    Dengan format data [rekening_id,saldo,saldo_asing,aktif,harta,isAsing]
-  ',
+    description: 'Mendapatkan daftar rekening aktif dan ID untuk input transaksi. WAJIB dipanggil fresh sebelum mencatat transaksi untuk mendapatkan ID rekening valid terkini (jangan gunakan ID dari ingatan/cache).
+    Format data: [rekening_id, nama_rekening, saldo, saldo_asing, aktif, harta, isAsing].',
     annotations: new ToolAnnotations(
       readOnlyHint: true,
       openWorldHint: false
@@ -48,8 +47,17 @@ class rekening
   {
     try {
       // FIX: Wrap the list in a key so the result is a 'record' (JSON Object)
+      $rows = (new ModelsRekening())->getAll();
       return [
-        'data' => new ModelsRekening()->getAll()
+        'data' => array_map(fn($r) => [
+          'rekening_id'   => (int) $r['id'],
+          'nama_rekening' => (string) $r['nama'],
+          'saldo'         => (float) ($r['saldo'] ?? 0),
+          'saldo_asing'   => (float) ($r['saldo_asing'] ?? 0),
+          'aktif'         => !empty($r['aktif']),
+          'harta'         => !empty($r['harta']),
+          'isAsing'       => !empty($r['isAsing']),
+        ], $rows)
       ];
     } catch (\Exception $e) {
       throw new ResourceReadException("Error: " . $e->getMessage());
@@ -61,7 +69,7 @@ class rekening
    */
   #[McpTool(
     name: 'get_Harta',
-    description: 'Mendapatkan daftar harta/aset yang sudah ada dan saldo pembukuannya Dengan format data [kelompok,count]',
+    description: 'Mendapatkan daftar transaksi harta/aset yang sudah tercatat dan nilai pembukuannya (aset permanen seperti HP, Kendaraan, Emas, Properti, Furnitur) untuk referensi inventaris dan depresiasi.',
     annotations: new ToolAnnotations(
       readOnlyHint: true,
       openWorldHint: false
@@ -91,7 +99,7 @@ class rekening
               'attachment'           => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'keterangan'           => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'review'               => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'created_at'           => ['type' => 'string', 'format' => 'date-time']
+              'created_at'           => ['type' => 'string', 'format' => 'date']
             ]
           ]
         ]
@@ -101,8 +109,28 @@ class rekening
   public function getHarta(): array
   {
     try {
+      $rows = (new Transaksi())->getDaftarHarta();
       return [
-        'data' => new Transaksi()->getDaftarHarta()
+        'data' => array_map(fn($row) => [
+          'id'               => (int) $row['id'],
+          'jenis_transaksi'  => (string) $row['jenis_transaksi'],
+          'harta'            => !empty($row['harta']),
+          'barang'           => (string) $row['barang'],
+          'rekening_sumber'  => isset($row['rekening_sumber']) && $row['rekening_sumber'] !== '' ? (int) $row['rekening_sumber'] : null,
+          'rekening_masuk'   => isset($row['rekening_masuk']) && $row['rekening_masuk'] !== '' ? (int) $row['rekening_masuk'] : null,
+          'nominal'          => (float) $row['nominal'],
+          'nominal_asing'    => isset($row['nominal_asing']) ? (float) $row['nominal_asing'] : 0.0,
+          'kuantitas'        => isset($row['kuantitas']) ? (float) $row['kuantitas'] : 1.0,
+          'penyusutan_bunga' => isset($row['penyusutan_bunga']) ? (float) $row['penyusutan_bunga'] : 0.0,
+          'rutin'            => !empty($row['rutin']),
+          'kelompok'         => $row['kelompok'] ?? null,
+          'tanggal'          => (string) $row['tanggal'],
+          'relasi_transaksi' => isset($row['relasi_transaksi']) && $row['relasi_transaksi'] !== '' ? (int) $row['relasi_transaksi'] : null,
+          'attachment'       => $row['attachment'] ?? null,
+          'keterangan'       => $row['keterangan'] ?? null,
+          'review'           => $row['review'] ?? null,
+          'created_at'       => !empty($row['created_at']) ? date('Y-m-d', strtotime($row['created_at'])) : date('Y-m-d'),
+        ], $rows)
       ];
     } catch (\Exception $e) {
       throw new ResourceReadException("Error: " . $e->getMessage());
