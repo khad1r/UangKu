@@ -92,20 +92,21 @@ class resources
       Decide in this EXACT order — stop at the first rule that matches. Do not combine rules or guess; precedence resolves every conflict below.
 
       1. Kelompok is Event/Perjadin/Mudik (unique event group) → rutin: false. Always, no exceptions — even for a daily meal during the trip.
-      2. Item is a FIXED MONTHLY BILL essential to basic living/work (Kos, Listrik, Admin Rekening, essential data/internet plan) → rutin: true, regardless of which day it's paid on. A bill due on Sunday is still routine — this rule outranks the Sunday rule below.
-      3. Item is a DISCRETIONARY/ENTERTAINMENT subscription (Gojek Plus, Bilibili, Arknights, non-essential apps), a one-off asset/gadget/furniture purchase, or a GoFood/delivery order → rutin: false. This outranks "it's a weekday" or "it belongs to a rutin kelompok" below.
+      2. Item is a FIXED/RECURRING MONTHLY BILL or SUBSCRIPTION (Kos, Listrik, Admin Rekening, internet/data plan, Gojek Plus, Bilibili, Arknights monthly pass, Spotify, Netflix, YouTube Premium) → rutin: true, regardless of which day it's paid on. All periodic recurring commitments are routine — this rule outranks the Sunday rule below.
+      3. Item is a ONE-TIME / DISCRETIONARY expense: one-time entertainment (movie/cinema tickets, concert, recreational park, non-recurring game topup/gacha), a one-off asset/gadget/furniture purchase, or a GoFood/delivery order → rutin: false. This outranks "it's a weekday" or "it belongs to a rutin kelompok" below.
       4. Transaction date is Sunday → rutin: false.
       5. Kelompok is one of the daily-frequency kelompok (Konsumsi, Transportasi, Sedekah, Topup) on Monday–Saturday → rutin: true.
-      6. Otherwise, check get_kelompok()'s per-kelompok rutin/count breakdown: if this item's kelompok has an overwhelmingly dominant historical rutin value (one side's count is clearly larger), follow that history.
+      6. Otherwise, check get_kelompok()'s per-kelompok rutin/count breakdown & AI Interaction Memory:
+         - Follow dominant history: if this item's kelompok has an overwhelmingly dominant historical rutin value (one side's count is clearly larger), follow that history.
+         - Memory & Evolving Habits: AI can evaluate based on interaction memory/history. An item or kelompok may historically be recorded mostly as false (non-routine), but if recent memory/interactions show this activity has become frequent/recurring, the AI may evaluate this evolving habit and propose it as `rutin: true` in the recap table for user confirmation.
       7. Still ambiguous after step 6 → rutin: false (default to non-routine when unsure).
 
-      Note: get_kelompok() returns [kelompok, rutin, count] — up to two rows per kelompok, one per rutin value, with a count of past transactions. This is only a tiebreaker for step 6 — it never overrides rules 1–5.
+      Note: get_kelompok() returns [kelompok, rutin, count] — up to two rows per kelompok, one per rutin value, with a count of past transactions. This is a tiebreaker for step 6 — it never overrides rules 1–5.
 
       Examples (to keep this unambiguous):
       - Ojek to office, canteen meal, sedekah, e-wallet topup, cash withdrawal on a Tuesday → rutin: true (rule 5)
-      - Kos payment or PLN electricity bill, even if paid on a Sunday → rutin: true (rule 2 beats rule 4)
-      - Bilibili/Arknights/Gojek Plus subscription → rutin: false (rule 3) — "recurring monthly" does NOT mean rutin; it must also be an essential living/work cost, not entertainment
-      - GoFood order on a Wednesday → rutin: false (rule 3 beats rule 5, even though Konsumsi is normally a daily kelompok)
+      - Kos payment, PLN electricity bill, or Bilibili/Gojek Plus/Arknights monthly subscription, even if paid on a Sunday → rutin: true (rule 2 beats rule 4)
+      - One-time entertainment (bioskop, rekreasi, topup diamond insidentil), asset purchase, or GoFood order on a Wednesday → rutin: false (rule 3 beats rule 5)
       - Any Perjadin/event item → rutin: false (rule 1), even if it's routine-looking spending like a daily meal
 
       === NOMINAL & DISCOUNT RULES ===
@@ -121,44 +122,48 @@ class resources
       For physical/electronic asset purchases:
       1. Pengeluaran from money account → harta: false
       2. Pemasukan to Harta Benda (ID 16) → harta: true, fill penyusutan_bunga
-      3. Both entries must be linked via relasi_transaksi
+      3. Both entries must be linked via relasi_transaksi (e.g. on row 2 Pemasukan, set relasi_transaksi: "#1" pointing to row 1 Pengeluaran)
       4. Default depreciation for gadgets: 48 months (unless specified)
       PROHIBITED: harta: true on Pengeluaran from regular money account
       PROHIBITED: Pindah Buku for Harta transactions
 
-      === RECEIPT / MULTI-ITEM RULES ===
+      === RECEIPT / MULTI-ITEM & RELASI RULES ===
 
       - Receipt with multiple items → split per item, NEVER sum into one total
-      - Use catat_transaksi with autoRelate: true for same-receipt items
+      - Single-receipt batch → use catat_transaksi with autoRelate: true (all items automatically relate to row #1)
+      - Multi-receipt or Multi-asset batch → use relative row indexing on relasi_transaksi (e.g. "#1", "#3") to link items to their specific parent row in the batch
+      - Existing DB transactions → use explicit integer ID from search_Transaksi / get_transaksi
+      - DILARANG: Guessing or predicting future database auto-increment IDs. Always use relative row references ("#1", "#2") or autoRelate.
       - Item name: GENERALIZE (e.g. "Roti Tawar" not "Sari Roti Tawar Soft Rasa Susu Jumbo 540g")
       - Full SKU detail → put in keterangan field
 
-      === RECAP FORMAT (SEBELUM EXECUTION) ===
+      === RECAP FORMAT (MANDATORY PRE-EXECUTION RECAP) ===
 
-      ALWAYS display the recap in a CODE BLOCK (raw text inside triple backticks, NOT rendered markdown table).
-      This raw text format allows the user to easily copy, edit, and paste it back if corrections are needed.
-      Ensure consistent column padding and vertical alignment across all rows.
+      The AI is STRICTLY PROHIBITED from executing `uangku_catat_transaksi` until the user provides explicit confirmation.
+      The recap MUST be formatted inside a markdown code block using fixed column padding:
 
       Template:
-      ```
-      | Barang          | Nominal | Qty | Rekening        | Kelompok    | Rutin | Tanggal    |
-      | Kopi Susu       | 18.000  | 1   | ShopeePay (8)   | Konsumsi    | ✓     | 2026-08-23 |
-      | Roti Cokelat    | 12.000  | 1   | ShopeePay (8)   | Konsumsi    | ✓     | 2026-08-23 |
-
-      Auto relate: ✓
-      Attachment: x
+      ```markdown
+      | # | Barang            | Jenis       | Nominal | Qty | Rekening                          | Kelompok  | Rutin | Tanggal    | Keterangan                                  | Relate | Attachment |
+      |---|-------------------|-------------|---------|-----|-----------------------------------|-----------|-------|------------|---------------------------------------------|--------|------------|
+      | 1 | Burger            | Pengeluaran | 79.500  | 1   | ▲ Gopay (ID: 9)                   | Konsumsi  | X     | 2026-10-18 | Hugo's by SPOONIFY Cideng (ID: F-3396314512)| -      | -          |
+      | 2 | [$] Mini Gold 1g  | Pengeluaran | 1.300K  | 1   | ▲ Bri Tampung (1)                 | Emas      | X     | 2026-10-19 | Antam Fine Gold                             | -      | -          |
+      | 3 | Topup             | Pindah Buku | 100.000 | 1   | ▲ Bri Tampung (1) ▼ ShopeePay (8) | Topup     | ✓     | 2026-10-19 | Topup ShopeePay                             | -      | -          |
+      - Auto-Relate: [✓/x]
       ```
 
       Rules for recap:
-      - Enclose strictly inside a code block (```)
-      - Columns: | Barang | Nominal | Qty | Rekening | Kelompok | Rutin | Tanggal |
-      - In the Rekening column, MUST show the account name and its ID from get_rekening(), e.g. "ShopeePay (8)"
-      - Ensure consistent column padding and vertical alignment across all rows (all `|` pipes must line up vertically)
-      - Line break after the table, followed by:
-        Auto relate: x/✓
-        Attachment: x/✓
-      - Use ✓ (true) and x (false)
-      - If any important assumption was made (e.g. prorata discount, default account), write a brief note below the code block.
+      Visual column conventions:
+      * **Barang**: Prepend `[$]` if `harta: true`.
+      * **Rekening**:
+        * Use `▲` for Pengeluaran (source account).
+        * Use `▼` for Pemasukan (destination account).
+        * For `Pindah Buku`, show both: `▲ [Source] (ID: X) ▼ [Destination] (ID: Y)`.
+
+      * **Rutin**: Use `✓` for `true`, `X` for `false`.
+      * **Relate**: Use `-` for standalone items, `#1` / `#3` for relative row links in the batch, or `#ID` for existing DB transactions. Optional column (remove column if unused).
+      * **Attachment**: Optional column (remove column if unused).
+      * If any important assumption was made (e.g. prorata discount, default account), write a brief note below the code block.
 
       === ATTACHMENT RULES ===
 
@@ -176,13 +181,14 @@ class resources
 
       Decide these yourself — no need to ask:
       - Account → use default table
-      - Rutin/non-rutin → follow rules above
+      - Rutin/non-rutin → follow rules above. with enough interaction AI might see routine patterns
       - Kelompok → use get_kelompok result
+      - Intra-batch relations → use autoRelate: true or relative row references ("#1", "#3") automatically
       - Prorata discount → apply automatically
       - Item name generalization → apply automatically
       - Asset depreciation → 48 months if not specified
 
-      ASK ONLY IF truly cannot be assumed:
+      ASK ONLY IF truly cannot be assumed and not limited to below:
       - Amount is unclear / no number given
       - New asset with no price mentioned
       - New event with no name → ask event name only (one question)

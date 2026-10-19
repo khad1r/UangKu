@@ -114,8 +114,9 @@
       </div>
       <div class="form-group">
         <!-- <label>Attachment</label> -->
-        <input type="file" placeholder="Attachment" class="form-control" accept="image/*, application/pdf" name="attachment" />
+        <input type="file" placeholder="Attachment" class="form-control" accept="image/*, application/pdf" name="attachment[]" id="attachment" multiple />
         <?php InputValidator('attachment') ?>
+        <div id="record-attachment-info" class="small text-secondary mt-1" style="display:none;"></div>
         <canvas id="preview-canvas" style="display:none;"></canvas>
       </div>
       <div class="form-group">
@@ -450,39 +451,59 @@
   }
   formBreakpoint.addEventListener('change', moveSummary)
 
-  FORM.attachment.addEventListener('change', handleFileUpload);
+  const attachmentInput = document.querySelector('#attachment');
+  if (attachmentInput) {
+    attachmentInput.addEventListener('change', handleFileUpload);
+  }
   document.addEventListener('paste', handleFileUpload);
   const canvas = document.querySelector('#preview-canvas');
   const ctx = canvas.getContext('2d');
 
   async function handleFileUpload(event) {
-    const files = [...(event.target.files || event.clipboardData.files)];
-    const file = files[0]; // only handle first file for preview
+    const rawFiles = [...(event.target?.files || event.clipboardData?.files || [])];
+    if (!rawFiles || rawFiles.length === 0) return;
 
-    canvas.style.display = "none"; // hide first
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // clear canvas
+    // Use DataTransfer to store all selected files
+    const dataTransfer = new DataTransfer();
+    rawFiles.forEach(f => dataTransfer.items.add(f));
+    const fileInput = document.querySelector('#attachment');
+    if (fileInput) fileInput.files = dataTransfer.files;
+
+    const infoEl = document.querySelector('#record-attachment-info');
+    if (infoEl) {
+      infoEl.innerHTML = `<i class="fas fa-paperclip"></i> <b>${dataTransfer.files.length}</b> file dipilih`;
+      infoEl.style.display = 'block';
+    }
+
+    // Preview the first file
+    const file = dataTransfer.files[0];
+    canvas.style.display = "none";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!file) return;
 
     if (file.type === "application/pdf") {
-      const buffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({
-        data: buffer
-      }).promise;
-      const page = await pdf.getPage(1);
-      const scale = 1.5;
-      const viewport = page.getViewport({
-        scale
-      });
+      try {
+        const buffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({
+          data: buffer
+        }).promise;
+        const page = await pdf.getPage(1);
+        const scale = 1.5;
+        const viewport = page.getViewport({
+          scale
+        });
 
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      canvas.style.display = "block";
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.display = "block";
 
-      await page.render({
-        canvasContext: ctx,
-        viewport
-      }).promise;
-
+        await page.render({
+          canvasContext: ctx,
+          viewport
+        }).promise;
+      } catch (err) {
+        console.warn("PDF preview error", err);
+      }
     } else if (file.type.startsWith("image/")) {
       const img = new Image();
       img.onload = () => {
@@ -498,9 +519,6 @@
     } else {
       return showAlert("Unsupported file type: " + file.type, 'warning');
     }
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(file);
-    FORM.attachment.files = dataTransfer.files;
   }
 
   function debounce(fn, delay = 500) {

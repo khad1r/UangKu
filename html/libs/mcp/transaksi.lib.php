@@ -18,56 +18,73 @@ class transaksi
     description: 'Mencatat transaksi keuangan baru (Pemasukan, Pengeluaran, atau Pindah Buku) ke sistem UangKu.
 
     ⚠️ RESTRICTION & MANDATORY WORKFLOW (WAJIB DIBACA & DIIKUTI):
-    1. WAJIB MEMAHAMI SYSTEM PROMPT: AI wajib selalu mengetahui dan mengikuti panduan lengkap dari resource system_prompt (uangku://system_prompt dari resources.lib.php).
+    1. WAJIB MEMAHAMI SYSTEM PROMPT: AI wajib selalu mengetahui dan mengikuti panduan lengkap dari resource system_prompt (uangku://system_prompt).
     2. DILARANG EKSEKUSI LANGSUNG: DILARANG memanggil tool ini pada giliran pertama saat user baru memberikan rincian/struk belanja atau sebelum konfirmasi user.
     3. TAHAPAN WAJIB SEBELUM EKSEKUSI:
-       a. Panggil "get_rekening" & "get_kelompok" secara fresh pada setiap turn (DILARANG pakai ID dari ingatan/turn sebelumnya).
-       b. Susun data transaksi dan TAMPILKAN FORMAT REKAP ke user dalam raw CODE BLOCK (```).
-       c. TUNGGU KONFIRMASI EKSPLISIT dari user (misal: "oke", "ya", "gas", "simpan", dsb.) atau koreksi dari user.
-       d. Baru panggil tool "catat_transaksi" ini SETELAH user memberikan konfirmasi persetujuan.
+      a. Panggil "get_rekening" & "get_kelompok" secara fresh pada setiap turn (DILARANG pakai ID dari ingatan/turn sebelumnya).
+      b. Susun data transaksi dan TAMPILKAN FORMAT REKAP ke user dalam markdown code block.
+      c. TUNGGU KONFIRMASI EKSPLISIT dari user (misal: "oke", "ya", "gas", "simpan", dsb.) atau koreksi dari user. DILARANG bertanya sebelum menampilkan rekap.
+      d. Baru panggil tool "catat_transaksi" ini SETELAH user memberikan konfirmasi persetujuan.
 
     FORMAT REKAP (SEBELUM EXECUTION) YANG WAJIB DITAMPILKAN KE USER:
-    Tampilkan rekap dalam raw CODE BLOCK (```, BUKAN rendered markdown table) dengan perataan vertikal karakter | yang rapi:
+    Tampilkan rekap dalam markdown code block (```markdown ... ```) dengan template berikut:
+    ```markdown
+    | # | Barang            | Jenis       | Nominal | Qty | Rekening                          | Kelompok  | Rutin | Tanggal    | Keterangan                                  | Relate | Attachment |
+    |---|-------------------|-------------|---------|-----|-----------------------------------|-----------|-------|------------|---------------------------------------------|--------|------------|
+    | 1 | Burger            | Pengeluaran | 79.500  | 1   | ▲ Gopay (ID: 9)                   | Konsumsi  | X     | 2026-10-18 | Hugos by SPOONIFY Cideng (ID: F-3396314512) | -      | -          |
+    | 2 | [$] Mini Gold 1g  | Pengeluaran | 1.300K  | 1   | ▲ Bri Tampung (1)                 | Emas      | X     | 2026-10-19 | Antam Fine Gold                             | -      | -          |
+    | 3 | Topup             | Pindah Buku | 100.000 | 1   | ▲ Bri Tampung (1) ▼ ShopeePay (8) | Topup     | ✓     | 2026-10-19 | Topup ShopeePay                             | -      | -          |
+    - Auto-Relate: [✓/x]
     ```
-    | Barang          | Nominal | Qty | Rekening        | Kelompok    | Rutin | Tanggal    |
-    | Kopi Susu       | 18.000  | 1   | ShopeePay (8)   | Konsumsi    | ✓     | 2026-08-23 |
-    | Roti Cokelat    | 12.000  | 1   | ShopeePay (8)   | Konsumsi    | ✓     | 2026-08-23 |
-
-    Auto relate: ✓
-    Attachment: x
-    ```
-    Aturan Format Rekap:
-    - Kolom: | Barang | Nominal | Qty | Rekening | Kelompok | Rutin | Tanggal |
-    - Kolom Rekening WAJIB menyertakan nama rekening beserta ID dari get_rekening(), contoh: "ShopeePay (8)".
-    - Kolom harus sejajar secara vertikal (semua karakter | lurus).
-    - Jeda satu baris setelah tabel lalu cantumkan "Auto relate: x/✓" dan "Attachment: x/✓" (gunakan simbol ✓ untuk true dan x untuk false).
+    Aturan Tampilan Kolom Rekap:
+    - Barang: Tambahkan prefix "[$]" jika harta: true. Generalisasikan nama barang (detail lengkap masukkan ke Keterangan).
+    - Rekening:
+      - Gunakan simbol "▲" untuk Pengeluaran (rekening sumber).
+      - Gunakan simbol "▼" untuk Pemasukan (rekening tujuan).
+      - Untuk Pindah Buku: tampilkan kedua rekening: "▲ [Sumber] (ID: X) ▼ [Tujuan] (ID: Y)".
+    - Rutin: Gunakan "✓" untuk true dan "X" untuk false.
+    - Relate & Attachment: Kolom opsional (dapat dihapus jika tidak digunakan).
     - Tuliskan catatan asumsi singkat di bawah code block jika ada (misal: prorata diskon atau default account).
 
-    ATURAN BISNIS PENTING:
-    1. STRUK BELANJA: Jika input berupa struk dengan banyak item, JANGAN dicatat sebagai satu total. Pecah menjadi item individu dalam array "data". Beri parameter "autoRelate: true" agar item-item otomatis berelasi dengan item pertama.
-    2. TRANSAKSI HARTA (ASET):
-      - Pembelian = Pengeluaran (rekening uang, harta=false) + Pemasukan (rekening Harta, harta=true, isi penyusutan_bunga), relasikan keduanya via relasi_transaksi.
-      - Penjualan/Pembuangan = Pengeluaran (rekening Harta, harta=true) + Pemasukan (rekening uang, bila ada hasil jual), relasikan keduanya.
-      - DILARANG: harta=true pada Pengeluaran dari rekening uang biasa.
-      - DILARANG: Pindah Buku untuk Harta.
-    3. NOMINAL ASING: Gunakan "nominal_asing" jika transaksi melibatkan Emas (dalam Gram) atau mata uang asing seperti USD (Paypal).
-    4. VALIDASI: WAJIB panggil tool "get_rekening" ULANG tepat sebelum menyusun rekap dan memanggil tool ini, SETIAP KALI.
-    5. DISKON:
-      - Jika diskon per item: Catat harga NETTO (setelah diskon).
-      - Jika diskon total di akhir struk: Gunakan metode PRORATA (bagi diskon ke setiap item secara proporsional).
-    6. KURS LOGIC: Perubahan nilai tukar dicatat sebagai Pemasukan/Pengeluaran pada kolom nominal (selisihnya), dengan nominal_asing = 0.',
+    ATURAN BISNIS PENTING DARI SYSTEM PROMPT (uangku://system_prompt):
+    1. DEFAULT REKENING (jika user tidak menyebutkan secara eksplisit):
+      - Makanan / minimarket / kantin / obat → ShopeePay
+      - Ojek / GoFood / Gojek → GoPay
+      - Tunai / pasar / warung tanpa QRIS → Dompet
+      - Topup / kos / transfer / tiket → BRI Tampung
+      - QRIS ShopeePay pada struk → ShopeePay
+      - Pembelian aset → Harta Benda (harta=true)
+    2. STRUK BELANJA & RELASI INTRA-BATCH:
+      - Pecah per item dalam array "data", JANGAN digabung menjadi satu total.
+      - Struk belanja tunggal: Cukup gunakan autoRelate: true (semua item otomatis dihubungkan ke baris #1).
+      - Multi-struk atau multi-pasangan aset dalam 1 batch: Gunakan penanda nomor baris string pada "relasi_transaksi" (contoh: "#1", "#3") untuk mengaitkan item ke baris induknya masing-masing.
+      - Transaksi lama di DB: Isi "relasi_transaksi" dengan integer ID database dari hasil search_Transaksi.
+    3. ATURAN HARTA (ASET):
+      - Pembelian: Baris pertama Pengeluaran (rekening uang, harta=false) + Baris kedua Pemasukan (rekening Harta, harta=true, penyusutan_bunga default 48 bulan jika tidak ditentukan, relasi_transaksi="#1" atau merujuk nomor baris pengeluaran terkait).
+      - Penjualan: Pengeluaran (rekening Harta, harta=true) + Pemasukan (rekening uang).
+      - DILARANG: harta=true pada Pengeluaran rekening uang biasa. DILARANG: Pindah Buku untuk Harta.
+    4. ATURAN ATTACHMENT:
+      - FALSE (default / x): Pengeluaran rutin/kecil (makanan, ojek, topup, belanja harian).
+      - TRUE (✓): Barang eksklusif/bernilai signifikan (gadget, elektronik, furniture, aset mahal, faktur/nota resmi) untuk bukti/garansi.
+    5. NOMINAL & DISKON:
+      - Nominal adalah harga PER UNIT (kuantitas dikalikan otomatis oleh sistem).
+      - Diskon total di akhir struk: bagi PRORATA ke setiap item secara proporsional.
+      - Diskon per item: catat harga NETTO.
+      - Cashback: JANGAN dicatat (abaikan). Tips: Gabungkan ke nominal transaksi utama.
+    6. RUTIN vs NON-RUTIN (Urutan prioritas strictly):
+      1. Event / Perjadin / Mudik → FALSE (selalu).
+      2. Tagihan bulanan tetap & langganan berkala (Kos, Listrik, Admin Rekening, paket data, Gojek Plus, Bilibili, game monthly card, Spotify, Netflix) → TRUE (walau dibayar hari Minggu).
+      3. Hiburan sekali beli / one-time entertainment (tiket bioskop, wisata, topup game non-langganan), pembelian aset/gadget/furnitur, atau GoFood/delivery spontan → FALSE.
+      4. Transaksi hari Minggu → FALSE.
+      5. Kelompok harian (Konsumsi, Transportasi, Sedekah, Topup) Senin–Sabtu → TRUE.
+      6. Cek sinyal dominan get_kelompok() & Memory AI: Ikuti histori dominan. Namun, AI dapat menilai berdasarkan memory/riwayat interaksi: jika suatu aktivitas sebelumnya sering tercatat false tetapi riwayat memory menunjukkan aktivitas tersebut kini sudah sering berulang, AI dapat berinisiatif mengajukannya sebagai TRUE pada tabel rekap untuk dikonfirmasi user.
+      7. Ragu / ambigu → FALSE.',
     annotations: new ToolAnnotations(
       readOnlyHint: false,
       destructiveHint: false,
       idempotentHint: false,
       openWorldHint: false
-    ),
-    outputSchema: [
-      'type' => 'object',
-      'properties' => [
-        'status' => ['type' => 'string', 'description' => 'Status pencatatan transaksi & link upload attachment buat user']
-      ]
-    ]
+    )
   )]
   #[Schema(
     properties: [
@@ -122,11 +139,11 @@ class transaksi
               'default' => false,
               'description' => 'KLASIFIKASI RUTINITAS. Tentukan dengan urutan prioritas ini (hentikan di aturan pertama yang cocok — lihat system_prompt bagian RUTIN vs NON-RUTIN untuk detail & contoh):
                 1. Bagian dari Event/Perjadin/Mudik -> FALSE, selalu.
-                2. Tagihan bulanan tetap untuk kebutuhan hidup/kerja dasar (Kos, Listrik, Admin Rekening, paket data esensial) -> TRUE, walau dibayar hari Minggu.
-                3. Langganan hiburan/non-esensial (Gojek Plus, Bilibili, Arknights, app non-esensial), pembelian aset/gadget/furnitur, atau GoFood/delivery -> FALSE.
+                2. Tagihan bulanan tetap & langganan berkala (Kos, Listrik, Admin Rekening, paket data, Gojek Plus, Bilibili, game monthly card, Spotify, Netflix) -> TRUE, walau dibayar hari Minggu.
+                3. Hiburan sekali beli / one-time entertainment (tiket bioskop, wisata, topup game non-langganan), pembelian aset/gadget/furnitur, atau GoFood/delivery spontan -> FALSE.
                 4. Transaksi hari Minggu -> FALSE.
                 5. Kelompok harian (Konsumsi, Transportasi, Sedekah, Topup) di hari Senin-Sabtu -> TRUE.
-                6. Masih ragu -> cek breakdown rutin/count per kelompok dari get_kelompok(); ikuti nilai rutin yang historisnya dominan untuk kelompok tsb.
+                6. Masih ragu -> cek breakdown rutin/count per kelompok dari get_kelompok() & Memory AI: ikuti nilai historis yang dominan. Namun jika memory/riwayat interaksi menunjukkan aktivitas yang sebelumnya sering false kini sudah sering berulang, AI dapat berinisiatif mengajukannya sebagai TRUE pada rekap untuk dikonfirmasi user.
                 7. Masih ragu juga -> FALSE (default non-rutin).'
             ],
             'kelompok'          => [
@@ -144,12 +161,12 @@ class transaksi
               'description' => 'Format: YYYY-MM-DD'
             ],
             'relasi_transaksi'  => [
-              'anyOf' => [['type' => 'integer'], ['type' => 'null']],
+              'anyOf' => [['type' => 'string'], ['type' => 'integer'], ['type' => 'null']],
               'description' =>
-              'ID transaksi utama untuk menghubungkan beberapa item dalam satu struk/kejadian.,
-                - ID ini bisa didapatkan dari response setelah mencatat transaksi melalui tool ini dengan format "✅ Berhasil! Transaksi Id #{id} telah dicatat.".
-                - Jika menginput struk belanja, catat item pertama, dapatkan ID-nya, lalu gunakan ID tersebut di field ini untuk item-item selanjutnya.
-        '
+              'ID transaksi utama untuk menghubungkan beberapa item dalam satu struk/kejadian/aset. Pilihan format:
+                - Referensi baris batch lokal: String dengan awalan "#" (misal: "#1", "#2") untuk menghubungkan ke baris transaksi sebelumnya dalam batch ini (1-based index). Sangat berguna untuk multi-struk atau pasangan aset (harta).
+                - ID Database riil: Integer ID transaksi lama (misal: 84) yang didapat dari search_Transaksi atau get_transaksi.
+                - null: Jika transaksi mandiri (tanpa relasi) atau jika mengandalkan parameter autoRelate: true.'
             ],
             'keterangan'        => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'default' => '', 'description' => 'Informasi tambahan tentang transaksi. Gunakan untuk detail spesifik yang tidak tercakup di field lain (contoh: nama toko, metode pembayaran, alasan pembelian).'],
             'attachment' => [
@@ -160,7 +177,11 @@ class transaksi
           'required' => ['jenis_transaksi', 'barang', 'nominal', 'kuantitas', 'tanggal']
         ]
       ],
-      'autoRelate' => ['type' => 'boolean', 'default' => false]
+      'autoRelate' => [
+        'type' => 'boolean',
+        'default' => false,
+        'description' => 'Jika TRUE, semua item setelah baris pertama yang relasi_transaksi-nya bernilai null akan otomatis dihubungkan ke ID baris pertama (#1). Cocok untuk struk belanja tunggal.'
+      ]
     ],
     required: ['data']
   )]
@@ -168,10 +189,13 @@ class transaksi
   {
     $transaksi = new ModelsTransaksi();
     $results = [];
-    $firstInsertId = null;
+    $insertedIds = [];
+    $attachmentLinks = [];
 
     try {
       foreach ($data as $index => $item) {
+        $rowNum = $index + 1;
+
         // 1. Manual verification of required fields
         $requiredFields = ['jenis_transaksi', 'barang', 'nominal', 'kuantitas', 'tanggal'];
         foreach ($requiredFields as $field) {
@@ -183,11 +207,40 @@ class transaksi
         // 2. Handle File Attachment (Will be uploaded via link later if requested)
         $finalFileName = !empty($item['attachment']) ? 'uploading' : null;
 
-        // 3. Auto-relate items in a batch
-        // If this is item > 0 in the array, and no relation is set, link it to the first item automatically
-        $relasiTransaksi = $item['relasi_transaksi'] ?? null;
-        if ($autoRelate && $index > 0 && $relasiTransaksi === null && $firstInsertId !== null) {
-          $relasiTransaksi = $firstInsertId;
+        // 3. Resolve transaction relation (Intra-batch relative index or existing DB ID)
+        $rawRelate = $item['relasi_transaksi'] ?? null;
+        $relasiTransaksi = null;
+
+        if ($rawRelate !== null && $rawRelate !== '') {
+          // a. Referensi nomor baris batch lokal dengan prefix '#' atau '@' (misal: "#1", "@1", "#2")
+          if (is_string($rawRelate) && preg_match('/^[#@](\d+)$/', trim($rawRelate), $matches)) {
+            $targetRow = (int) $matches[1];
+            if (!isset($insertedIds[$targetRow])) {
+              throw new ToolCallException("❌ Validasi Gagal pada baris #{$rowNum}: Referensi relasi '{$rawRelate}' merujuk ke baris yang belum tersimpan atau tidak ditemukan dalam batch.");
+            }
+            $relasiTransaksi = $insertedIds[$targetRow];
+          }
+          // b. Relative offset negatif (misal: -1 atau "-1" untuk merujuk baris tepat sebelumnya)
+          elseif (is_numeric($rawRelate) && (int) $rawRelate < 0) {
+            $targetRow = $rowNum + (int) $rawRelate;
+            if (!isset($insertedIds[$targetRow])) {
+              throw new ToolCallException("❌ Validasi Gagal pada baris #{$rowNum}: Relative offset '{$rawRelate}' tidak valid.");
+            }
+            $relasiTransaksi = $insertedIds[$targetRow];
+          }
+          // c. Integer / numeric: bisa ID database lama atau baris batch sebelumnya
+          elseif (is_numeric($rawRelate)) {
+            $num = (int) $rawRelate;
+            if ($num > 0 && $num < $rowNum && isset($insertedIds[$num])) {
+              $relasiTransaksi = $insertedIds[$num];
+            } elseif ($num > 0) {
+              $relasiTransaksi = $num;
+            }
+          }
+        }
+        // d. Fallback autoRelate jika relasi tidak diisi eksplisit
+        elseif ($autoRelate && $index > 0 && isset($insertedIds[1])) {
+          $relasiTransaksi = $insertedIds[1];
         }
 
         // 4. Map and normalize data payload
@@ -214,24 +267,20 @@ class transaksi
 
         if ($result > 0) {
           $lastId = $transaksi->lastInsertId();
-
-          // Capture the first ID to use for subsequent relations in this batch
-          if ($index === 0) {
-            $firstInsertId = $lastId;
-          }
+          $insertedIds[$rowNum] = $lastId;
 
           $results[] = "#{$lastId} ({$item['barang']})";
 
           // If the user requested an attachment for this transaction, generate a link
           if (!empty($item['attachment'])) {
-            $attachmentLink = "\n\n🔗 Harap unggah lampiran (attachment) untuk transaksi #{$lastId} di sini: " . BASEURL . "/Record/attachment/" . $lastId;
+            $attachmentLinks[] = "🔗 Harap unggah lampiran (attachment) untuk transaksi #{$lastId} ({$item['barang']}) di sini: " . BASEURL . "/Record/attachment/" . $lastId;
           }
         } else {
           throw new ToolCallException("❌ Gagal menyimpan item '{$item['barang']}' ke database.");
         }
       }
 
-      $linkSuffix = isset($attachmentLink) ? $attachmentLink : "";
+      $linkSuffix = !empty($attachmentLinks) ? "\n\n" . implode("\n", $attachmentLinks) : "";
       return "✅ Berhasil! " . count($results) . " Transaksi dicatat: " . implode(";\n ", $results) . $linkSuffix;
     } catch (\Exception $e) {
       throw new ToolCallException("⚠️ Error: " . $e->getMessage());
@@ -273,13 +322,7 @@ class transaksi
       destructiveHint: true,
       idempotentHint: true,
       openWorldHint: false
-    ),
-    outputSchema: [
-      'type' => 'object',
-      'properties' => [
-        'status' => ['type' => 'string', 'description' => 'Status pencatatan transaksi & link upload attachment buat user']
-      ]
-    ]
+    )
   )]
   #[Schema(
     properties: [
@@ -326,6 +369,7 @@ class transaksi
   {
     $transaksi = new ModelsTransaksi();
     $results = [];
+    $attachmentLinks = [];
     try {
       foreach ($data as $index => $item) {
         if ($index >= 15) break; // Batas maksimal 15 transaksi per update massal
@@ -355,14 +399,14 @@ class transaksi
           $results[] = "#{$targetId} ({$item['barang']})";
 
           if ($wantsAttachment) {
-            $attachmentLink = "\n\n🔗 Harap unggah lampiran (attachment) untuk transaksi #{$targetId} di sini: " . BASEURL . "/Record/attachment/" . $targetId;
+            $attachmentLinks[] = "🔗 Harap unggah lampiran (attachment) untuk transaksi #{$targetId} ({$item['barang']}) di sini: " . BASEURL . "/Record/attachment/" . $targetId;
           }
         } else {
           throw new ToolCallException("❌ Gagal Update item '{$item['barang']}' ke database.");
         }
       }
 
-      $linkSuffix = isset($attachmentLink) ? $attachmentLink : "";
+      $linkSuffix = !empty($attachmentLinks) ? "\n\n" . implode("\n", $attachmentLinks) : "";
       return "✅ Berhasil! " . count($results) . " Transaksi diperbarui: " . implode(";\n", $results) . $linkSuffix;
     } catch (\Exception $e) {
       throw new ToolCallException("⚠️ Error: " . $e->getMessage());
@@ -404,7 +448,11 @@ class transaksi
       $rows = new ModelsTransaksi()->getKelompok();
       return [
         'data' => array_map(
-          fn($row) => [...$row, 'rutin' => $row['rutin'] == 1],
+          fn($row) => [
+            'kelompok' => $row['kelompok'] ?? null,
+            'rutin'    => $row['rutin'] == 1,
+            'count'    => (int) $row['count']
+          ],
           $rows
         )
       ];
@@ -418,7 +466,7 @@ class transaksi
    */
   #[McpTool(
     name: 'get_transaksi',
-    description: 'Mendapatkan daftar transaksi dalam rentang tanggal tertentu ',
+    description: 'Mendapatkan daftar riwayat transaksi dalam rentang tanggal tertentu (default: tanggal 1 bulan berjalan s/d hari ini). Gunakan untuk analisis riwayat belanja, audit mutasi, atau mencari transaksi masa lalu.',
     annotations: new ToolAnnotations(
       readOnlyHint: true,
       openWorldHint: false
@@ -448,7 +496,7 @@ class transaksi
               'attachment'           => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'keterangan'           => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'review'               => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'created_at'           => ['type' => 'string', 'format' => 'date-time'],
+              'created_at'           => ['type' => 'string', 'format' => 'date'],
               'nama_rekening_sumber' => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'nama_rekening_masuk'  => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'jenis_budget_sumber'  => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
@@ -464,12 +512,12 @@ class transaksi
       'startDate'           => [
         'anyOf' => [['type' => 'string'], ['type' => 'null']],
         'format' => 'date',
-        'description' => 'Format: YYYY-MM-DD'
+        'description' => 'Tanggal awal rentang pencarian (Format: YYYY-MM-DD). Default: tanggal 1 bulan berjalan.'
       ],
       'endDate'           => [
         'anyOf' => [['type' => 'string'], ['type' => 'null']],
         'format' => 'date',
-        'description' => 'Format: YYYY-MM-DD'
+        'description' => 'Tanggal akhir rentang pencarian (Format: YYYY-MM-DD). Default: hari ini.'
       ],
     ]
   )]
@@ -480,8 +528,32 @@ class transaksi
     $startDate = $startDate ?? date('Y-m-01'); // Default ke tanggal 1
     $endDate = $endDate ?? date('Y-m-d'); // Default ke hari ini
     try {
+      $rows = (new ModelsTransaksi())->getInRange($startDate, $endDate);
       return [
-        'data' => (new ModelsTransaksi())->getInRange($startDate, $endDate)
+        'data' => array_map(fn($row) => [
+          'id'                   => (int) $row['id'],
+          'jenis_transaksi'      => (string) $row['jenis_transaksi'],
+          'harta'                => !empty($row['harta']),
+          'barang'               => (string) $row['barang'],
+          'rekening_sumber'      => isset($row['rekening_sumber']) && $row['rekening_sumber'] !== '' ? (int) $row['rekening_sumber'] : null,
+          'rekening_masuk'       => isset($row['rekening_masuk']) && $row['rekening_masuk'] !== '' ? (int) $row['rekening_masuk'] : null,
+          'nominal'              => (float) $row['nominal'],
+          'nominal_asing'        => isset($row['nominal_asing']) ? (float) $row['nominal_asing'] : 0.0,
+          'kuantitas'            => isset($row['kuantitas']) ? (float) $row['kuantitas'] : 1.0,
+          'penyusutan_bunga'     => isset($row['penyusutan_bunga']) ? (float) $row['penyusutan_bunga'] : 0.0,
+          'rutin'                => !empty($row['rutin']),
+          'kelompok'             => $row['kelompok'] ?? null,
+          'tanggal'              => (string) $row['tanggal'],
+          'relasi_transaksi'     => isset($row['relasi_transaksi']) && $row['relasi_transaksi'] !== '' ? (int) $row['relasi_transaksi'] : null,
+          'attachment'           => $row['attachment'] ?? null,
+          'keterangan'           => $row['keterangan'] ?? null,
+          'review'               => $row['review'] ?? null,
+          'created_at'           => !empty($row['created_at']) ? date('Y-m-d', strtotime($row['created_at'])) : date('Y-m-d'),
+          'nama_rekening_sumber' => $row['nama_rekening_sumber'] ?? null,
+          'nama_rekening_masuk'  => $row['nama_rekening_masuk'] ?? null,
+          'jenis_budget_sumber'  => $row['jenis_budget_sumber'] ?? null,
+          'jenis_budget_masuk'   => $row['jenis_budget_masuk'] ?? null,
+        ], $rows)
       ];
     } catch (\Exception $e) {
       throw new ToolCallException("Error: " . $e->getMessage());
@@ -493,7 +565,7 @@ class transaksi
    */
   #[McpTool(
     name: 'search_Transaksi',
-    description: 'Mencari transaksi berdasarkan kriteria tertentu',
+    description: 'Mencari transaksi berdasarkan kata kunci spesifik (ID transaksi, nama barang, atau nama kelompok). Gunakan untuk menemukan ID transaksi lama sebelum melakukan update_transaksi atau menghubungkan relasi_transaksi.',
     annotations: new ToolAnnotations(
       readOnlyHint: true,
       openWorldHint: false
@@ -506,28 +578,12 @@ class transaksi
           'items' => [
             'type' => 'object',
             'properties' => [
-              'id'                   => ['type' => 'integer'],
-              'jenis_transaksi'      => ['type' => 'string'],
-              'harta'                => ['type' => 'boolean'],
-              'barang'               => ['type' => 'string'],
-              'rekening_sumber'      => ['anyOf' => [['type' => 'integer'], ['type' => 'null']]],
-              'rekening_masuk'       => ['anyOf' => [['type' => 'integer'], ['type' => 'null']]],
-              'nominal'              => ['type' => 'number'],
-              'nominal_asing'        => ['type' => 'number'],
-              'kuantitas'            => ['type' => 'number'],
-              'penyusutan_bunga'     => ['type' => 'number'],
-              'rutin'                => ['type' => 'boolean'],
-              'kelompok'             => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'tanggal'              => ['type' => 'string', 'format' => 'date'],
-              'relasi_transaksi'     => ['anyOf' => [['type' => 'integer'], ['type' => 'null']]],
-              'attachment'           => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'keterangan'           => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'review'               => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'created_at'           => ['type' => 'string', 'format' => 'date-time'],
-              'nama_rekening_sumber' => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'nama_rekening_masuk'  => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'jenis_budget_sumber'  => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'jenis_budget_masuk'   => ['anyOf' => [['type' => 'string'], ['type' => 'null']]]
+              'id'              => ['type' => 'string'],
+              'barang'          => ['type' => 'string'],
+              'nominal'         => ['type' => 'number'],
+              'kelompok'        => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'rekening_sumber' => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+              'rekening_masuk'  => ['anyOf' => [['type' => 'string'], ['type' => 'null']]]
             ]
           ]
         ]
@@ -538,7 +594,7 @@ class transaksi
     properties: [
       'search'           => [
         'type' => 'string',
-        'description' => 'Search By Id, Name, Kelompok'
+        'description' => 'Kata kunci pencarian: ID transaksi (angka), nama barang, atau nama kelompok/kategori.'
       ],
     ]
   )]
@@ -546,8 +602,16 @@ class transaksi
     string $search,
   ): array {
     try {
+      $rows = (new ModelsTransaksi())->find($search);
       return [
-        'data' => new ModelsTransaksi()->find($search)
+        'data' => array_map(fn($row) => [
+          'id'              => (string) $row['id'],
+          'barang'          => (string) $row['barang'],
+          'nominal'         => (float) $row['nominal'],
+          'kelompok'        => $row['kelompok'] ?? null,
+          'rekening_sumber' => $row['rekening_sumber'] ?? null,
+          'rekening_masuk'  => $row['rekening_masuk'] ?? null,
+        ], $rows)
       ];
     } catch (\Exception $e) {
       throw new ToolCallException("Error: " . $e->getMessage());

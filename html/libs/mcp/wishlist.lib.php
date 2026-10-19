@@ -22,13 +22,7 @@ class wishlist
       destructiveHint: false,
       idempotentHint: false,
       openWorldHint: false
-    ),
-    outputSchema: [
-      'type' => 'object',
-      'properties' => [
-        'status' => ['type' => 'string']
-      ]
-    ]
+    )
   )]
   #[Schema(
     properties: [
@@ -80,8 +74,8 @@ class wishlist
               'harga_estimasi'  => ['anyOf' => [['type' => 'number'], ['type' => 'null']]],
               'link'            => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
               'catatan'         => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'created_at'      => ['type' => 'string', 'format' => 'date-time'],
-              'updated_at'      => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'format' => 'date-time'],
+              'created_at'      => ['type' => 'string', 'format' => 'date'],
+              'updated_at'      => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'format' => 'date'],
             ]
           ]
         ]
@@ -91,8 +85,17 @@ class wishlist
   public function getWishlist(): array
   {
     try {
+      $rows = (new ModelsWishlist())->getAll();
       return [
-        'data' => new ModelsWishlist()->getAll()
+        'data' => array_map(fn($row) => [
+          'id'             => (int) $row['id'],
+          'nama'           => (string) $row['nama'],
+          'harga_estimasi' => isset($row['harga_estimasi']) && $row['harga_estimasi'] !== null && $row['harga_estimasi'] !== '' ? (float) $row['harga_estimasi'] : null,
+          'link'           => $row['link'] ?? null,
+          'catatan'        => $row['catatan'] ?? null,
+          'created_at'     => !empty($row['created_at']) ? date('Y-m-d', strtotime($row['created_at'])) : date('Y-m-d'),
+          'updated_at'     => !empty($row['updated_at']) ? date('Y-m-d', strtotime($row['updated_at'])) : null,
+        ], $rows)
       ];
     } catch (\Exception $e) {
       throw new ToolCallException("Error: " . $e->getMessage());
@@ -109,21 +112,15 @@ class wishlist
       destructiveHint: false,
       idempotentHint: true,
       openWorldHint: false
-    ),
-    outputSchema: [
-      'type' => 'object',
-      'properties' => [
-        'status' => ['type' => 'string']
-      ]
-    ]
+    )
   )]
   #[Schema(
     properties: [
       'id'              => ['type' => 'integer', 'description' => 'ID item Wishlist yang akan diperbarui'],
-      'nama'            => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-      'harga_estimasi'  => ['anyOf' => [['type' => 'number'], ['type' => 'null']]],
-      'link'            => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-      'catatan'         => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
+      'nama'            => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'description' => 'Nama baru barang Wishlist (opsional)'],
+      'harga_estimasi'  => ['anyOf' => [['type' => 'number'], ['type' => 'null']], 'description' => 'Estimasi harga baru dalam Rupiah (opsional)'],
+      'link'            => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'description' => 'Link/URL baru produk (opsional)'],
+      'catatan'         => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'description' => 'Catatan atau pertimbangan baru (opsional)'],
     ],
     required: ['id']
   )]
@@ -157,13 +154,7 @@ class wishlist
       destructiveHint: true,
       idempotentHint: true,
       openWorldHint: false
-    ),
-    outputSchema: [
-      'type' => 'object',
-      'properties' => [
-        'status' => ['type' => 'string']
-      ]
-    ]
+    )
   )]
   #[Schema(
     properties: [
