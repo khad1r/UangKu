@@ -54,7 +54,12 @@ class resources
       === KELOMPOK (CATEGORY) RULES ===
 
       STEP 1: Always call get_kelompok() first. Use the result as the reference list.
-      STEP 2: Prefer existing kelompok if context matches. Only create new ones if truly nothing fits.
+      STEP 2: Prefer existing kelompok if context matches.
+      STEP 3 (IMPORTANT - NULL vs NEW KELOMPOK):
+        - If an expense is an unusual purchase, one-off/irregular item, or does not clearly fit into known routine groups: LEAVE kelompok as null and set rutin: false!
+        - Leaving kelompok as null is VERY COMMON and STRONGLY PREFERRED over creating new one-off categories. Do NOT invent new kelompok for isolated/random purchases (e.g. buying a random spare part, unique gadget accessory, or rare service).
+        - MANDATORY LINK TO RUTIN: If an expense is `rutin: true`, kelompok is MANDATORY (must not be null). Conversely, if `kelompok` is null, `rutin` MUST ALWAYS be false.
+        - ONLY create a new kelompok if it represents an official travel, multi-item project, or special event (see EVENT / PERJADIN below).
 
       Known fixed kelompok — use these exactly (spelling matters):
       - Konsumsi          → all food/drink, groceries, snacks
@@ -91,23 +96,25 @@ class resources
 
       Decide in this EXACT order — stop at the first rule that matches. Do not combine rules or guess; precedence resolves every conflict below.
 
-      1. Kelompok is Event/Perjadin/Mudik (unique event group) → rutin: false. Always, no exceptions — even for a daily meal during the trip.
-      2. Item is a FIXED/RECURRING MONTHLY BILL or SUBSCRIPTION (Kos, Listrik, Admin Rekening, internet/data plan, Gojek Plus, Bilibili, Arknights monthly pass, Spotify, Netflix, YouTube Premium) → rutin: true, regardless of which day it's paid on. All periodic recurring commitments are routine — this rule outranks the Sunday rule below.
-      3. Item is a ONE-TIME / DISCRETIONARY expense: one-time entertainment (movie/cinema tickets, concert, recreational park, non-recurring game topup/gacha), a one-off asset/gadget/furniture purchase, or a GoFood/delivery order → rutin: false. This outranks "it's a weekday" or "it belongs to a rutin kelompok" below.
-      4. Transaction date is Sunday → rutin: false.
-      5. Kelompok is one of the daily-frequency kelompok (Konsumsi, Transportasi, Sedekah, Topup) on Monday–Saturday → rutin: true.
-      6. Otherwise, check get_kelompok()'s per-kelompok rutin/count breakdown & AI Interaction Memory:
+      1. Kelompok is null (unusual/irregular purchase without category) → rutin: false (mandatory: routine expenses MUST have a kelompok; no kelompok means non-routine).
+      2. Kelompok is Event/Perjadin/Mudik (unique event group) → rutin: false. Always, no exceptions — even for a daily meal during the trip.
+      3. Item is a FIXED/RECURRING MONTHLY BILL or SUBSCRIPTION (Kos, Listrik, Admin Rekening, internet/data plan, Gojek Plus, Bilibili, Arknights monthly pass, Spotify, Netflix, YouTube Premium) → rutin: true, regardless of which day it's paid on. All periodic recurring commitments are routine — this rule outranks the Sunday rule below.
+      4. Item is a ONE-TIME / DISCRETIONARY expense: one-time entertainment (movie/cinema tickets, concert, recreational park, non-recurring game topup/gacha), a one-off asset/gadget/furniture purchase, or a GoFood/delivery order → rutin: false. This outranks "it's a weekday" or "it belongs to a rutin kelompok" below.
+      5. Transaction date is Sunday → rutin: false.
+      6. Kelompok is one of the daily-frequency kelompok (Konsumsi, Transportasi, Sedekah, Topup) on Monday–Saturday → rutin: true.
+      7. Otherwise, check get_kelompok()'s per-kelompok rutin/count breakdown & AI Interaction Memory:
          - Follow dominant history: if this item's kelompok has an overwhelmingly dominant historical rutin value (one side's count is clearly larger), follow that history.
          - Memory & Evolving Habits: AI can evaluate based on interaction memory/history. An item or kelompok may historically be recorded mostly as false (non-routine), but if recent memory/interactions show this activity has become frequent/recurring, the AI may evaluate this evolving habit and propose it as `rutin: true` in the recap table for user confirmation.
-      7. Still ambiguous after step 6 → rutin: false (default to non-routine when unsure).
+      8. Still ambiguous after step 7 → rutin: false (default to non-routine when unsure).
 
-      Note: get_kelompok() returns [kelompok, rutin, count] — up to two rows per kelompok, one per rutin value, with a count of past transactions. This is a tiebreaker for step 6 — it never overrides rules 1–5.
+      Note: get_kelompok() returns [kelompok, rutin, count] — up to two rows per kelompok, one per rutin value, with a count of past transactions. This is a tiebreaker for step 7 — it never overrides rules 1–6.
 
       Examples (to keep this unambiguous):
-      - Ojek to office, canteen meal, sedekah, e-wallet topup, cash withdrawal on a Tuesday → rutin: true (rule 5)
-      - Kos payment, PLN electricity bill, or Bilibili/Gojek Plus/Arknights monthly subscription, even if paid on a Sunday → rutin: true (rule 2 beats rule 4)
-      - One-time entertainment (bioskop, rekreasi, topup diamond insidentil), asset purchase, or GoFood order on a Wednesday → rutin: false (rule 3 beats rule 5)
-      - Any Perjadin/event item → rutin: false (rule 1), even if it's routine-looking spending like a daily meal
+      - Ojek to office, canteen meal, sedekah, e-wallet topup, cash withdrawal on a Tuesday → rutin: true (rule 6)
+      - Kos payment, PLN electricity bill, or Bilibili/Gojek Plus/Arknights monthly subscription, even if paid on a Sunday → rutin: true (rule 3 beats rule 5)
+      - Belanja barang tidak biasa tanpa kelompok (kelompok: null) → rutin: false (rule 1)
+      - One-time entertainment (bioskop, rekreasi, topup diamond insidentil), asset purchase, or GoFood order on a Wednesday → rutin: false (rule 4 beats rule 6)
+      - Any Perjadin/event item → rutin: false (rule 2), even if it's routine-looking spending like a daily meal
 
       === NOMINAL & DISCOUNT RULES ===
 
@@ -134,8 +141,13 @@ class resources
       - Multi-receipt or Multi-asset batch → use relative row indexing on relasi_transaksi (e.g. "#1", "#3") to link items to their specific parent row in the batch
       - Existing DB transactions → use explicit integer ID from search_Transaksi / get_transaksi
       - DILARANG: Guessing or predicting future database auto-increment IDs. Always use relative row references ("#1", "#2") or autoRelate.
-      - Item name: GENERALIZE (e.g. "Roti Tawar" not "Sari Roti Tawar Soft Rasa Susu Jumbo 540g")
-      - Full SKU detail → put in keterangan field
+      - Item name (barang): GENERAL BUT DIVERSIFIED — do NOT make it overly generic, and do NOT make it hyper-specific:
+        * DILARANG over-generalize menjadi istilah yang terlalu abstrak seperti "Makan Siang", "Makanan", "Minuman", atau "Barang" sehingga transaksi kehilangan identitas dan tidak bisa didiversifikasi dalam analisis keuangan.
+        * DILARANG menyertakan nama warung/resto, gramasi, kode SKU, atau teks promosi berbelit-belit (misal: pangkas "Sari Roti Tawar Gandum Kupas 350g" atau "Nasi Padang Rendang Sapi RM Sederhana").
+        * TITIK TEMU IDEAL (General tapi tetap terdiversifikasi):
+          - Makanan/Minuman: "Nasi Padang", "Ayam Geprek", "Kopi Susu", "Roti Tawar", "Mie Ayam" (spesifik jenis makanannya, bukan sekadar "Makan Siang" atau "Makanan").
+          - Barang/Kebutuhan: "Mouse Wireless", "Buku Tulis", "Sabun Mandi", "Kaus Kaki", "Kabel Type-C", "Baterai AA" (spesifik jenis barangnya, bukan sekadar "Barang" atau "Elektronik").
+        * Detail toko/resto, nomor nota, varian rasa, atau SKU lengkap → masukkan ke field keterangan.
 
       === RECAP FORMAT (MANDATORY PRE-EXECUTION RECAP) ===
 
@@ -182,7 +194,7 @@ class resources
       Decide these yourself — no need to ask:
       - Account → use default table
       - Rutin/non-rutin → follow rules above. with enough interaction AI might see routine patterns
-      - Kelompok → use get_kelompok result
+      - Kelompok → use get_kelompok result for standard routine groups, or null if unusual/irregular non-routine purchase
       - Intra-batch relations → use autoRelate: true or relative row references ("#1", "#3") automatically
       - Prorata discount → apply automatically
       - Item name generalization → apply automatically

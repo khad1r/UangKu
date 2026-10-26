@@ -37,7 +37,9 @@ class transaksi
     - Auto-Relate: [✓/x]
     ```
     Aturan Tampilan Kolom Rekap:
-    - Barang: Tambahkan prefix "[$]" jika harta: true. Generalisasikan nama barang (detail lengkap masukkan ke Keterangan).
+    - Barang:
+      - Tambahkan prefix "[$]" jika harta: true.
+      - Generalisasikan nama barang tetapi tetap terdiversifikasi & teridentifikasi (misal: "Nasi Padang", "Ayam Geprek", "Mouse Wireless", bukan terlalu abstrak seperti "Makanan"/"Makan siang", dan bukan berbelit merek/SKU). Detail lengkap masukkan ke Keterangan.
     - Rekening:
       - Gunakan simbol "▲" untuk Pengeluaran (rekening sumber).
       - Gunakan simbol "▼" untuk Pemasukan (rekening tujuan).
@@ -72,13 +74,14 @@ class transaksi
       - Diskon per item: catat harga NETTO.
       - Cashback: JANGAN dicatat (abaikan). Tips: Gabungkan ke nominal transaksi utama.
     6. RUTIN vs NON-RUTIN (Urutan prioritas strictly):
-      1. Event / Perjadin / Mudik → FALSE (selalu).
-      2. Tagihan bulanan tetap & langganan berkala (Kos, Listrik, Admin Rekening, paket data, Gojek Plus, Bilibili, game monthly card, Spotify, Netflix) → TRUE (walau dibayar hari Minggu).
-      3. Hiburan sekali beli / one-time entertainment (tiket bioskop, wisata, topup game non-langganan), pembelian aset/gadget/furnitur, atau GoFood/delivery spontan → FALSE.
-      4. Transaksi hari Minggu → FALSE.
-      5. Kelompok harian (Konsumsi, Transportasi, Sedekah, Topup) Senin–Sabtu → TRUE.
-      6. Cek sinyal dominan get_kelompok() & Memory AI: Ikuti histori dominan. Namun, AI dapat menilai berdasarkan memory/riwayat interaksi: jika suatu aktivitas sebelumnya sering tercatat false tetapi riwayat memory menunjukkan aktivitas tersebut kini sudah sering berulang, AI dapat berinisiatif mengajukannya sebagai TRUE pada tabel rekap untuk dikonfirmasi user.
-      7. Ragu / ambigu → FALSE.',
+      1. Kelompok bernilai NULL (belanja barang tidak biasa / insidentil) → FALSE (wajib: pengeluaran rutin harus memiliki kelompok; tanpa kelompok berarti non-rutin).
+      2. Event / Perjadin / Mudik → FALSE (selalu).
+      3. Tagihan bulanan tetap & langganan berkala (Kos, Listrik, Admin Rekening, paket data, Gojek Plus, Bilibili, game monthly card, Spotify, Netflix) → TRUE (walau dibayar hari Minggu).
+      4. Hiburan sekali beli / one-time entertainment (tiket bioskop, wisata, topup game non-langganan), pembelian aset/gadget/furnitur, atau GoFood/delivery spontan → FALSE.
+      5. Transaksi hari Minggu → FALSE.
+      6. Kelompok harian (Konsumsi, Transportasi, Sedekah, Topup) Senin–Sabtu → TRUE.
+      7. Cek sinyal dominan get_kelompok() & Memory AI: Ikuti histori dominan. Namun, AI dapat menilai berdasarkan memory/riwayat interaksi: jika suatu aktivitas sebelumnya sering tercatat false tetapi riwayat memory menunjukkan aktivitas tersebut kini sudah sering berulang, AI dapat berinisiatif mengajukannya sebagai TRUE pada tabel rekap untuk dikonfirmasi user.
+      8. Ragu / ambigu → FALSE.',
     annotations: new ToolAnnotations(
       readOnlyHint: false,
       destructiveHint: false,
@@ -103,7 +106,7 @@ class transaksi
                 Set TRUE jika rekening yang digunakan adalah rekening Harta (baik Pemasukan maupun Pengeluaran).
                 DILARANG set TRUE pada Pengeluaran dari rekening uang biasa.
               '],
-            'barang' => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat, Harus di generalkan jangan terlalu spesifik (contoh: "Makan siang" bukan "Nasi Padang Sari Ratu"), Gunakan Keterangan untuk lainnya.'],
+            'barang' => ['type' => 'string', 'description' => 'Nama barang atau deskripsi singkat. Harus digeneralisasikan tetapi tetap terdiversifikasi dan dapat dibedakan (contoh: "Nasi Padang", "Ayam Geprek", "Kopi Susu", "Mouse Wireless" — JANGAN terlalu abstrak seperti "Makan siang" / "Makanan" / "Barang", dan JANGAN terlalu spesifik seperti menyertakan nama warung/gramasi/SKU). Gunakan field Keterangan untuk detail merek/toko/SKU lengkap.'],
             'rekening_sumber'   => [
               'anyOf' => [['type' => 'integer'], ['type' => 'null']],
               'description' => 'ID Rekening asal. WAJIB ambil dari hasil pemanggilan get_rekening PALING BARU (turn ini) — JANGAN pernah pakai ID dari ingatan/percakapan sebelumnya. (Wajib jika Pengeluaran/Pindah Buku)
