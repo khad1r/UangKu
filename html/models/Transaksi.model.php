@@ -206,6 +206,57 @@ class Transaksi extends Database
     }
     return $query->resultSet();
   }
+  /**
+   * Flexible query for MCP: keyword (all terms must match), date range, and exact filters.
+   * Only non-null filters are applied.
+   */
+  public function filter(
+    ?string $search = null,
+    ?string $startDate = null,
+    ?string $endDate = null,
+    ?string $jenis = null,
+    ?string $kelompok = null,
+    ?int $rekening = null,
+    int $limit = 100
+  ): array {
+    $where = [];
+    $params = [];
+
+    $terms = $search !== null ? array_filter(preg_split('/\s+/', trim(strtolower($search)))) : [];
+    foreach (array_values($terms) as $i => $term) {
+      $p = ":term{$i}";
+      $params[$p] = '%' . $term . '%';
+      $where[] = "(printf('%04d', t.id) LIKE $p OR LOWER(t.barang) LIKE $p OR LOWER(t.kelompok) LIKE $p
+        OR LOWER(t.keterangan) LIKE $p OR LOWER(t.review) LIKE $p OR LOWER(rs.nama) LIKE $p OR LOWER(rm.nama) LIKE $p)";
+    }
+    if ($startDate !== null) { $where[] = 't.tanggal >= :startDate'; $params[':startDate'] = $startDate; }
+    if ($endDate !== null)   { $where[] = 't.tanggal <= :endDate';   $params[':endDate'] = $endDate; }
+    if ($jenis !== null)     { $where[] = 't.jenis_transaksi = :jenis'; $params[':jenis'] = $jenis; }
+    if ($kelompok !== null)  { $where[] = 'LOWER(t.kelompok) = :kelompok'; $params[':kelompok'] = strtolower($kelompok); }
+    if ($rekening !== null)  { $where[] = '(t.rekening_sumber = :rek OR t.rekening_masuk = :rek)'; $params[':rek'] = $rekening; }
+
+    $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+    $limit = max(1, min($limit, 500));
+
+    $query = $this->query(<<<SQL
+      SELECT
+        t.*,
+        rs.nama AS nama_rekening_sumber,
+        rm.nama AS nama_rekening_masuk,
+        rs.jenis_uang AS jenis_budget_sumber,
+        rm.jenis_uang AS jenis_budget_masuk
+      FROM {$this->table} t
+      LEFT JOIN REKENING rs ON t.rekening_sumber = rs.id
+      LEFT JOIN REKENING rm ON t.rekening_masuk = rm.id
+      $whereSql
+      ORDER BY t.tanggal DESC, t.id DESC
+      LIMIT $limit
+    SQL);
+    foreach ($params as $k => $v) {
+      $query->bind($k, $v);
+    }
+    return $query->resultSet();
+  }
   public function insertTransaksi($data)
   {
     return $this->insert($this->table, $data)->affectedRows();
