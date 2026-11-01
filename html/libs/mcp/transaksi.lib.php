@@ -60,7 +60,7 @@ class transaksi
       - Pecah per item dalam array "data", JANGAN digabung menjadi satu total.
       - Struk belanja tunggal: Cukup gunakan autoRelate: true (semua item otomatis dihubungkan ke baris #1).
       - Multi-struk atau multi-pasangan aset dalam 1 batch: Gunakan penanda nomor baris string pada "relasi_transaksi" (contoh: "#1", "#3") untuk mengaitkan item ke baris induknya masing-masing.
-      - Transaksi lama di DB: Isi "relasi_transaksi" dengan integer ID database dari hasil search_Transaksi.
+      - Transaksi lama di DB: Isi "relasi_transaksi" dengan integer ID database dari hasil get_transaksi (pakai parameter search).
     3. ATURAN HARTA (ASET):
       - Pembelian: Baris pertama Pengeluaran (rekening uang, harta=false) + Baris kedua Pemasukan (rekening Harta, harta=true, penyusutan_bunga default 48 bulan jika tidak ditentukan, relasi_transaksi="#1" atau merujuk nomor baris pengeluaran terkait).
       - Penjualan: Pengeluaran (rekening Harta, harta=true) + Pemasukan (rekening uang).
@@ -168,7 +168,7 @@ class transaksi
               'description' =>
               'ID transaksi utama untuk menghubungkan beberapa item dalam satu struk/kejadian/aset. Pilihan format:
                 - Referensi baris batch lokal: String dengan awalan "#" (misal: "#1", "#2") untuk menghubungkan ke baris transaksi sebelumnya dalam batch ini (1-based index). Sangat berguna untuk multi-struk atau pasangan aset (harta).
-                - ID Database riil: Integer ID transaksi lama (misal: 84) yang didapat dari search_Transaksi atau get_transaksi.
+                - ID Database riil: Integer ID transaksi lama (misal: 84) yang didapat dari get_transaksi.
                 - null: Jika transaksi mandiri (tanpa relasi) atau jika mengandalkan parameter autoRelate: true.'
             ],
             'keterangan'        => ['anyOf' => [['type' => 'string'], ['type' => 'null']], 'default' => '', 'description' => 'Informasi tambahan tentang transaksi. Gunakan untuk detail spesifik yang tidak tercakup di field lain (contoh: nama toko, metode pembayaran, alasan pembelian).'],
@@ -464,12 +464,17 @@ class transaksi
     }
   }
   /**
-   * Mendapatkan daftar transaksi dalam rentang tanggal tertentu
-   * Gunakan tool ini untuk mendapatkan data transaksi dalam format yang mudah dipahami untuk analisis
+   * Mendapatkan / mencari transaksi (gabungan get_transaksi + search_Transaksi)
+   * Semua filter opsional dan digabung dengan AND.
    */
   #[McpTool(
     name: 'get_transaksi',
-    description: 'Mendapatkan daftar riwayat transaksi dalam rentang tanggal tertentu (default: tanggal 1 bulan berjalan s/d hari ini). Gunakan untuk analisis riwayat belanja, audit mutasi, atau mencari transaksi masa lalu.',
+    description: 'Mengambil atau mencari riwayat transaksi. Semua filter opsional dan digabung (AND).
+    - Tanpa filter apa pun → transaksi bulan berjalan (tanggal 1 s/d hari ini).
+    - search → kata kunci (ID 4 digit, barang, kelompok, keterangan, review, nama rekening). Multi kata = semua kata harus cocok. Jika hanya search tanpa tanggal, dicari di seluruh riwayat.
+    - startDate/endDate → rentang tanggal (YYYY-MM-DD).
+    - jenis_transaksi / kelompok / rekening → filter persis.
+    Gunakan untuk analisis/audit riwayat, atau menemukan ID transaksi lama sebelum update_transaksi / relasi_transaksi.',
     annotations: new ToolAnnotations(
       readOnlyHint: true,
       openWorldHint: false
@@ -477,6 +482,7 @@ class transaksi
     outputSchema: [
       'type' => 'object',
       'properties' => [
+        'count' => ['type' => 'integer'],
         'data' => [
           'type' => 'array',
           'items' => [
@@ -512,27 +518,58 @@ class transaksi
   )]
   #[Schema(
     properties: [
-      'startDate'           => [
+      'search' => [
         'anyOf' => [['type' => 'string'], ['type' => 'null']],
-        'format' => 'date',
-        'description' => 'Tanggal awal rentang pencarian (Format: YYYY-MM-DD). Default: tanggal 1 bulan berjalan.'
+        'description' => 'Kata kunci: ID transaksi, nama barang, kelompok, keterangan, review, atau nama rekening.'
       ],
-      'endDate'           => [
+      'startDate' => [
         'anyOf' => [['type' => 'string'], ['type' => 'null']],
         'format' => 'date',
-        'description' => 'Tanggal akhir rentang pencarian (Format: YYYY-MM-DD). Default: hari ini.'
+        'description' => 'Tanggal awal (YYYY-MM-DD).'
+      ],
+      'endDate' => [
+        'anyOf' => [['type' => 'string'], ['type' => 'null']],
+        'format' => 'date',
+        'description' => 'Tanggal akhir (YYYY-MM-DD).'
+      ],
+      'jenis_transaksi' => [
+        'anyOf' => [['type' => 'string', 'enum' => ['Pengeluaran', 'Pemasukan', 'Pindah Buku']], ['type' => 'null']],
+        'description' => 'Filter jenis transaksi.'
+      ],
+      'kelompok' => [
+        'anyOf' => [['type' => 'string'], ['type' => 'null']],
+        'description' => 'Filter nama kelompok (persis, tidak case-sensitive).'
+      ],
+      'rekening' => [
+        'anyOf' => [['type' => 'integer'], ['type' => 'null']],
+        'description' => 'Filter ID rekening (cocok sebagai sumber maupun tujuan). Ambil ID dari get_rekening.'
+      ],
+      'limit' => [
+        'type' => 'integer',
+        'default' => 100,
+        'description' => 'Jumlah maksimal hasil (1-500), urut dari tanggal terbaru.'
       ],
     ]
   )]
   public function getTransaksi(
+    ?string $search = null,
     ?string $startDate = null,
     ?string $endDate = null,
+    ?string $jenis_transaksi = null,
+    ?string $kelompok = null,
+    ?int $rekening = null,
+    int $limit = 100,
   ): array {
-    $startDate = $startDate ?? date('Y-m-01'); // Default ke tanggal 1
-    $endDate = $endDate ?? date('Y-m-d'); // Default ke hari ini
+    $search = ($search !== null && trim($search) !== '') ? $search : null;
+    // No filter at all → default to current month
+    if ($search === null && $startDate === null && $endDate === null && $jenis_transaksi === null && $kelompok === null && $rekening === null) {
+      $startDate = date('Y-m-01');
+      $endDate = date('Y-m-d');
+    }
     try {
-      $rows = (new ModelsTransaksi())->getInRange($startDate, $endDate);
+      $rows = (new ModelsTransaksi())->filter($search, $startDate, $endDate, $jenis_transaksi, $kelompok, $rekening, $limit);
       return [
+        'count' => count($rows),
         'data' => array_map(fn($row) => [
           'id'                   => (int) $row['id'],
           'jenis_transaksi'      => (string) $row['jenis_transaksi'],
@@ -556,64 +593,6 @@ class transaksi
           'nama_rekening_masuk'  => $row['nama_rekening_masuk'] ?? null,
           'jenis_budget_sumber'  => $row['jenis_budget_sumber'] ?? null,
           'jenis_budget_masuk'   => $row['jenis_budget_masuk'] ?? null,
-        ], $rows)
-      ];
-    } catch (\Exception $e) {
-      throw new ToolCallException("Error: " . $e->getMessage());
-    }
-  }
-  /**
-   * Mencari transaksi berdasarkan kriteria tertentu
-   * Gunakan tool ini untuk mendapatkan data transaksi dalam format yang mudah dipahami untuk analisis
-   */
-  #[McpTool(
-    name: 'search_Transaksi',
-    description: 'Mencari transaksi berdasarkan kata kunci spesifik (ID transaksi, nama barang, atau nama kelompok). Gunakan untuk menemukan ID transaksi lama sebelum melakukan update_transaksi atau menghubungkan relasi_transaksi.',
-    annotations: new ToolAnnotations(
-      readOnlyHint: true,
-      openWorldHint: false
-    ),
-    outputSchema: [
-      'type' => 'object',
-      'properties' => [
-        'data' => [
-          'type' => 'array',
-          'items' => [
-            'type' => 'object',
-            'properties' => [
-              'id'              => ['type' => 'string'],
-              'barang'          => ['type' => 'string'],
-              'nominal'         => ['type' => 'number'],
-              'kelompok'        => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'rekening_sumber' => ['anyOf' => [['type' => 'string'], ['type' => 'null']]],
-              'rekening_masuk'  => ['anyOf' => [['type' => 'string'], ['type' => 'null']]]
-            ]
-          ]
-        ]
-      ]
-    ]
-  )]
-  #[Schema(
-    properties: [
-      'search'           => [
-        'type' => 'string',
-        'description' => 'Kata kunci pencarian: ID transaksi (angka), nama barang, atau nama kelompok/kategori.'
-      ],
-    ]
-  )]
-  public function searchTransaksi(
-    string $search,
-  ): array {
-    try {
-      $rows = (new ModelsTransaksi())->find($search);
-      return [
-        'data' => array_map(fn($row) => [
-          'id'              => (string) $row['id'],
-          'barang'          => (string) $row['barang'],
-          'nominal'         => (float) $row['nominal'],
-          'kelompok'        => $row['kelompok'] ?? null,
-          'rekening_sumber' => $row['rekening_sumber'] ?? null,
-          'rekening_masuk'  => $row['rekening_masuk'] ?? null,
         ], $rows)
       ];
     } catch (\Exception $e) {

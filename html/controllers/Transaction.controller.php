@@ -99,7 +99,9 @@ class Transaction extends Controller
       foreach ($rows as $row) {
         $sub = floatval($row['total_idr']);
         $totalAll += $sub;
-        $row['jenis_transaksi'] === 'Pemasukan' ? ($totalIn += $sub) : ($totalOut += $sub);
+        if ($row['jenis_transaksi'] === 'Pemasukan') $totalIn += $sub;
+        elseif ($row['jenis_transaksi'] === 'Pengeluaran') $totalOut += $sub;
+        // Pindah Buku is neutral for net (money moves between own accounts)
       }
 
       echo json_encode([
@@ -108,6 +110,7 @@ class Transaction extends Controller
         'total' => $totalAll,
         'total_in' => $totalIn,
         'total_out' => $totalOut,
+        'net' => $totalIn - $totalOut,
         'data' => $rows
       ]);
     } catch (\Throwable $th) {

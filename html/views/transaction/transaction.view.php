@@ -770,7 +770,10 @@
       .then(result => {
         if (result.status === 'success' && result.count > 1) {
           relatedCount.textContent = result.count;
-          relatedTotalBadge.innerHTML = `<span class="badge bg-primary fs-6">Grand Total: Rp ${(+result.total).toLocaleString('id')}</span>`;
+          const hasBoth = result.total_in > 0 && result.total_out > 0;
+          relatedTotalBadge.innerHTML = hasBoth
+            ? `<span class="badge bg-primary fs-6">Net: Rp ${(+result.net).toLocaleString('id')}</span>`
+            : `<span class="badge bg-primary fs-6">Grand Total: Rp ${(+result.total).toLocaleString('id')}</span>`;
 
           const typeColor = { 'Pengeluaran': 'danger', 'Pemasukan': 'success', 'Pindah Buku': 'warning' };
 
@@ -808,7 +811,7 @@
 
           // Footer summary
           let tfootHtml = '';
-          if (result.total_in > 0 && result.total_out > 0) {
+          if (hasBoth) {
             tfootHtml = `
               <tr>
                 <td colspan="6" class="text-end">Total Pemasukan:</td>
@@ -822,7 +825,7 @@
               </tr>
               <tr class="table-secondary">
                 <td colspan="6" class="text-end">NET TOTAL:</td>
-                <td class="text-end text-primary">Rp ${(+result.total).toLocaleString('id')}</td>
+                <td class="text-end ${result.net < 0 ? 'text-danger' : 'text-success'}">Rp ${(+result.net).toLocaleString('id')}</td>
                 <td></td>
               </tr>
             `;

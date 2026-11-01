@@ -139,7 +139,7 @@ class resources
       - Receipt with multiple items → split per item, NEVER sum into one total
       - Single-receipt batch → use catat_transaksi with autoRelate: true (all items automatically relate to row #1)
       - Multi-receipt or Multi-asset batch → use relative row indexing on relasi_transaksi (e.g. "#1", "#3") to link items to their specific parent row in the batch
-      - Existing DB transactions → use explicit integer ID from search_Transaksi / get_transaksi
+      - Existing DB transactions → use explicit integer ID from get_transaksi (use its search parameter)
       - DILARANG: Guessing or predicting future database auto-increment IDs. Always use relative row references ("#1", "#2") or autoRelate.
       - Item name (barang): GENERAL BUT DIVERSIFIED — do NOT make it overly generic, and do NOT make it hyper-specific:
         * DILARANG over-generalize menjadi istilah yang terlalu abstrak seperti "Makan Siang", "Makanan", "Minuman", atau "Barang" sehingga transaksi kehilangan identitas dan tidak bisa didiversifikasi dalam analisis keuangan.
